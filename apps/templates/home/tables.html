@@ -1,0 +1,131 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %} 
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+  <div class="content">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card ">
+          <div class="card-header">
+            <h4 class="card-title"> Simple Table</h4>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table tablesorter " id="">
+                <thead class=" text-primary">
+                  <tr>
+                    <th>
+                      Name
+                    </th>
+                    <th>
+                      Products
+                    </th>
+                    <th>
+                      Last Scraped Date
+                    </th>
+                    <th class="text-center">
+                      Scrap
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <p>Oriental</p>
+                      <input type="number" placeholder="category" id="oriental_category" />
+                    </td>
+                    <td>
+                      <p>3</p>
+                      <input type="number" placeholder="DB category" id="oriental_db_category" />
+                    </td>
+                    <td>
+                      07-10-2024
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn" onclick="scrap()">
+                        Scrap
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Cashmere
+                    </td>
+                    <td>
+                      3
+                    </td>
+                    <td>
+                      07-10-2024
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn" onclick="secScrapView('https://www.cashmerecosmetics.com/language/en/product-category/bath-body/bath-shower-gel/')">
+                        Scrap
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+  function scrap(url) {
+    fetch("/api/scrap", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ id: "1",url: url, category: document.getElementById('oriental_category').value, db_category: document.getElementById('oriental_db_category').value })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+  function secScrapView(url) {
+    fetch("/api/SecScrapView", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ id: "1",url: url })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+</script>
+{% endblock javascripts %}
