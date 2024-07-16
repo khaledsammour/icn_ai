@@ -399,7 +399,7 @@ class GameakScrapView(APIView):
                     hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
             index = index + 1
         
-        for href in hrefs[:1]:
+        for href in hrefs:
             try:
                 driver.get(href)
                 sleep(1)
