@@ -37,11 +37,13 @@
                   <tr>
                     <td>
                       <p>Oriental</p>
-                      <input type="number" placeholder="category" id="oriental_category" />
+                      <input type="number" class="form-control mt-3" placeholder="category" id="oriental_category" />
+                      <input type="text" class="form-control mt-3" placeholder="Description" id="description" />
                     </td>
                     <td>
                       <p>3</p>
-                      <input type="number" placeholder="DB category" id="oriental_db_category" />
+                      <input type="number" class="form-control mt-3" placeholder="DB category" id="oriental_db_category" />
+                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="arabic_description" />
                     </td>
                     <td>
                       07-10-2024
@@ -106,7 +108,13 @@ const csrftoken = getCookie('csrftoken');
           "Content-Type": "application/json",
           'X-CSRFToken': csrftoken,
       },
-      body: JSON.stringify({ id: "1",url: url, category: document.getElementById('oriental_category').value, db_category: document.getElementById('oriental_db_category').value })
+      body: JSON.stringify({ id: "1",
+        url: url, 
+        category: document.getElementById('oriental_category').value, 
+        db_category: document.getElementById('oriental_db_category').value,
+        description: document.getElementById('description').value,
+        arabic_description: document.getElementById('arabic_description').value,
+      })
     })
     .then(response => response.json())
     .then(data => console.log(data))

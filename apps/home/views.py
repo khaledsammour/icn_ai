@@ -224,7 +224,6 @@ class ScrapView(APIView):
         driver = Chrome(options=options)
         driver.maximize_window()
         url = 'https://os-jo.com/product/search?category_id='+request.data['category']+'&limit=1000000000'
-        url = 'https://os-jo.com/product/search?search=Noctua%20NH-L9a-AM4%20chromax.Black%2C%20Low-Profile%20CPU%20Cooler%20for%20AMD%20AM4%20(Black)'
         driver.get(url)
         driver.execute_script("window.open('https://www.freetranslations.org/english-to-arabic-translation.html');")
         driver.switch_to.window(driver.window_handles[0])
@@ -259,10 +258,8 @@ class ScrapView(APIView):
 
                 # Get the main image URL
                 main_image_elem = soup.select_one('img.zoomImg')
-                print(main_image_elem)
-                print(main_image_elem['src'])
+                
                 image = getImageUrl(main_image_elem['src']) if main_image_elem else ''
-                print(image)
 
                 # Get additional images
                 image_elems = soup.select('.mSSlideElement > li > img')
@@ -296,9 +293,9 @@ class ScrapView(APIView):
                 product = {
                     "Arabic Name": translate(driver, title),
                     "English Name": title,
-                    "Arabic Description": translate(driver, product_attributes_content) if len(product_attributes_content) > 3 else "يعد هذا الكمبيوتر الخيار الأمثل لأي محترف يتطلع إلى تحقيق أقصى قدر من الأداء. مع ألواح زجاجية من الجانب والأمام لعرض أجهزتك وإضاءة RGB. يتضمن معالجًا قويًا، مما يجعله مثاليًا لتعدد المهام والألعاب. توفر ذاكرة الوصول العشوائي (RAM) تشغيلاً سلسًا وسرعات تحميل فائقة السرعة. إنه مزيج من القوة والكفاءة..",
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else "This pc is the perfect choice for any professional looking to maximize their performance. With glass panels from the side and front to showcase your hardware and RGB lighting. Including a powerful processor, making it ideal for multitasking and gaming. The RAM provides smooth operation and lightning-fast loading speeds. It's a combination of power and efficiency..",
-                    "Category Id": 'YOUR_CATEGORY_ID',  # Replace with actual category ID
+                    "Arabic Description": translate(driver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
                     "English Brand": "",
                     "Unit Price": price,
