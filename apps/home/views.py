@@ -399,7 +399,7 @@ class GameakScrapView(APIView):
                     hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
             index = index + 1
         
-        for href in hrefs[:3]:
+        for href in hrefs[:1]:
             try:
                 driver.get(href)
                 sleep(1)
@@ -416,13 +416,11 @@ class GameakScrapView(APIView):
                 # Get the main image URL
                 main_image_elem = soup.select_one('zoom-images img')
                 
-                # image = getImageUrl(main_image_elem['src']) if main_image_elem else ''
-                image = main_image_elem['src'] if main_image_elem else ''
+                image = getImageUrl(main_image_elem['src'].replace('//gameakjo', 'https://gameakjo')) if main_image_elem else ''
 
                 # Get additional images
                 image_elems = soup.select('zoom-images img')
-                # images = [getImageUrl(img['src']) for img in image_elems]
-                images = [img['src'] for img in image_elems]
+                images = [getImageUrl(img['src'].replace('//gameakjo', 'https://gameakjo')) for img in image_elems]
 
                 # Get product attributes content
                 description_elem = soup.select_one(
@@ -437,8 +435,8 @@ class GameakScrapView(APIView):
                 keyWords = key_words_elem['content'] if key_words_elem else ''
 
                 # Get discount
-                discount_elem = soup.select_one(".product__price--off")
-                discount = discount_elem.get_text().replace('% off', '').strip() if discount_elem else '0'
+                discount_elem = soup.select_one(".product__price--off > span")
+                discount = discount_elem.get_text().replace('%', '').strip() if discount_elem and 'hidden' not in soup.select_one(".product__price--off")['class'] else '0'
 
                 product_attributes_content_json = {}
                 
