@@ -378,6 +378,128 @@ class ScrapView(APIView):
         return JsonResponse({})
     
 
+class GameakScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        options = Options()
+        driver = Chrome(options=options)
+        driver.maximize_window()
+        url = request.data['url']
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            driver.get(url+'&page='+str(index))
+            sleep(3)
+            isExist = check_if_exist(driver, "#CollectionLoop > .product-item", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, "#CollectionLoop > .product-item")
+            for e in elements:
+                if len(e.find_elements(By.CSS_SELECTOR, '.tb_label_stock_status')) == 0:
+                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
+            index = index + 1
+        
+        for href in hrefs[:3]:
+            try:
+                driver.get(href)
+                sleep(1)
+                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                soup = BeautifulSoup(href_res, 'html.parser')
+                title = soup.select_one('h1.product__title').get_text(strip=True)
+
+                # Get the product price
+                price_elem = soup.select_one(
+                    ".product__price > span:nth-child(1)"
+                )
+                price = price_elem.get_text().replace('JOD', '').strip() if price_elem else ''
+
+                # Get the main image URL
+                main_image_elem = soup.select_one('zoom-images img')
+                
+                # image = getImageUrl(main_image_elem['src']) if main_image_elem else ''
+                image = main_image_elem['src'] if main_image_elem else ''
+
+                # Get additional images
+                image_elems = soup.select('zoom-images img')
+                # images = [getImageUrl(img['src']) for img in image_elems]
+                images = [img['src'] for img in image_elems]
+
+                # Get product attributes content
+                description_elem = soup.select_one(
+                    ".product-extended, "
+                    ".toggle-ellipsis__content > .col:nth-child(1)"
+                )
+                product_attributes_content = description_elem.get_text(strip=True) if description_elem else ''
+
+                # Get keywords
+                key_words_elem = soup.select_one("meta[property*='og:title']")
+                
+                keyWords = key_words_elem['content'] if key_words_elem else ''
+
+                # Get discount
+                discount_elem = soup.select_one(".product__price--off")
+                discount = discount_elem.get_text().replace('% off', '').strip() if discount_elem else '0'
+
+                product_attributes_content_json = {}
+                
+                product_attributes = soup.select(".toggle-ellipsis__content > .col:nth-child(3)")
+                for attr in product_attributes:
+                    key = attr.select_one("td:nth-child(1)").get_text(strip=True)
+                    val = attr.select_one("td:nth-child(2)").get_text(strip=True)
+                    product_attributes_content_json[key] = val
+
+                driver.get(href.replace('https://gameakjo.com/', 'https://gameakjo.com/ar/'))
+                sleep(1)
+                ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
+                ar_title = ar_soup.select_one('h1.product__title').get_text(strip=True)
+                ar_description_elem = ar_soup.select_one(
+                    ".product-extended, "
+                    ".toggle-ellipsis__content > .col:nth-child(1)"
+                )
+                ar_product_attributes_content = ar_description_elem.get_text(strip=True) if description_elem else ''
+                ar_key_words_elem = ar_soup.select_one("meta[property*='og:title']")
+                ar_keyWords = ar_key_words_elem['content'] if ar_key_words_elem else ''
+
+                # Create product dictionary
+                product = {
+                    "Arabic Name": ar_title,
+                    "English Name": title,
+                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content) > 3 else request.data['arabic_description'],
+                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Category Id": request.data['db_category'],
+                    "Arabic Brand": " ",
+                    "English Brand": " ",
+                    "Unit Price": price,
+                    "Discount Type": "Percent" if discount != "0" else "",
+                    "Discount": discount if discount != "0" else "",
+                    "Unit": "PC",
+                    "Current Stock": "3",
+                    "Main Image URL": image,
+                    "Photos URLs": str((",").join(images)) if images else image,
+                    "Video Youtube URL": " ",
+                    "English Meta Tags": keyWords.replace('//', ','),
+                    "Arabic Meta Tags": ar_keyWords.replace('//', ','),
+                    "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                    "wholesale": "no",
+                    "reference_link": href,
+                }
+                data.append(product)
+            except Exception as e:
+                print(e)
+                errors.append({
+                    "url": href
+                })
+
+        df = pd.DataFrame(data)
+        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+
+        err_df = pd.DataFrame(errors)
+        err_df.to_excel('errors.xlsx', index=False)
+
+        driver.quit()
+        return JsonResponse({})
+
 class SecScrapView(APIView):
     def post(self, request, *args, **kwargs):
         # id = request.data['id']
