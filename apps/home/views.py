@@ -395,8 +395,7 @@ class GameakScrapView(APIView):
             isExist = check_if_exist(driver, "#CollectionLoop > .product-item", "products")
             elements = driver.find_elements(By.CSS_SELECTOR, "#CollectionLoop > .product-item")
             for e in elements:
-                if len(e.find_elements(By.CSS_SELECTOR, '.tb_label_stock_status')) == 0:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
+                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
             index = index + 1
         
         for href in hrefs:
@@ -425,7 +424,8 @@ class GameakScrapView(APIView):
                 # Get product attributes content
                 description_elem = soup.select_one(
                     ".product-extended, "
-                    ".toggle-ellipsis__content > .col:nth-child(1)"
+                    ".toggle-ellipsis__content > .col:nth-child(1), "
+                    ".toggle-ellipsis__content"
                 )
                 product_attributes_content = description_elem.get_text(strip=True) if description_elem else ''
 
@@ -453,7 +453,8 @@ class GameakScrapView(APIView):
                 ar_title = ar_soup.select_one('h1.product__title').get_text(strip=True)
                 ar_description_elem = ar_soup.select_one(
                     ".product-extended, "
-                    ".toggle-ellipsis__content > .col:nth-child(1)"
+                    ".toggle-ellipsis__content > .col:nth-child(1), "
+                    ".toggle-ellipsis__content"
                 )
                 ar_product_attributes_content = ar_description_elem.get_text(strip=True) if description_elem else ''
                 ar_key_words_elem = ar_soup.select_one("meta[property*='og:title']")
