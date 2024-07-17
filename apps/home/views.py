@@ -587,8 +587,8 @@ class PalestinianScrapView(APIView):
                 product = {
                     "Arabic Name": ar_title,
                     "English Name": title,
-                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content) > 3 else request.data['arabic_description'],
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content) > 3 else '',
+                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else '',
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": " ",
                     "English Brand": " ",
