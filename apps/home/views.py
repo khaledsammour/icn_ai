@@ -801,7 +801,7 @@ class VikushaScrapView(APIView):
                 keyWords = key_words_elem['content'] if key_words_elem else ''
 
                 # Get discount
-                discount_elem = int(soup.select(".summary .amount")[1].get_text().replace('د.ا', '').strip()) if len(soup.select(".summary .amount"))>0 else 0
+                discount_elem = int(soup.select(".summary .amount")[1].get_text().replace('د.ا', '').strip()) if len(soup.select(".summary .amount"))>1 else 0
                 discount = price - discount_elem
 
                 product_attributes_content_json = {}
