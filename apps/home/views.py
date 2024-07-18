@@ -793,7 +793,7 @@ class VikushaScrapView(APIView):
 
                 # Get product attributes content
                 description_elem = soup.select_one("#tab-description")
-                product_attributes_content = description_elem.get_text(strip=True) if description_elem else ''
+                product_attributes_content = description_elem.get_text(separator=' ',strip=True) if description_elem else ''
 
                 # Get keywords
                 key_words_elem = soup.select_one("meta[property*='og:title']")
@@ -801,8 +801,8 @@ class VikushaScrapView(APIView):
                 keyWords = key_words_elem['content'] if key_words_elem else ''
 
                 # Get discount
-                discount_elem = soup.select_one(".product-main .on-sale")
-                discount = discount_elem.get_text().replace('-', '').replace('%', '').strip() if discount_elem else '0'
+                discount_elem = int(soup.select(".summary .amount")[1].get_text().replace('د.ا', '').strip()) if len(soup.select(".summary .amount"))>0 else 0
+                discount = price - discount_elem
 
                 product_attributes_content_json = {}
                 
@@ -822,8 +822,8 @@ class VikushaScrapView(APIView):
                     "Arabic Brand": "",
                     "English Brand": "",
                     "Unit Price": price,
-                    "Discount Type": "Percent" if discount != "0" else "",
-                    "Discount": discount if discount != "0" else "",
+                    "Discount Type": "Flat" if str(discount) != "0" else "",
+                    "Discount": str(discount) if str(discount) != "0" else "",
                     "Unit": "PC",
                     "Current Stock": in_stock,
                     "Main Image URL": image,
