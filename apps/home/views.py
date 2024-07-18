@@ -779,9 +779,9 @@ class VikushaScrapView(APIView):
                 price = price_elem.get_text().replace('د.ا', '').strip() if price_elem else ''
 
                 # Get the main image URL
-                main_image_elem = soup.select_one('.woocommerce-product-gallery__wrapper > .woocommerce-product-gallery__image > a')
+                main_image_elem = soup.select_one('.zoomImg, .svi-mainsection img')
                 
-                image = getImageUrl(main_image_elem['href']) if main_image_elem else ''
+                image = getImageUrl(main_image_elem['src']) if main_image_elem else ''
 
                 # Get additional images
                 image_elems = soup.select('.woocommerce-product-gallery__wrapper > .woocommerce-product-gallery__image > a')
