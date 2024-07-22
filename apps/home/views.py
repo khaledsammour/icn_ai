@@ -23,6 +23,7 @@ from selenium.webdriver import Chrome
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from bs4 import BeautifulSoup
+import language_tool_python
 
 def index(request):
     context = {'segment': 'index'}
@@ -615,9 +616,7 @@ class PalestinianScrapView(APIView):
 
 class SecScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        # id = request.data['id']
         options = Options()
-        # options.add_argument('--headless=new')
         driver = Chrome(options=options)
         driver.maximize_window()
         url = request.data['url']
@@ -626,15 +625,16 @@ class SecScrapView(APIView):
         index = 1
         data = []
         errors = []
-        # while(isExist):
-        driver.get(url+'/page/'+str(index))
-        sleep(3)
-        # isExist = check_if_exist(driver, ".shop-container .products > .product-small", "products")
-        elements = driver.find_elements(By.CSS_SELECTOR, ".shop-container .products > .product-small")
-        hrefs = []
-        for e in elements:
-            # if len(e.find_elements(By.CSS_SELECTOR, '.tb_label_stock_status')) == 0:
-            hrefs.append(e.find_element(By.CSS_SELECTOR, ".image-zoom_in a").get_attribute("href"))
+        while(isExist):
+            driver.get(url+'/page/'+str(index))
+            sleep(3)
+            isExist = check_if_exist(driver, ".shop-container .products > .product-small", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".shop-container .products > .product-small")
+            hrefs = []
+            for e in elements:
+                hrefs.append(e.find_element(By.CSS_SELECTOR, ".image-zoom_in a").get_attribute("href"))
+            index = index + 1
+
         for href in hrefs:
             try:
                 driver.get(href)
@@ -655,8 +655,8 @@ class SecScrapView(APIView):
                 image = getImageUrl(main_image_elem['src']) if main_image_elem else ''
 
                 # Get additional images
-                image_elems = soup.select('.mSSlideElement > li > img')
-                images = [getImageUrl(img['src']) for img in image_elems]
+                image_elems = soup.select('.product-gallery .product-images img')
+                images = [getImageUrl(img['data-large_image']) for img in image_elems]
 
                 # Check stock status
                 
@@ -664,8 +664,8 @@ class SecScrapView(APIView):
                 # in_stock = soup.select_one(".quantity > input.qty")['max']
 
                 # Get product attributes content
-                description_elem = soup.select_one("#tab-description")
-                product_attributes_content = description_elem.get_text(strip=True) if description_elem else ''
+                description_elem = soup.select_one("#tab-description, .product-short-description")
+                product_attributes_content = correct_spelling(description_elem.get_text(strip=True), 'en-US') if description_elem else ''
 
                 # Get keywords
                 key_words_elem = soup.select_one("meta[property*='og:title']")
@@ -691,9 +691,9 @@ class SecScrapView(APIView):
                 ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
                 ar_title = ar_soup.select_one('.product-main .product_title').get_text(strip=True)
                 ar_description_elem = ar_soup.select_one(
-                    "#tab-description"
+                    "#tab-description, .product-short-description"
                 )
-                ar_product_attributes_content = ar_description_elem.get_text(strip=True) if ar_description_elem else ''
+                ar_product_attributes_content = correct_spelling(ar_description_elem.get_text(strip=True), 'ar') if ar_description_elem else ''
                 ar_key_words_elem = ar_soup.select_one("meta[property*='og:title']")
                 ar_keyWords = ar_key_words_elem['content'] if ar_key_words_elem else ''
                 # Create product dictionary
@@ -725,7 +725,6 @@ class SecScrapView(APIView):
                 errors.append({
                     "url": href
                 })
-        index = index + 1
 
         df = pd.DataFrame(data)
         df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
@@ -972,6 +971,11 @@ def translate(driver, text):
     driver.switch_to.window(driver.window_handles[0])
     return res
 
+def correct_spelling(text, lang):
+    tool = language_tool_python.LanguageTool(lang)
+    matches = tool.check(text)
+    corrected_text = language_tool_python.utils.correct(text, matches)
+    return corrected_text
 
 def until_visible(driver, element, max_counter=10,refresh=False,refresh_wait_element=None, secound_element=None):
     counter=0
