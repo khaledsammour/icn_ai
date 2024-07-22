@@ -625,12 +625,12 @@ class SecScrapView(APIView):
         index = 1
         data = []
         errors = []
+        hrefs = []
         while(isExist):
             driver.get(url+'/page/'+str(index))
             sleep(3)
             isExist = check_if_exist(driver, ".shop-container .products > .product-small", "products")
             elements = driver.find_elements(By.CSS_SELECTOR, ".shop-container .products > .product-small")
-            hrefs = []
             for e in elements:
                 hrefs.append(e.find_element(By.CSS_SELECTOR, ".image-zoom_in a").get_attribute("href"))
             index = index + 1
@@ -664,8 +664,11 @@ class SecScrapView(APIView):
                 # in_stock = soup.select_one(".quantity > input.qty")['max']
 
                 # Get product attributes content
-                description_elem = soup.select_one("#tab-description, .product-short-description")
-                product_attributes_content = correct_spelling(description_elem.get_text(strip=True), 'en-US') if description_elem else ''
+                # description_elem = soup.select_one("#tab-description, .product-short-description")
+                # product_attributes_content = correct_spelling(description_elem.get_text(strip=True), 'en-US') if description_elem else ''
+                # product_attributes_content = description_elem.encode_contents() if description_elem else ''
+                # until_visible_click(driver, '#tab-description')
+                product_attributes_content = driver.find_element(By.CSS_SELECTOR, '#tab-description').get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, '#tab-description'))>0 else driver.find_element(By.CSS_SELECTOR, '.product-short-description').get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, '.product-short-description'))>0 else ''
 
                 # Get keywords
                 key_words_elem = soup.select_one("meta[property*='og:title']")
@@ -690,12 +693,24 @@ class SecScrapView(APIView):
                 ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
                 ar_title = ar_soup.select_one('.product-main .product_title').get_text(strip=True)
-                ar_description_elem = ar_soup.select_one(
-                    "#tab-description, .product-short-description"
-                )
-                ar_product_attributes_content = correct_spelling(ar_description_elem.get_text(strip=True), 'ar') if ar_description_elem else ''
+                # ar_description_elem = ar_soup.select_one(
+                #     "#tab-description, .product-short-description"
+                # )
+                # ar_product_attributes_content = correct_spelling(ar_description_elem.get_text(strip=True), 'ar') if ar_description_elem else ''
+                # ar_product_attributes_content = ar_description_elem.encode_contents() if ar_description_elem else ''
+                # until_visible_click(driver, '#tab-description, .product-short-description')
+                ar_product_attributes_content = driver.find_element(By.CSS_SELECTOR, '#tab-description').get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, '#tab-description'))>0 else driver.find_element(By.CSS_SELECTOR, '.product-short-description').get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, '.product-short-description'))>0 else ''
                 ar_key_words_elem = ar_soup.select_one("meta[property*='og:title']")
                 ar_keyWords = ar_key_words_elem['content'] if ar_key_words_elem else ''
+
+                ar_product_attributes_content_json = {}
+                
+                ar_product_attributes = ar_soup.select("#tab-additional_information tbody > tr")
+                for attr in ar_product_attributes:
+                    if 'woocommerce-product-attributes-item--weight' not in attr['class'] and 'woocommerce-product-attributes-item--dimensions' not in attr['class']: 
+                        key = attr.select_one("th:nth-child(1)").get_text(strip=True)
+                        val = attr.select_one("td:nth-child(2)").get_text(strip=True)
+                        ar_product_attributes_content_json[key] = val
                 # Create product dictionary
                 product = {
                     "Arabic Name": ar_title,
@@ -716,6 +731,7 @@ class SecScrapView(APIView):
                     "English Meta Tags": keyWords.replace('//', ','),
                     "Arabic Meta Tags": ar_keyWords.replace('//', ','),
                     "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                    "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
                     "wholesale": "no",
                     "reference_link": href,
                 }
