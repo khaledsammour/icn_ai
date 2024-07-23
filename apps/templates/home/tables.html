@@ -126,6 +126,24 @@
                       </button>
                     </td>
                   </tr>
+                  <tr>
+                    <td>
+                      <p>GTS</p>
+                      <input type="text" class="form-control mt-3" placeholder="URL" id="gts_url" />
+                    </td>
+                    <td>
+                      <p>3</p>
+                      <input type="text" class="form-control mt-3" placeholder="Category" id="gts_db_category" />
+                    </td>
+                    <td>
+                      07-10-2024
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn" onclick="gtsScrapView()">
+                        Scrap
+                      </button>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -242,6 +260,24 @@ const csrftoken = getCookie('csrftoken');
       body: JSON.stringify({ id: "1",
       url: document.getElementById('vikusha_url').value, 
       db_category: document.getElementById('vikusha_db_category').value, 
+    })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+
+  function gtsScrapView() {
+    fetch("/api/GTSScrapView", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ id: "2802",
+      url: document.getElementById('gts_url').value, 
+      db_category: document.getElementById('gts_db_category').value, 
     })
     })
     .then(response => response.json())
