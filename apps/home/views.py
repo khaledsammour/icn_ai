@@ -1101,7 +1101,7 @@ class GTSScrapView(APIView):
                 return product
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(scrape_product, href) for href in hrefs[:20]]
+            futures = [executor.submit(scrape_product, href) for href in hrefs]
             results = [future.result() for future in as_completed(futures)]
 
         data = [result for result in results if 'error' not in result]
