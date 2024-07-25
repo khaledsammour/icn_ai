@@ -1026,8 +1026,9 @@ class GTSScrapView(APIView):
                 in_stock = '3' if 'In Stock' in soup.select_one("meta[property*='product:availability']")['content'] else '0'
 
                 # Get product attributes content
-                description_elem = soup.select_one(description_selector).get_text(strip=True) if soup.select_one(description_selector) else ''
-                product_attributes_content = correct_spelling(description_elem, 'en-US') if description_elem and 'Previous page' not in description_elem and 'From The Manufacturer' not in description_elem.lower() else ''
+                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                # print(unwrap_divs(str(soup.select_one(description_selector).contents)))
+                product_attributes_content = description_elem if description_elem and 'Previous page' not in description_elem and 'From The Manufacturer' not in description_elem.lower() else ''
                 # Get keywords
                 key_words_elem = soup.select_one(key_words_selector)
                 
@@ -1223,6 +1224,22 @@ def translate(driver, text):
     res = driver.find_element(By.XPATH, "//*[@id='TranslationOutput']").text
     driver.switch_to.window(driver.window_handles[0])
     return res
+
+def unwrap_divs(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Unwrap divs, figures, and images
+    for tag in soup.find_all(['div', 'figure', 'img']):
+        tag.unwrap()
+    
+    # Remove all style attributes and classes
+    for tag in soup.find_all(True):  # True matches all tags
+        if tag.has_attr('style'):
+            del tag['style']
+        if tag.has_attr('class'):
+            del tag['class']
+    
+    return soup.prettify()
 
 def correct_spelling(text, lang):
     tool = language_tool_python.LanguageTool(lang)
