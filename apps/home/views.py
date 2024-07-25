@@ -980,6 +980,9 @@ class HighTechScrapView(APIView):
 
 class GTSScrapView(APIView):
     def post(self, request, *args, **kwargs):
+        translateDriver = Chrome()
+        translateDriver.maximize_window()
+        translateDriver.get('https://www.freetranslations.org/english-to-arabic-translation.html')
         driver = Chrome()
         driver.maximize_window()
         url = request.data['url']
@@ -992,8 +995,8 @@ class GTSScrapView(APIView):
         elements = driver.find_elements(By.CSS_SELECTOR, ".tb_products > .product-layout")
         for e in elements:
             hrefs.append(e.find_element(By.CSS_SELECTOR, "h4 > a").get_attribute("href"))
-        driver.execute_script("window.open('https://www.freetranslations.org/english-to-arabic-translation.html');")
-        driver.switch_to.window(driver.window_handles[0])
+        # driver.execute_script("window.open('https://www.freetranslations.org/english-to-arabic-translation.html');")
+        # driver.switch_to.window(driver.window_handles[0])
         for href in hrefs:
             try:
                 driver.get(href)
@@ -1019,7 +1022,7 @@ class GTSScrapView(APIView):
 
                 # Get additional images
                 image_elems = soup.select('.tb_gallery .tb_listing img')
-                images = [getImageUrl(request.data['id'], img['src'].replace('128x128', '1200x1200')) for img in image_elems]
+                images = [getImageUrl(request.data['id'], img['src'].replace('128x128', '1200x1200')) for img in image_elems if len(img['src'])>10]
 
                 # Check stock status
                 
@@ -1065,7 +1068,7 @@ class GTSScrapView(APIView):
                 product = {
                     "Arabic Name": ar_title,
                     "English Name": title,
-                    "Arabic Description": translate(driver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                    "Arabic Description": translate(translateDriver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
                     "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
@@ -1213,7 +1216,7 @@ class TXONScrapView(APIView):
         return JsonResponse({})
     
 def translate(driver, text):
-    driver.switch_to.window(driver.window_handles[1])
+    # driver.switch_to.window(driver.window_handles[1])
     driver.execute_script('''
         document.getElementById("InputText").value = "";
                         ''')
@@ -1222,7 +1225,7 @@ def translate(driver, text):
     sleep(3)
     # until_visible(driver, ".mttextarea")
     res = driver.find_element(By.XPATH, "//*[@id='TranslationOutput']").text
-    driver.switch_to.window(driver.window_handles[0])
+    # driver.switch_to.window(driver.window_handles[0])
     return res
 
 def unwrap_divs(html_content):
