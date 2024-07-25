@@ -1097,11 +1097,12 @@ class GTSScrapView(APIView):
 
         df = pd.DataFrame(data)
         df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
-
-        err_df = pd.DataFrame(errors)
-        err_df.to_excel('errors.xlsx', index=False)
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
+        translateDriver.quit()
         return JsonResponse({})
 
 class TXONScrapView(APIView):
