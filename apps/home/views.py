@@ -25,7 +25,7 @@ from django.http import JsonResponse
 from bs4 import BeautifulSoup
 import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import re
 def index(request):
     context = {'segment': 'index'}
 
@@ -1167,28 +1167,17 @@ class CityCenterScrapView(APIView):
                 discount = discount_elem.get_text().replace('JOD', '').strip() if discount_elem else '0'
 
                 product_attributes_content_json = {}
+                ar_product_attributes_content_json = {}
                 
                 product_attributes = soup.select(product_attributes_selector)
                 for attr in product_attributes:
                     key = attr.select_one("td:nth-child(1)").get_text(strip=True)
                     val = attr.select_one("td:nth-child(2)").get_text(strip=True)
+                    ar_key = translate(translateDriver, key)
+                    ar_val = translate(translateDriver, val)
                     product_attributes_content_json[key] = val
+                    ar_product_attributes_content_json[ar_key] = ar_val
 
-                # driver.get(soup.select_one(".tb_wt_header_language_menu_system a[data-language-code*='ar']")['href'])
-                # sleep(1)
-                # ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                # ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
-                # ar_title = ar_soup.select_one(title_selector).get_text(strip=True) if ar_soup.select_one(title_selector) and 'الصفحة المطلوبة لا يمكن العثور عليها' not in ar_soup.select_one(title_selector).get_text(strip=True) else title
-                # ar_key_words_elem = ar_soup.select_one(key_words_selector)
-                # ar_keyWords = ar_key_words_elem['content'] if ar_key_words_elem and 'الصفحة المطلوبة لا يمكن العثور عليها' not in ar_key_words_elem['content'] else ''
-
-                # ar_product_attributes_content_json = {}
-                
-                # ar_product_attributes = ar_soup.select(product_attributes_selector)
-                # for attr in ar_product_attributes:
-                #     key = attr.select_one("td:nth-child(1)").get_text(strip=True)
-                #     val = attr.select_one("td:nth-child(2)").get_text(strip=True)
-                #     ar_product_attributes_content_json[key] = val
                 # Create product dictionary
                 product = {
                     "Arabic Name": translate(translateDriver, title),
@@ -1209,7 +1198,7 @@ class CityCenterScrapView(APIView):
                     "English Meta Tags": keyWords.replace('//', ','),
                     "Arabic Meta Tags": translate(translateDriver, keyWords).replace('//', ','),
                     "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
-                    "features_ar": '',
+                    "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
                     "wholesale": "no",
                     "reference_link": href,
                 }
