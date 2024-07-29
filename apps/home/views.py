@@ -1132,7 +1132,7 @@ class TXONScrapView(APIView):
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
                 available = soup.select_one(".availability").get_text(strip=True) if soup.select_one(".availability") else 'In Stock'
-                if 'In Stock' in available:
+                if 'in stock' in available.lower():
                     title = soup.select_one(title_selector).get_text(strip=True)
 
                     # Get the product price
