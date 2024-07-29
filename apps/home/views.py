@@ -1131,59 +1131,62 @@ class TXONScrapView(APIView):
                 key_words_selector = "meta[property*='og:title']"
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
-                title = soup.select_one(title_selector).get_text(strip=True)
+                available = soup.select_one(".availability").get_text(strip=True) if soup.select_one(".availability") else 'In Stock'
+                if 'In Stock' in available:
+                    title = soup.select_one(title_selector).get_text(strip=True)
 
-                # Get the product price
-                old_price = soup.select_one(".old-product-price > span")
-                price_elem = soup.select_one("span[itemprop*='price']")
-                price = old_price.get_text(strip=True).replace('JOD', '').strip() if old_price else price_elem['content'].strip() if price_elem else ''
-                discount = old_price.get_text(strip=True).replace('JOD', '').strip() - price_elem['content'].strip() if old_price else '0'
+                    # Get the product price
+                    old_price = soup.select_one(".old-product-price > span")
+                    price_elem = soup.select_one("span[itemprop*='price']")
+                    price = old_price.get_text(strip=True).replace('JOD', '').strip() if old_price else price_elem['content'].strip() if price_elem else ''
+                    discount = str(float(old_price.get_text(strip=True).replace('JOD', '').strip()) - float(price_elem['content'].strip())) if old_price else '0'
 
-                main_image_elem = soup.select_one('img.cloudzoom')
+                    main_image_elem = soup.select_one('img.cloudzoom')
+                        
+                    image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+
+                    # Get additional images
+                    image_elems = soup.select('.slick-track > div > a')
+                    images = [getImageUrl(request.data['id'], img['data-full-image-url']) for img in image_elems]
+
+                    # Check stock status
                     
-                image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    in_stock = '3'
 
-                # Get additional images
-                image_elems = soup.select('.slick-track > div > a')
-                images = [getImageUrl(request.data['id'], img['data-full-image-url']) for img in image_elems]
+                    # Get product attributes content
+                    # description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    # print(unwrap_divs(str(soup.select_one(description_selector).contents)))
+                    # product_attributes_content = description_elem if description_elem else ''
+                    product_attributes_content = driver.find_element(By.CSS_SELECTOR, description_selector).get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, description_selector))>0 else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'] if key_words_elem else ''
 
-                # Check stock status
-                
-                in_stock = '3' if 'In Stock' in soup.select_one(".availability").get_text(strip=True) else '0'
-
-                # Get product attributes content
-                product_attributes_content = driver.find_element(By.CSS_SELECTOR, description_selector).get_attribute('innerHTML').strip() if len(driver.find_elements(By.CSS_SELECTOR, description_selector))>0 else ''
-                # Get keywords
-                key_words_elem = soup.select_one(key_words_selector)
-                
-                keyWords = key_words_elem['content'] if key_words_elem else ''
-
-
-                # Create product dictionary
-                product = {
-                    "Arabic Name": title,
-                    "English Name": title,
-                    "Arabic Description": translate(translateDriver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
-                    "Category Id": request.data['db_category'],
-                    "Arabic Brand": "",
-                    "English Brand": "",
-                    "Unit Price": price,
-                    "Discount Type": "Flat" if discount != "0" else "",
-                    "Discount": discount if discount != "0" else "",
-                    "Unit": "PC",
-                    "Current Stock": in_stock,
-                    "Main Image URL": image,
-                    "Photos URLs": str((",").join(images)) if images else image,
-                    "Video Youtube URL": "",
-                    "English Meta Tags": keyWords.replace('//', ','),
-                    "Arabic Meta Tags": translate(driver, keyWords).replace('//', ','),
-                    "features": '',
-                    "features_ar": '',
-                    "wholesale": "no",
-                    "reference_link": href,
-                }
-                data.append(product)
+                    # Create product dictionary
+                    product = {
+                        "Arabic Name": title,
+                        "English Name": title,
+                        "Arabic Description": translate(translateDriver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": keyWords.replace('//', ','),
+                        "Arabic Meta Tags": translate(translateDriver, keyWords).replace('//', ','),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
             except Exception as e:
                 print(e)
                 errors.append({
