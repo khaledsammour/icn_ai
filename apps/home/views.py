@@ -1128,7 +1128,7 @@ class CityCenterScrapView(APIView):
                 driver.get(href)
                 sleep(1)
                 title_selector = '.tb_system_page_title > h1'
-                description_selector = '.tb_product_description'
+                description_selector = '.tb_wt_product_field_system'
                 key_words_selector = "meta[property*='og:title']"
                 product_attributes_selector = ".tb_product_attributes tbody > tr"
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
