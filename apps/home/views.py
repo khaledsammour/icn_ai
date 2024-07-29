@@ -1117,11 +1117,17 @@ class TXONScrapView(APIView):
         data = []
         errors = []
         hrefs = []
-        driver.get(url.replace('?dsf=stock-status-is-in-stock', '?limit=10000000&dsf=stock-status-is-in-stock'))
-        sleep(3)
-        elements = driver.find_elements(By.CSS_SELECTOR, ".product-grid .product-item")
-        for e in elements:
-            hrefs.append(e.find_element(By.CSS_SELECTOR, ".picture > a").get_attribute("href"))
+        index = 1
+        isExist = True
+        while(isExist):
+            driver.get(url+'#/pageSize=30&viewMode=grid&orderBy=0&pageNumber=' + str(index))
+            sleep(3)
+            isExist = False if len(driver.find_elements(By.XPATH, "//div[contains(@class, 'ajaxFilters') and contains(@style,'display: block')]"))>0 else True
+            if isExist:
+                elements = driver.find_elements(By.CSS_SELECTOR, ".product-grid .product-item")
+                for e in elements:
+                    hrefs.append(e.find_element(By.CSS_SELECTOR, ".picture > a").get_attribute("href"))
+            index = index + 1
         for href in hrefs:
             try:
                 driver.get(href)
