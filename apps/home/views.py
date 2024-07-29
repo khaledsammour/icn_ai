@@ -1120,7 +1120,7 @@ class TXONScrapView(APIView):
         index = 1
         isExist = True
         while(isExist):
-            driver.get(url+'#/pageSize=30&viewMode=grid&orderBy=0&pageNumber=' + str(index))
+            driver.get(url+'#/pageNumber=' + str(index))
             sleep(3)
             isExist = False if len(driver.find_elements(By.XPATH, "//div[contains(@class, 'ajaxFilters') and contains(@style,'display: block')]"))>0 else True
             if isExist:
