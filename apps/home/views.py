@@ -1172,8 +1172,8 @@ class CityCenterScrapView(APIView):
                 for attr in product_attributes:
                     key = attr.select_one("td:nth-child(1)").get_text(strip=True)
                     val = attr.select_one("td:nth-child(2)").get_text(strip=True)
-                    ar_key = translate(key)
-                    ar_val = translate(val)
+                    ar_key = str(translate(key))
+                    ar_val = str(translate(val))
                     product_attributes_content_json[key] = val
                     ar_product_attributes_content_json[ar_key] = ar_val
 
@@ -1326,10 +1326,13 @@ class TXONScrapView(APIView):
         return JsonResponse({})
 
 def translate(text):
-    translator = Translator()
-    translator.translate(text)
-    translation = translator.translate(text, dest='ar').text
-    return translation
+    try:
+        translator = Translator()
+        translator.translate(text)
+        translation = translator.translate(text, dest='ar').text
+        return translation
+    except:
+        return text
 
 def unwrap_divs(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
