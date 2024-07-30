@@ -1220,10 +1220,8 @@ class CityCenterScrapView(APIView):
         return JsonResponse({})
 
 def replace_dimensions(url):
-    # Regex pattern to match dimensions like 128x128
-    pattern = r'\d+x\d+'
-    # Replace the dimensions with '1200x1200'
-    return re.sub(pattern, '1200x1200', url)
+    pattern = r'\d+x\d+.'
+    return re.sub(pattern, '1200x1200.', url)
 
 class TXONScrapView(APIView):
     def post(self, request, *args, **kwargs):
