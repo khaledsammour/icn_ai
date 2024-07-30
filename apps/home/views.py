@@ -1328,16 +1328,12 @@ class TXONScrapView(APIView):
         return JsonResponse({})
 
 def translate(driver, text):
-    # driver.switch_to.window(driver.window_handles[1])
-    driver.execute_script('''
-        document.getElementById("InputText").value = "";
-                        ''')
+    driver.refresh()
     until_visible_send_keys(driver, "#InputText", text)
     until_visible_click(driver, ".translate-form-control")
     sleep(3)
     # until_visible(driver, ".mttextarea")
     res = driver.find_element(By.XPATH, "//*[@id='TranslationOutput']").text
-    # driver.switch_to.window(driver.window_handles[0])
     return res
 
 def unwrap_divs(html_content):
