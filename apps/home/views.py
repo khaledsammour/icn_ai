@@ -1220,8 +1220,8 @@ class CityCenterScrapView(APIView):
         return JsonResponse({})
 
 def replace_dimensions(url):
-    pattern = r'\d+x\d+.'
-    return re.sub(pattern, '1200x1200.', url)
+    pattern = r'\d+x\d+.webp'
+    return re.sub(pattern, '1200x1200.webp', url)
 
 class TXONScrapView(APIView):
     def post(self, request, *args, **kwargs):
