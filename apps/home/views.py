@@ -26,6 +26,8 @@ from bs4 import BeautifulSoup
 import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
+from translate import Translator
+
 def index(request):
     context = {'segment': 'index'}
 
@@ -1107,9 +1109,9 @@ class GTSScrapView(APIView):
 
 class CityCenterScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        translateDriver = Chrome()
-        translateDriver.maximize_window()
-        translateDriver.get('https://www.freetranslations.org/english-to-arabic-translation.html')
+        # translateDriver = Chrome()
+        # translateDriver.maximize_window()
+        # translateDriver.get('https://www.freetranslations.org/english-to-arabic-translation.html')
         driver = Chrome()
         driver.maximize_window()
         url = request.data['url']
@@ -1173,16 +1175,16 @@ class CityCenterScrapView(APIView):
                 for attr in product_attributes:
                     key = attr.select_one("td:nth-child(1)").get_text(strip=True)
                     val = attr.select_one("td:nth-child(2)").get_text(strip=True)
-                    ar_key = translate(translateDriver, key)
-                    ar_val = translate(translateDriver, val)
+                    ar_key = translate(key)
+                    ar_val = translate(val)
                     product_attributes_content_json[key] = val
                     ar_product_attributes_content_json[ar_key] = ar_val
 
                 # Create product dictionary
                 product = {
-                    "Arabic Name": translate(translateDriver, title),
+                    "Arabic Name": translate(title),
                     "English Name": title,
-                    "Arabic Description": translate(translateDriver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                    "Arabic Description": translate(product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
                     "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
@@ -1196,7 +1198,7 @@ class CityCenterScrapView(APIView):
                     "Photos URLs": str((",").join(images)) if images else image,
                     "Video Youtube URL": "",
                     "English Meta Tags": keyWords.replace('//', ','),
-                    "Arabic Meta Tags": translate(translateDriver, keyWords).replace('//', ','),
+                    "Arabic Meta Tags": translate(keyWords).replace('//', ','),
                     "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
                     "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
                     "wholesale": "no",
@@ -1216,7 +1218,7 @@ class CityCenterScrapView(APIView):
             err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
-        translateDriver.quit()
+        # translateDriver.quit()
         return JsonResponse({})
 
 def replace_dimensions(url):
@@ -1327,14 +1329,10 @@ class TXONScrapView(APIView):
         translateDriver.quit()
         return JsonResponse({})
 
-def translate(driver, text):
-    driver.refresh()
-    until_visible_send_keys(driver, "#InputText", text)
-    until_visible_click(driver, ".translate-form-control")
-    sleep(3)
-    # until_visible(driver, ".mttextarea")
-    res = driver.find_element(By.XPATH, "//*[@id='TranslationOutput']").text
-    return res
+def translate(text):
+    translator= Translator(to_lang="ar")
+    translation = translator.translate(text)
+    return translation
 
 def unwrap_divs(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -1521,36 +1519,3 @@ def click_on_overlay(driver, name):
             except:
                 element.click()
             break
-
-class Translator:
-    def __init__(self, headless=False):
-        options = Options()
-        if headless: options.headless = True
-        self._br = Chrome(options=options)
-        self._br.get("https://www.freetranslations.org/english-to-arabic-translation.html")
-        # self._br.set_page_load_timeout(25)
-
-    def translate(self, string):
-        print('string: ', string)
-        if not string: return "Done"
-        for i in range(3):
-            try: return self._translate(string.replace("\\", ''))
-            except Exception as e:
-                print(e)
-                sleep(2)
-        raise ConnectionAbortedError
-
-    def _translate(self, string):
-        tag = self._br.find_element(By.CSS_SELECTOR,"#InputText")
-        # tag.send_keys(Keys.CONTROL + "a")
-        # tag.send_keys(Keys.DELETE)
-        self._br.execute_script('''
-            document.getElementById("InputText").value = "";
-                               ''')
-        tag.send_keys(string)
-        self._br.find_element(By.CSS_SELECTOR, ".translate-form-control").click()
-        WebDriverWait(self._br, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".mttextarea")))
-        return self._br.find_element(By.XPATH, "//*[@id='TranslationOutput']").text
-
-    def close(self):
-        self._br.close()
