@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
-from translate import Translator
+from googletrans import Translator
 
 def index(request):
     context = {'segment': 'index'}
@@ -97,8 +97,8 @@ def getImageUrl(id, image_url):
         
         # Check if the request was successful
         if response.status_code == 200:
-            print('Request was successful!')
-            print('Response:', response.text)  # If the response contains JSON data
+            # print('Request was successful!')
+            # print('Response:', response.text)  # If the response contains JSON data
             return response.text
         else:
             print('Request failed with status code:', response.status_code)
@@ -1109,9 +1109,6 @@ class GTSScrapView(APIView):
 
 class CityCenterScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        # translateDriver = Chrome()
-        # translateDriver.maximize_window()
-        # translateDriver.get('https://www.freetranslations.org/english-to-arabic-translation.html')
         driver = Chrome()
         driver.maximize_window()
         url = request.data['url']
@@ -1218,7 +1215,6 @@ class CityCenterScrapView(APIView):
             err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
-        # translateDriver.quit()
         return JsonResponse({})
 
 def replace_dimensions(url):
@@ -1330,8 +1326,9 @@ class TXONScrapView(APIView):
         return JsonResponse({})
 
 def translate(text):
-    translator= Translator(to_lang="ar")
-    translation = translator.translate(text)
+    translator = Translator()
+    translator.translate(text)
+    translation = translator.translate(text, dest='ar').text
     return translation
 
 def unwrap_divs(html_content):
