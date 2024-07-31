@@ -105,6 +105,18 @@ def getImageUrl(id, image_url):
             print('Response:', response.text)
     except requests.exceptions.RequestException as e:
         print('An error occurred:', e)
+
+def checkImageUrl(image_url):
+    try:
+        response = requests.get(image_url)
+        
+        if response.status_code == 200:
+            return image_url
+        else:
+            raise Exception("status: "+response.status_code)
+    except requests.exceptions.RequestException as e:
+        print('An error occurred:', e)
+
 jsons = [
     {
         "id": 1,
@@ -977,8 +989,6 @@ class HighTechScrapView(APIView):
 
         driver.quit()
         return JsonResponse({})
-    
-
 
 class GTSScrapView(APIView):
     def post(self, request, *args, **kwargs):
@@ -1223,9 +1233,6 @@ def replace_dimensions(url):
 
 class TXONScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        translateDriver = Chrome()
-        translateDriver.maximize_window()
-        translateDriver.get('https://www.freetranslations.org/english-to-arabic-translation.html')
         driver = Chrome()
         driver.maximize_window()
         url = request.data['url']
@@ -1288,7 +1295,7 @@ class TXONScrapView(APIView):
                     product = {
                         "Arabic Name": title,
                         "English Name": title,
-                        "Arabic Description": translate(translateDriver, product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content) > 3 else request.data['arabic_description'],
                         "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
                         "Category Id": request.data['db_category'],
                         "Arabic Brand": "",
@@ -1302,7 +1309,7 @@ class TXONScrapView(APIView):
                         "Photos URLs": str((",").join(images)) if images else image,
                         "Video Youtube URL": "",
                         "English Meta Tags": keyWords.replace('//', ','),
-                        "Arabic Meta Tags": translate(translateDriver, keyWords).replace('//', ','),
+                        "Arabic Meta Tags": translate(keyWords).replace('//', ','),
                         "features": '',
                         "features_ar": '',
                         "wholesale": "no",
@@ -1322,7 +1329,6 @@ class TXONScrapView(APIView):
             err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
-        translateDriver.quit()
         return JsonResponse({})
 
 def translate(text):
