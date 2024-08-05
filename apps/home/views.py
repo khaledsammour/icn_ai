@@ -281,7 +281,7 @@ class DynamicScrapView(APIView):
         index = index + 1
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -394,7 +394,7 @@ class ScrapView(APIView):
         index = index + 1
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -516,7 +516,7 @@ class GameakScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -639,7 +639,7 @@ class PalestinianScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -777,7 +777,7 @@ class SecScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -891,7 +891,7 @@ class VikushaScrapView(APIView):
         index = index + 1
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -1000,7 +1000,7 @@ class HighTechScrapView(APIView):
         index = index + 1
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
 
         err_df = pd.DataFrame(errors)
         err_df.to_excel('errors.xlsx', index=False)
@@ -1126,10 +1126,10 @@ class GTSScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
-            err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
         translateDriver.quit()
@@ -1230,10 +1230,10 @@ class TXONScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
-            err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
         translateDriver.quit()
@@ -1341,10 +1341,10 @@ class CityCenterScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
-            err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
         return JsonResponse({})
@@ -1471,10 +1471,108 @@ class BCIScrapView(APIView):
                 })
 
         df = pd.DataFrame(data)
-        df.to_excel(request.data['db_category']+'_products.xlsx', index=False)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
-            err_df.to_excel(request.data['db_category']+'_errors.xlsx', index=False)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+
+        driver.quit()
+        return JsonResponse({})
+
+
+class RokonBaghdadScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = Chrome()
+        driver.maximize_window()
+        url = request.data['url']
+        driver.get(url)
+        data = []
+        errors = []
+        hrefs = []
+        until_visible_click(driver, '.cookie-bar-wrap.show .btn-accept')
+        while (True):
+            until_visible(driver, '.search-result-middle:not(.loading)')
+            elements = driver.find_elements(By.CSS_SELECTOR, ".grid-view-products .product-card")
+            for e in elements:
+                if len(e.find_elements(By.CSS_SELECTOR, ".badge-danger"))==0:
+                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image").get_attribute("href"))
+            if (len(driver.find_elements(By.CSS_SELECTOR,'.pagination >li:last-child > button:not(.disabled)'))>0):
+                until_visible_click(driver, '.pagination >li:last-child > button:not(.disabled)')
+            else:
+                break
+        print(len(hrefs))
+        for href in hrefs[:5]:
+            try:
+                driver.get(href)
+                title_selector = 'meta[name*="title"]'
+                description_selector = '#description'
+                key_words_selector = "meta[property*='og:title']"
+                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                soup = BeautifulSoup(href_res, 'html.parser')
+                title = soup.select_one(title_selector).get_text(strip=True)
+                # Get the product price
+                price_elem = soup.select_one(".product-price .previous-price").get_text(strip=True) if soup.select_one(".product-price .previous-price") else soup.select_one("meta[property*='product:price:amount']")['content']
+                price = price_elem.strip().replace('JOD','').strip() if price_elem else ''
+                # Get discount
+                discount_elem = soup.select_one("meta[property*='product:price:amount']")['content'] if soup.select_one(".product-price .previous-price").get_text(strip=True) else None
+                discount = discount_elem.strip().replace('JOD','').strip() if discount_elem else '0'
+                # Get the main image URL
+                main_image_elem = soup.select_one('img[alt*="Product image"]')
+                image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                # Get additional images
+                image_elems = soup.select('img[alt*="Product image"]')
+                images = [getImageUrl(request.data['id'], img['src']) for img in image_elems if len(img['src'])>10]
+                # Check stock status
+                in_stock = '3'
+                # Get product attributes content
+                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                product_attributes_content = description_elem if description_elem else ''
+                # Get keywords
+                key_words_elem = soup.select_one(key_words_selector)
+                keyWords = key_words_elem['content'].replace('| baghdad corner jordan','').strip() if key_words_elem else ''
+                driver.get(href.replace('/en/', '/ar/'))
+                ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
+                ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
+                ar_key_words_elem = ar_soup.select_one(key_words_selector)
+                ar_keyWords = ar_key_words_elem['content'].replace('| baghdad corner jordan','').strip() if ar_key_words_elem else ''
+                ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
+                product = {
+                    "Arabic Name": ar_title,
+                    "English Name": title,
+                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content) > 3 else request.data['arabic_description'],
+                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Category Id": request.data['db_category'],
+                    "Arabic Brand": "",
+                    "English Brand": "",
+                    "Unit Price": price,
+                    "Discount Type": "Flat" if discount != "0" else "",
+                    "Discount": discount if discount != "0" else "",
+                    "Unit": "PC",
+                    "Current Stock": in_stock,
+                    "Main Image URL": image,
+                    "Photos URLs": str((",").join(images)) if images else image,
+                    "Video Youtube URL": "",
+                    "English Meta Tags": keyWords.replace('//', ','),
+                    "Arabic Meta Tags": ar_keyWords.replace('//', ','),
+                    "features": '',
+                    "features_ar": '',
+                    "wholesale": "no",
+                    "reference_link": href,
+                }
+                data.append(product)
+            except Exception as e:
+                print(e)
+                errors.append({
+                    "url": href
+                })
+
+        df = pd.DataFrame(data)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
 
         driver.quit()
         return JsonResponse({})

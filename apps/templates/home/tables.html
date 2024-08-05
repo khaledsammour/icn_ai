@@ -206,6 +206,26 @@
                       </button>
                     </td>
                   </tr>
+                  <tr>
+                    <td>
+                      <p>Rokon Baghdad</p>
+                      <input type="text" class="form-control mt-3" placeholder="URL" id="rokon_baghdad_url" />
+                      <input type="text" class="form-control mt-3" placeholder="Description" id="rokon_baghdad_description" />
+                    </td>
+                    <td>
+                      <p>3</p>
+                      <input type="text" class="form-control mt-3" placeholder="Category" id="rokon_baghdad_db_category" />
+                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="rokon_baghdad_arabic_description" />
+                    </td>
+                    <td>
+                      07-10-2024
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn" onclick="rokonBaghdadScrapView()">
+                        Scrap
+                      </button>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -389,7 +409,7 @@ const csrftoken = getCookie('csrftoken');
     .catch(error => console.error("Error:", error));
 
   }
-
+  
   function bciScrapView() {
     fetch("/api/BCIScrapView", {
       method: "POST",
@@ -403,6 +423,27 @@ const csrftoken = getCookie('csrftoken');
         db_category: document.getElementById('bci_db_category').value,
         description: document.getElementById('bci_description').value,
         arabic_description: document.getElementById('bci_arabic_description').value,
+      })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+
+  function rokonBaghdadScrapView() {
+    fetch("/api/RokonBaghdadScrapView", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ 
+        id: "2843",
+        url: document.getElementById('rokon_baghdad_url').value, 
+        db_category: document.getElementById('rokon_baghdad_db_category').value,
+        description: document.getElementById('rokon_baghdad_description').value,
+        arabic_description: document.getElementById('rokon_baghdad_arabic_description').value,
       })
     })
     .then(response => response.json())
