@@ -26,24 +26,7 @@ from bs4 import BeautifulSoup
 import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
-from googletrans import Translator
-# from transformers import *
-# model = PegasusForConditionalGeneration.from_pretrained("tuner007/pegasus_paraphrase")
-# tokenizer = PegasusTokenizerFast.from_pretrained("tuner007/pegasus_paraphrase")
-
-# def get_paraphrased_sentences(model, tokenizer, sentence, num_return_sequences=5, num_beams=5):
-#   # tokenize the text to be form of a list of token IDs
-#   inputs = tokenizer([sentence], truncation=True, padding="longest", return_tensors="pt")
-#   # generate the paraphrased sentences
-#   outputs = model.generate(
-#     **inputs,
-#     num_beams=num_beams,
-#     num_return_sequences=num_return_sequences,
-#   )
-#   # decode the generated sentences using the tokenizer to get them back to text
-#   return tokenizer.batch_decode(outputs, skip_special_tokens=True)
-# sentence = 'Redmi A3 features an all-new Premium Halo Design that is eye-catching and makes you look great in a sea of boring designs. Choose from three beautiful colours that will always make you stand out.'
-# print(get_paraphrased_sentences(model, tokenizer, sentence))
+from deep_translator import GoogleTranslator
 
 
 def index(request):
@@ -1489,6 +1472,7 @@ class RokonBaghdadScrapView(APIView):
         driver.maximize_window()
         url = request.data['url']
         driver.get(url)
+        sleep(1)
         data = []
         errors = []
         hrefs = []
@@ -1503,22 +1487,16 @@ class RokonBaghdadScrapView(APIView):
                 until_visible_click(driver, '.pagination >li:last-child > button:not(.disabled)')
             else:
                 break
-        print(len(hrefs))
+            
         for href in hrefs[:5]:
             try:
-                driver.get(href)
+                driver.get(href.replace('/en/', '/ar/'))
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
                 key_words_selector = "meta[property*='og:title']"
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
-                title = soup.select_one(title_selector).get_text(strip=True)
-                # Get the product price
-                price_elem = soup.select_one(".product-price .previous-price").get_text(strip=True) if soup.select_one(".product-price .previous-price") else soup.select_one("meta[property*='product:price:amount']")['content']
-                price = price_elem.strip().replace('JOD','').strip() if price_elem else ''
-                # Get discount
-                discount_elem = soup.select_one("meta[property*='product:price:amount']")['content'] if soup.select_one(".product-price .previous-price").get_text(strip=True) else None
-                discount = discount_elem.strip().replace('JOD','').strip() if discount_elem else '0'
+                title = soup.select_one(title_selector)['content'].strip()
                 # Get the main image URL
                 main_image_elem = soup.select_one('img[alt*="Product image"]')
                 image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
@@ -1533,19 +1511,25 @@ class RokonBaghdadScrapView(APIView):
                 # Get keywords
                 key_words_elem = soup.select_one(key_words_selector)
                 keyWords = key_words_elem['content'].replace('| baghdad corner jordan','').strip() if key_words_elem else ''
-                driver.get(href.replace('/en/', '/ar/'))
-                ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
-                ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
-                ar_key_words_elem = ar_soup.select_one(key_words_selector)
-                ar_keyWords = ar_key_words_elem['content'].replace('| baghdad corner jordan','').strip() if ar_key_words_elem else ''
-                ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
+                driver.get(href.replace('/ar/','/en/'))
+                en_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                en_soup = BeautifulSoup(en_href_res, 'html.parser')
+                # Get the product price
+                price_elem = en_soup.select_one(".product-price .previous-price").get_text(strip=True) if en_soup.select_one(".product-price .previous-price") else en_soup.select_one("meta[property*='product:price:amount']")['content']
+                price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
+                # Get discount
+                discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price").get_text(strip=True) else None
+                discount = float(price) - float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) if discount_elem else '0'
+                # ar_title = ar_soup.select_one(title_selector)['content'].strip()
+                # ar_key_words_elem = ar_soup.select_one(key_words_selector)
+                # ar_keyWords = ar_key_words_elem['content'].replace('| baghdad corner jordan','').strip() if ar_key_words_elem else ''
+                # ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                # ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
                 product = {
-                    "Arabic Name": ar_title,
-                    "English Name": title,
-                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content) > 3 else request.data['arabic_description'],
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Arabic Name": title,
+                    "English Name": translate(title, dest='en'),
+                    "Arabic Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['arabic_description'],
+                    "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
                     "English Brand": "",
@@ -1557,8 +1541,8 @@ class RokonBaghdadScrapView(APIView):
                     "Main Image URL": image,
                     "Photos URLs": str((",").join(images)) if images else image,
                     "Video Youtube URL": "",
-                    "English Meta Tags": keyWords.replace('//', ','),
-                    "Arabic Meta Tags": ar_keyWords.replace('//', ','),
+                    "English Meta Tags": translate(keyWords, dest='en').replace('//', ','),
+                    "Arabic Meta Tags": keyWords.replace('//', ','),
                     "features": '',
                     "features_ar": '',
                     "wholesale": "no",
@@ -1603,11 +1587,9 @@ def replace_dimensions(url):
     pattern = r'\d+x\d+.webp'
     return re.sub(pattern, '1200x1200.webp', url)
 
-def translate(text):
+def translate(text, dest='ar'):
     try:
-        translator = Translator()
-        translator.translate(text)
-        translation = translator.translate(text, dest='ar').text
+        translation = GoogleTranslator(source='auto', target=dest).translate(text)
         return translation
     except Exception as e:
         print(e)
