@@ -1398,10 +1398,13 @@ class BCIScrapView(APIView):
                 image_elems = driver.find_elements(By.CSS_SELECTOR, '.fotorama__nav__shaft > .fotorama__nav__frame')
                 images = []
                 for indx, i in enumerate(image_elems):
-                    until_visible_click(driver, '.fotorama__nav__shaft > .fotorama__nav__frame:nth-child('+str(indx+2)+')')
-                    sleep(1)
-                    mainImg = driver.find_element(By.CSS_SELECTOR, '.fotorama__stage *[data-active*="true"]')
-                    images.append(getImageUrl(request.data['id'], mainImg.get_attribute('href')))
+                    try:
+                        until_visible_click(driver, '.fotorama__nav__shaft > .fotorama__nav__frame:nth-child('+str(indx+2)+')')
+                        sleep(1)
+                        mainImg = driver.find_element(By.CSS_SELECTOR, '.fotorama__stage *[data-active*="true"]')
+                        images.append(getImageUrl(request.data['id'], mainImg.get_attribute('href')))
+                    except Exception as e:
+                        print(e)
 
                 # Check stock status
                 in_stock = '3'
