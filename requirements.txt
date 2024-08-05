@@ -15,3 +15,4 @@ pandas
 requests
 djangorestframework
 language_tool_python
+git+https://github.com/PrithivirajDamodaran/Parrot_Paraphraser.git

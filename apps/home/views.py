@@ -123,6 +123,18 @@ def getImageUrl(id, image_url):
             print('Response:', response.text)
     except requests.exceptions.RequestException as e:
         print('An error occurred:', e)
+
+def checkImageUrl(image_url):
+    try:
+        response = requests.get(image_url)
+        
+        if response.status_code == 200:
+            return image_url
+        else:
+            raise Exception("status: "+response.status_code)
+    except requests.exceptions.RequestException as e:
+        print('An error occurred:', e)
+
 jsons = [
     {
         "id": 1,
@@ -995,8 +1007,6 @@ class HighTechScrapView(APIView):
 
         driver.quit()
         return JsonResponse({})
-    
-
 
 class GTSScrapView(APIView):
     def post(self, request, *args, **kwargs):

@@ -186,6 +186,26 @@
                       </button>
                     </td>
                   </tr>
+                  <tr>
+                    <td>
+                      <p>BCI</p>
+                      <input type="text" class="form-control mt-3" placeholder="URL" id="bci_url" />
+                      <input type="text" class="form-control mt-3" placeholder="Description" id="bci_description" />
+                    </td>
+                    <td>
+                      <p>3</p>
+                      <input type="text" class="form-control mt-3" placeholder="Category" id="bci_db_category" />
+                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="bci_arabic_description" />
+                    </td>
+                    <td>
+                      07-10-2024
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn" onclick="bciScrapView()">
+                        Scrap
+                      </button>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -362,6 +382,27 @@ const csrftoken = getCookie('csrftoken');
         db_category: document.getElementById('city_center_db_category').value,
         description: document.getElementById('city_center_description').value,
         arabic_description: document.getElementById('city_center_arabic_description').value,
+      })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+
+  function bciScrapView() {
+    fetch("/api/BCIScrapView", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ 
+        id: "2835",
+        url: document.getElementById('bci_url').value, 
+        db_category: document.getElementById('bci_db_category').value,
+        description: document.getElementById('bci_description').value,
+        arabic_description: document.getElementById('bci_arabic_description').value,
       })
     })
     .then(response => response.json())
