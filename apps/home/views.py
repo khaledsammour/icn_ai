@@ -1488,7 +1488,7 @@ class RokonBaghdadScrapView(APIView):
             else:
                 break
             
-        for href in hrefs[:5]:
+        for href in hrefs:
             try:
                 driver.get(href.replace('/en/', '/ar/'))
                 title_selector = 'meta[name*="title"]'
