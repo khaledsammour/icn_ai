@@ -1518,13 +1518,8 @@ class RokonBaghdadScrapView(APIView):
                 price_elem = en_soup.select_one(".product-price .previous-price").get_text(strip=True) if en_soup.select_one(".product-price .previous-price") else en_soup.select_one("meta[property*='product:price:amount']")['content']
                 price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
                 # Get discount
-                discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price").get_text(strip=True) else None
+                discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price") else None
                 discount = float(price) - float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) if discount_elem else '0'
-                # ar_title = ar_soup.select_one(title_selector)['content'].strip()
-                # ar_key_words_elem = ar_soup.select_one(key_words_selector)
-                # ar_keyWords = ar_key_words_elem['content'].replace('| baghdad corner jordan','').strip() if ar_key_words_elem else ''
-                # ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                # ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
                 product = {
                     "Arabic Name": title,
                     "English Name": translate(title, dest='en'),
