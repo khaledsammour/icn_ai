@@ -27,7 +27,8 @@ import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 from deep_translator import GoogleTranslator
-
+import yake
+from .googleSuggetion import api_call
 
 def index(request):
     context = {'segment': 'index'}
@@ -1336,11 +1337,8 @@ class BCIScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = Chrome()
         driver.maximize_window()
-        # change_driver = Chrome()
-        # change_driver.maximize_window()
         url = request.data['url']
         driver.get(url)
-        # change_driver.get('https://www.paraphrase-online.com/')
         data = []
         errors = []
         hrefs = []
@@ -1424,8 +1422,6 @@ class BCIScrapView(APIView):
                     key = attr.select_one("th:nth-child(1)").get_text(strip=True)
                     val = attr.select_one("td:nth-child(2)").get_text(strip=True)
                     ar_product_attributes_content_json[key] = val
-                # changed_title = change_text(change_driver, title) if len(title.split(' '))>5 else ''
-                # changed_product_attributes_content = change_text(change_driver, product_attributes_content) if len(product_attributes_content.split(' '))>5 else ''
                 product = {
                     "Arabic Name": ar_title,
                     "English Name": title,
@@ -1468,7 +1464,24 @@ class BCIScrapView(APIView):
 
 class RokonBaghdadScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        driver = Chrome()
+        chrome_options = Options()
+        # chrome_options.page_load_strategy = 'eager'
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-features=NetworkService')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+        chrome_options.add_argument('--disable-features=IsolateOrigins')
+        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
+        # chrome_options.add_argument('--headless')
+        change_driver = Chrome(options=chrome_options)
+        change_driver.maximize_window()
+        change_driver.get('https://www.paraphrase-online.com/')
+        driver = Chrome(options=chrome_options)
         driver.maximize_window()
         url = request.data['url']
         driver.get(url)
@@ -1520,11 +1533,21 @@ class RokonBaghdadScrapView(APIView):
                 # Get discount
                 discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price") else None
                 discount = float(price) - float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) if discount_elem else '0'
+                changed_product_attributes_content = change_text(change_driver, translate(product_attributes_content, dest='en')) if len(product_attributes_content.split(' '))>5 else ''
+                description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
+                keywords = extract_top_keywords(description)
+                ar_keywords = []
+                for k in keyWords.split('//'):
+                    keywords.append(k)
+
+                for keyW in keywords:
+                    ar_keywords.append(translate(keyW))
+                    
                 product = {
                     "Arabic Name": title,
                     "English Name": translate(title, dest='en'),
-                    "Arabic Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['arabic_description'],
-                    "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                    "Arabic Description": translate(description) if len(description)>3 else request.data['arabic_description'],
+                    "English Description": description if len(description) > 3 else request.data['description'],
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
                     "English Brand": "",
@@ -1536,8 +1559,8 @@ class RokonBaghdadScrapView(APIView):
                     "Main Image URL": image,
                     "Photos URLs": str((",").join(images)) if images else image,
                     "Video Youtube URL": "",
-                    "English Meta Tags": translate(keyWords, dest='en').replace('//', ','),
-                    "Arabic Meta Tags": keyWords.replace('//', ','),
+                    "English Meta Tags": ','.join(keywords),
+                    "Arabic Meta Tags": ','.join(ar_keywords),
                     "features": '',
                     "features_ar": '',
                     "wholesale": "no",
@@ -1549,16 +1572,32 @@ class RokonBaghdadScrapView(APIView):
                 errors.append({
                     "url": href
                 })
+                break
 
-        df = pd.DataFrame(data)
-        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
             err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-    
+
+def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_threshold=0.1, deduplication_algo='seqm', window_size=1, num_of_keywords=5):
+    if not isinstance(text, str):
+        raise ValueError("Input must be a string")
+
+    try:
+        custom_kw_extractor = yake.KeywordExtractor(lan=language, n=max_ngram_size, dedupLim=deduplication_threshold, dedupFunc=deduplication_algo, windowsSize=window_size, top=num_of_keywords, features=None)
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError("YAKE library not installed")
+
+    keywords = custom_kw_extractor.extract_keywords(text)
+
+    top_keywords = [kw[0] for kw in keywords]
+
+    return top_keywords
+
 def change_text(driver, text):
     driver.refresh()
     driver.switch_to.window(driver.window_handles[0])

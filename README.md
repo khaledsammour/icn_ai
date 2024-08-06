@@ -229,3 +229,5 @@ Black Dashboard is a premium [Bootstrap](https://www.admin-dashboards.com/bootst
 
 ---
 [Black Dashboard Django](https://www.creative-tim.com/product/black-dashboard-django) - Provided by [ICN](https://www.creative-tim.com/) and [AppSeed](https://appseed.us).
+
+python -m spacy download en_core_web_lg
