@@ -1601,6 +1601,7 @@ def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_th
 def change_text(driver, text):
     driver.refresh()
     driver.switch_to.window(driver.window_handles[0])
+    driver.execute_script('''document.querySelectorAll('iframe').forEach(function (e){e.remove()})''')
     until_visible_click(driver, "button[tooltip*='Rephrase and change the structure of your sentence']")
     driver.switch_to.window(driver.window_handles[0])
     driver.find_element(By.CSS_SELECTOR, '#input-data').clear()
