@@ -1523,7 +1523,7 @@ class RokonBaghdadScrapView(APIView):
         for href in hrefs:
             try:
                 driver.get(href.replace('/en/', '/ar/'))
-                if 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
+                if len(driver.find_elements(By.CSS_SELECTOR, '.section-title'))>0 and 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
                     return
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
