@@ -29,6 +29,34 @@ import re
 from deep_translator import GoogleTranslator
 import yake
 from .googleSuggetion import api_call
+# import torch
+# from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+# model = AutoModelForSeq2SeqLM.from_pretrained("ramsrigouthamg/t5-large-paraphraser-diverse-high-quality")
+# tokenizer = AutoTokenizer.from_pretrained("ramsrigouthamg/t5-large-paraphraser-diverse-high-quality")
+
+# import torch
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# print ("device ",device)
+# model = model.to(device)
+
+# def get_paraphrased_sentences(model, tokenizer, sentence):
+#   # tokenize the text to be form of a list of token IDs
+#   encoding = tokenizer.encode_plus(sentence,max_length =len(sentence), padding='max_length', return_tensors="pt")
+#   input_ids,attention_mask  = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
+#   # generate the paraphrased sentences
+#   model.eval()
+#   beam_outputs = model.generate(
+#     input_ids=input_ids,attention_mask=attention_mask,
+#     max_length=len(sentence),  # Reduced max_length
+#     early_stopping=True,
+#     num_beams=5,     # Reduced number of beams
+#     num_return_sequences=1,
+#     length_penalty=1.0
+#   )
+#   # decode the generated sentences using the tokenizer to get them back to text
+#   return tokenizer.batch_decode(beam_outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+# print('-'*50, get_paraphrased_sentences(model, tokenizer, "Luxcl Hair Straightener 60W LHS-5302 220-240V 50-60Hz 35W LED lights for 6 temperatures Precise digital temperature 155-230Â°C 2 x 120mm ceramic heating plates Auto shut-off after 1 hour Temperature control Hinge lock for easy storage PTC rapid heating system 360Â° rotatable cable"))
 
 def index(request):
     context = {'segment': 'index'}
@@ -385,8 +413,7 @@ class ScrapView(APIView):
 
         driver.quit()
         return JsonResponse({})
-    
-
+   
 class GameakScrapView(APIView):
     def post(self, request, *args, **kwargs):
         options = Options()
@@ -507,7 +534,6 @@ class GameakScrapView(APIView):
 
         driver.quit()
         return JsonResponse({})
-
 
 class PalestinianScrapView(APIView):
     def post(self, request, *args, **kwargs):
@@ -631,7 +657,6 @@ class PalestinianScrapView(APIView):
         driver.quit()
         return JsonResponse({})
     
-
 class SecScrapView(APIView):
     def post(self, request, *args, **kwargs):
         options = Options()
@@ -769,7 +794,6 @@ class SecScrapView(APIView):
         driver.quit()
         return JsonResponse({})
 
-
 class VikushaScrapView(APIView):
     def post(self, request, *args, **kwargs):
         # id = request.data['id']
@@ -883,7 +907,6 @@ class VikushaScrapView(APIView):
         driver.quit()
         return JsonResponse({})
     
-
 class HighTechScrapView(APIView):
     def post(self, request, *args, **kwargs):
         options = Options()
@@ -1461,7 +1484,6 @@ class BCIScrapView(APIView):
         driver.quit()
         return JsonResponse({})
 
-
 class RokonBaghdadScrapView(APIView):
     def post(self, request, *args, **kwargs):
         chrome_options = Options()
@@ -1478,9 +1500,6 @@ class RokonBaghdadScrapView(APIView):
         chrome_options.add_argument('--disable-features=IsolateOrigins')
         chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
         # chrome_options.add_argument('--headless')
-        change_driver = Chrome(options=chrome_options)
-        change_driver.maximize_window()
-        change_driver.get('https://www.paraphrase-online.com/')
         driver = Chrome(options=chrome_options)
         driver.maximize_window()
         url = request.data['url']
@@ -1504,6 +1523,8 @@ class RokonBaghdadScrapView(APIView):
         for href in hrefs:
             try:
                 driver.get(href.replace('/en/', '/ar/'))
+                if 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
+                    return
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
                 key_words_selector = "meta[property*='og:title']"
@@ -1533,9 +1554,8 @@ class RokonBaghdadScrapView(APIView):
                 # Get discount
                 discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price") else None
                 discount = float(price) - float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) if discount_elem else '0'
-                changed_product_attributes_content = change_text(change_driver, translate(product_attributes_content, dest='en')) if len(product_attributes_content.split(' '))>5 else ''
-                description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
-                keywords = extract_top_keywords(description)
+                
+                keywords = extract_top_keywords(translate(product_attributes_content, dest='en'))
                 ar_keywords = []
                 for k in keyWords.split('//'):
                     keywords.append(k)
@@ -1546,8 +1566,8 @@ class RokonBaghdadScrapView(APIView):
                 product = {
                     "Arabic Name": title,
                     "English Name": translate(title, dest='en'),
-                    "Arabic Description": translate(description) if len(description)>3 else request.data['arabic_description'],
-                    "English Description": description if len(description) > 3 else request.data['description'],
+                    "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
+                    "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
                     "English Brand": "",
@@ -1580,6 +1600,13 @@ class RokonBaghdadScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'].split(' '))>5 else ''
+                description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
+                d['English Description'] = description
+                d['Arabic Description'] = translate(description)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
 
@@ -1599,7 +1626,7 @@ def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_th
     return top_keywords
 
 def change_text(driver, text):
-    driver.refresh()
+    driver.get('https://www.paraphrase-online.com/')
     driver.switch_to.window(driver.window_handles[0])
     driver.execute_script('''document.querySelectorAll('iframe').forEach(function (e){e.remove()})''')
     until_visible_click(driver, "button[tooltip*='Rephrase and change the structure of your sentence']")
@@ -1612,6 +1639,14 @@ def change_text(driver, text):
     try: 
         until_visible(driver, '#output-data > span')
     except:
+        driver.get('https://www.paraphrase-online.com/')
+        driver.switch_to.window(driver.window_handles[0])
+        driver.execute_script('''document.querySelectorAll('iframe').forEach(function (e){e.remove()})''')
+        until_visible_click(driver, "button[tooltip*='Rephrase and change the structure of your sentence']")
+        driver.switch_to.window(driver.window_handles[0])
+        driver.find_element(By.CSS_SELECTOR, '#input-data').clear()
+        until_visible_send_keys(driver, '#input-data', text)
+        driver.switch_to.window(driver.window_handles[0])
         until_visible_click(driver, '.phraseit')
         driver.switch_to.window(driver.window_handles[0])
         until_visible(driver, '#output-data > span')
