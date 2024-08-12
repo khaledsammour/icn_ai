@@ -1516,7 +1516,6 @@ class DadaGroupScrapView(APIView):
                 discount = float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) - float(price) if discount_elem else '0'
                 # Get the main image URL
                 main_image_elem = soup.select_one('.slider > li.slide img')
-                print(main_image_elem['src'])
                 image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
                 # Get additional images
                 image_elems = soup.select('.slider > li.slide img')
@@ -1552,10 +1551,10 @@ class DadaGroupScrapView(APIView):
                 ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
                 ar_title = ar_soup.select_one(title_selector)['content'].strip()
-                ar_description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if ar_soup.select_one(description_selector) else ''
                 ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
                 ar_product_attributes_content_json = {}
-                ar_product_attributes = soup.select(product_attributes_selector)
+                ar_product_attributes = ar_soup.select(product_attributes_selector)
                 for ar_attr in ar_product_attributes:
                     key = ar_attr.select_one(".col-3-s").get_text(strip=True)
                     val = ar_attr.select_one(".col-4-s").get_text(strip=True)
@@ -1602,10 +1601,10 @@ class DadaGroupScrapView(APIView):
             iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
             driver.get(iframe.get_attribute('src'))
             for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'].split(' '))>5 and d['English Description'] != request.data['description'] else ''
-                description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
-                d['English Description'] = description
-                d['Arabic Description'] = translate(description)
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
             df = pd.DataFrame(data)
             df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
@@ -1708,7 +1707,7 @@ def change_text(driver, text):
 
     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
     soup = BeautifulSoup(href_res, 'html.parser')
-    return soup.select_one('#paraphraser-output-box').get_text(strip=True)
+    return soup.select_one('#paraphraser-output-box').get_text(" ",strip=True)
 
 def replace_dimensions(url):
     pattern = r'\d+x\d+.webp'
