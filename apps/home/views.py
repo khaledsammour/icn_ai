@@ -1370,13 +1370,13 @@ class RokonBaghdadScrapView(APIView):
         for href in hrefs:
             try:
                 driver.get(href.replace('/en/', '/ar/'))
+                if len(driver.find_elements(By.CSS_SELECTOR, '.section-title'))>0 and 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
+                    continue
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
                 key_words_selector = "meta[property*='og:title']"
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
-                if soup.select_one('head > title') and '404' in soup.select_one('head > title').get_text() and not soup.select_one(title_selector):
-                    continue
                 title = soup.select_one(title_selector)['content'].strip()
                 # Get the main image URL
                 main_image_elem = soup.select_one('img[alt*="Product image"]')
@@ -1437,7 +1437,6 @@ class RokonBaghdadScrapView(APIView):
                 data.append(product)
             except Exception as e:
                 print(e)
-                traceback.print_exc()
                 errors.append({
                     "url": href
                 })
@@ -1484,7 +1483,10 @@ class DadaGroupScrapView(APIView):
         errors = []
         hrefs = []
         while (True):
-            until_visible(driver, '.show-more')
+            try:
+                until_visible(driver, '.show-more')
+            except:
+                pass
             if (len(driver.find_elements(By.CSS_SELECTOR,'.show-more'))>0):
                 until_visible_click(driver, '.show-more')
             else:
@@ -1510,10 +1512,11 @@ class DadaGroupScrapView(APIView):
                 price_elem = soup.select_one(".price-span").get_text(strip=True)
                 price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
                 # Get discount
-                discount_elem = soup.select_one(".discount-price-span").get_text(strip=True) if en_soup.select_one(".discount-price-span") else None
+                discount_elem = soup.select_one(".discount-price-span").get_text(strip=True) if soup.select_one(".discount-price-span") else None
                 discount = float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) - float(price) if discount_elem else '0'
                 # Get the main image URL
                 main_image_elem = soup.select_one('.slider > li.slide img')
+                print(main_image_elem['src'])
                 image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
                 # Get additional images
                 image_elems = soup.select('.slider > li.slide img')
@@ -1526,6 +1529,7 @@ class DadaGroupScrapView(APIView):
                 # Get keywords
                 key_words_elem = soup.select_one(key_words_selector)
                 keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                keywords = keyWords.split('//')
                 if len(product_attributes_content)>0:
                     keywords = extract_top_keywords(product_attributes_content)
                     ar_keywords = []
@@ -1535,7 +1539,9 @@ class DadaGroupScrapView(APIView):
                     for keyW in keywords:
                         ar_keywords.append(translate(keyW))
                 else:
-                    ar_keywords = translate(key_words_elem['content'].strip()) if key_words_elem else ''
+                    ar_keywords = []
+                    for keyW in keywords:
+                        ar_keywords.append(translate(keyW))
                 product_attributes_content_json = {}                
                 product_attributes = soup.select(product_attributes_selector)
                 for attr in product_attributes:
@@ -1591,6 +1597,10 @@ class DadaGroupScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
             for d in data:
                 changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'].split(' '))>5 and d['English Description'] != request.data['description'] else ''
                 description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
