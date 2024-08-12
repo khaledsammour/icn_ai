@@ -133,6 +133,7 @@ def getImageUrl(id, image_url):
         else:
             print('Request failed with status code:', response.status_code)
             print('Response:', response.text)
+            return ''
     except requests.exceptions.RequestException as e:
         print('An error occurred:', e)
 
@@ -1524,7 +1525,7 @@ class RokonBaghdadScrapView(APIView):
             try:
                 driver.get(href.replace('/en/', '/ar/'))
                 if len(driver.find_elements(By.CSS_SELECTOR, '.section-title'))>0 and 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
-                    return
+                    continue
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
                 key_words_selector = "meta[property*='og:title']"
@@ -1537,6 +1538,7 @@ class RokonBaghdadScrapView(APIView):
                 # Get additional images
                 image_elems = soup.select('img[alt*="Product image"]')
                 images = [getImageUrl(request.data['id'], img['src']) for img in image_elems if len(img['src'])>10]
+                images = [i for i in images if len(i)>10]
                 # Check stock status
                 in_stock = '3'
                 # Get product attributes content
@@ -1610,6 +1612,64 @@ class RokonBaghdadScrapView(APIView):
         driver.quit()
         return JsonResponse({})
 
+class ChangeText(APIView):
+    def post(self, request, *args, **kwargs):
+        chrome_options = Options()
+        # chrome_options.page_load_strategy = 'eager'
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-features=NetworkService')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+        chrome_options.add_argument('--disable-features=IsolateOrigins')
+        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
+        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')
+        driver = Chrome(options=chrome_options)
+        driver.maximize_window()
+        dataframe1 = pd.read_excel('excel/651_products.xlsx')
+        products = []
+        for index, row in dataframe1.iterrows():
+            data = row.to_dict()
+            products.append({
+                "Arabic Name": data['Arabic Name'],
+                "English Name": data['English Name'],
+                "Arabic Description": data['Arabic Description'],
+                "English Description": data['English Description'],
+                "Category Id": data['Category Id'],
+                "Arabic Brand": data['Arabic Brand'],
+                "English Brand": data['English Brand'],
+                "Unit Price": data['Unit Price'],
+                "Discount Type": data['Discount Type'],
+                "Discount": data['Discount'],
+                "Unit": data['Unit'],
+                "Current Stock": data['Current Stock'],
+                "Main Image URL": data['Main Image URL'],
+                "Photos URLs": data['Photos URLs'],
+                "Video Youtube URL": data['Video Youtube URL'],
+                "English Meta Tags": data['English Meta Tags'],
+                "Arabic Meta Tags": data['Arabic Meta Tags'],
+                "features": data['features'],
+                "features_ar": data['features_ar'],
+                "wholesale": data['wholesale'],
+                "reference_link": data['reference_link'],
+            })
+        changed_product_attributes_content = change_text(driver, ' Khaled Sammour '.join([d['English Description'] if len(d['English Description'].split(' '))>5 else ' Mohammad Sammour ' for d in products]))
+        splitted = changed_product_attributes_content.split(' Khaled Sammour ')
+        for i, d in enumerate(products):
+            if splitted[i] != ' Mohammad Sammour ':
+                d['English Description'] = splitted[i]
+                d['Arabic Description'] = translate(splitted[i])
+
+        # df = pd.DataFrame(data)
+        # df.to_excel('excel/new_651_products.xlsx', index=False)
+        # driver.quit()
+        return JsonResponse({})
+
 def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_threshold=0.1, deduplication_algo='seqm', window_size=1, num_of_keywords=5):
     if not isinstance(text, str):
         raise ValueError("Input must be a string")
@@ -1637,7 +1697,7 @@ def change_text(driver, text):
     until_visible_click(driver, '.phraseit')
     driver.switch_to.window(driver.window_handles[0])
     try: 
-        until_visible(driver, '#output-data > span')
+        until_visible(driver, '#output-data > span',max_counter=20)
     except:
         driver.get('https://www.paraphrase-online.com/')
         driver.switch_to.window(driver.window_handles[0])

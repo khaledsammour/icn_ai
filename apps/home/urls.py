@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView
+from .views import ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView
 
 urlpatterns = [
 
@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/CityCenterScrapView', CityCenterScrapView.as_view()),
     path('api/BCIScrapView', BCIScrapView.as_view()),
     path('api/RokonBaghdadScrapView', RokonBaghdadScrapView.as_view()),
+    path('api/ChangeText', ChangeText.as_view()),
 ]

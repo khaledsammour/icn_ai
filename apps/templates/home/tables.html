@@ -224,6 +224,9 @@
                       <button type="button" class="btn" onclick="rokonBaghdadScrapView()">
                         Scrap
                       </button>
+                      <button type="button" class="btn" onclick="changeText()">
+                        Change Text
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -430,9 +433,29 @@ const csrftoken = getCookie('csrftoken');
     .catch(error => console.error("Error:", error));
 
   }
-
+  
   function rokonBaghdadScrapView() {
     fetch("/api/RokonBaghdadScrapView", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ 
+        id: "2843",
+        url: document.getElementById('rokon_baghdad_url').value, 
+        db_category: document.getElementById('rokon_baghdad_db_category').value,
+        description: document.getElementById('rokon_baghdad_description').value,
+        arabic_description: document.getElementById('rokon_baghdad_arabic_description').value,
+      })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Error:", error));
+
+  }
+  function changeText() {
+    fetch("/api/ChangeText", {
       method: "POST",
       headers: {
           "Content-Type": "application/json",
