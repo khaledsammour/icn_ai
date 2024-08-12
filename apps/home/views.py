@@ -1370,13 +1370,13 @@ class RokonBaghdadScrapView(APIView):
         for href in hrefs:
             try:
                 driver.get(href.replace('/en/', '/ar/'))
-                if len(driver.find_elements(By.CSS_SELECTOR, '.section-title'))>0 and 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
-                    continue
                 title_selector = 'meta[name*="title"]'
                 description_selector = '#description'
                 key_words_selector = "meta[property*='og:title']"
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
+                if soup.select_one('head > title') and '404' in soup.select_one('head > title').get_text() and not soup.select_one(title_selector):
+                    continue
                 title = soup.select_one(title_selector)['content'].strip()
                 # Get the main image URL
                 main_image_elem = soup.select_one('img[alt*="Product image"]')
@@ -1437,6 +1437,7 @@ class RokonBaghdadScrapView(APIView):
                 data.append(product)
             except Exception as e:
                 print(e)
+                traceback.print_exc()
                 errors.append({
                     "url": href
                 })
@@ -1627,7 +1628,7 @@ class ChangeText(APIView):
         products = []
         for index, row in dataframe1.iterrows():
             data = row.to_dict()
-            new_desc = another_change_text(driver, data['English Description'])
+            new_desc = change_text(driver, data['English Description'])
             ar_new_desc = translate(new_desc)
             products.append({
                 "Arabic Name": data['Arabic Name'],
