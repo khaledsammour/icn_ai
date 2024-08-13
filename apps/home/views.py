@@ -1609,25 +1609,29 @@ class DadaGroupScrapView(APIView):
             df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-    
+
+def create_browser():
+    chrome_options = Options()
+    # chrome_options.page_load_strategy = 'eager'
+    chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+    chrome_options.add_argument('--disable-extensions')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-web-security')
+    chrome_options.add_argument('--allow-running-insecure-content')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-setuid-sandbox')
+    chrome_options.add_argument('--disable-features=NetworkService')
+    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+    chrome_options.add_argument('--disable-features=IsolateOrigins')
+    chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
+    # chrome_options.add_argument('--headless')
+    driver = Chrome(options=chrome_options)
+    driver.maximize_window()
+    return driver
+
 class BashitiScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        chrome_options = Options()
-        # chrome_options.page_load_strategy = 'eager'
-        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-setuid-sandbox')
-        chrome_options.add_argument('--disable-features=NetworkService')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--disable-features=IsolateOrigins')
-        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
-        # chrome_options.add_argument('--headless')
-        driver = Chrome(options=chrome_options)
-        driver.maximize_window()
+        driver = create_browser()
         url = request.data['url']
         driver.get(url)
         sleep(1)
@@ -1646,9 +1650,10 @@ class BashitiScrapView(APIView):
                     if len(e.find_elements(By.CSS_SELECTOR, ".out-of-stock"))==0:
                         hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
             index = index + 1
-            
-        for href in hrefs:
+        driver.quit()
+        def get_details(href):
             try:
+                driver = create_browser()
                 driver.get(href.replace('?lang=ar', '?lang=en'))
                 title_selector = '.product_title '
                 description_selector = '.woocommerce-Tabs-panel--description'
@@ -1704,7 +1709,7 @@ class BashitiScrapView(APIView):
                     "Arabic Brand": "",
                     "English Brand": "",
                     "Unit Price": price,
-                    "Discount Type": "Flat" if discount != "0" else "",
+                    "Discount Type": "Percent" if discount != "0" else "",
                     "Discount": discount if discount != "0" else "",
                     "Unit": "PC",
                     "Current Stock": in_stock,
@@ -1724,8 +1729,11 @@ class BashitiScrapView(APIView):
                 errors.append({
                     "url": href
                 })
-                break
-
+        drivers = []
+        executor = ThreadPoolExecutor(max_workers=10)
+        for href in hrefs:
+            executor.submit(get_details, href)
+        executor.shutdown(wait=True)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
             err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)

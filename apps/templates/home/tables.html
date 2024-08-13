@@ -528,7 +528,7 @@ const csrftoken = getCookie('csrftoken');
     .catch(error => console.error("Error:", error));
 
   }
-  function bashitiGroupScrapView() {
+  function bashitiScrapView() {
     fetch("/api/BashitiScrapView", {
       method: "POST",
       headers: {
