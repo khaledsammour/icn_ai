@@ -1513,7 +1513,7 @@ class DadaGroupScrapView(APIView):
                 price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
                 # Get discount
                 discount_elem = soup.select_one(".discount-price-span").get_text(strip=True) if soup.select_one(".discount-price-span") else None
-                discount = float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) - float(price) if discount_elem else '0'
+                discount = float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) - float(price.split(' ')[0]) if discount_elem else '0'
                 # Get the main image URL
                 main_image_elem = soup.select_one('.slider > li.slide img')
                 image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
@@ -1579,6 +1579,142 @@ class DadaGroupScrapView(APIView):
                     "Arabic Meta Tags": ','.join(ar_keywords),
                     "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
                     "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
+                    "wholesale": "no",
+                    "reference_link": href,
+                }
+                data.append(product)
+            except Exception as e:
+                print(e)
+                errors.append({
+                    "url": href
+                })
+                break
+
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})
+    
+class BashitiScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        chrome_options = Options()
+        # chrome_options.page_load_strategy = 'eager'
+        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--allow-running-insecure-content')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-features=NetworkService')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+        chrome_options.add_argument('--disable-features=IsolateOrigins')
+        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
+        # chrome_options.add_argument('--headless')
+        driver = Chrome(options=chrome_options)
+        driver.maximize_window()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = []
+        isExist = True
+        index = 1
+        while (isExist):
+            driver.get(url+'page/'+str(index)+'/')
+            sleep(3)
+            isExist = True if len(driver.find_elements(By.CSS_SELECTOR, ".products > .wd-product"))>0 else False
+            if isExist:
+                elements = driver.find_elements(By.CSS_SELECTOR, ".products > .wd-product")
+                for e in elements:
+                    if len(e.find_elements(By.CSS_SELECTOR, ".out-of-stock"))==0:
+                        hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
+            index = index + 1
+            
+        for href in hrefs:
+            try:
+                driver.get(href.replace('?lang=ar', '?lang=en'))
+                title_selector = '.product_title '
+                description_selector = '.woocommerce-Tabs-panel--description'
+                key_words_selector = "meta[property*='og:title']"
+                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                soup = BeautifulSoup(href_res, 'html.parser')
+                title = soup.select_one(title_selector).get_text(strip=True)
+                # Get the product price
+                price_elem = soup.select_one(".summary .price .amount").get_text(strip=True)
+                price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
+                # Get discount
+                discount_elem = soup.select_one(".onsale.product-label").get_text(strip=True) if soup.select_one(".onsale.product-label") else None
+                discount = discount_elem.replace('-','').replace('%','').strip() if discount_elem else '0'
+                # Get the main image URL
+                main_image_elem = soup.select_one('.wd-carousel-wrap > .wd-carousel-item img')
+                image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                # Get additional images
+                image_elems = soup.select('.wd-carousel-wrap > .wd-carousel-item img')
+                images = [getImageUrl(request.data['id'], img['src']) for img in image_elems if len(img['src'])>10]
+                # Check stock status
+                in_stock = '3'
+                # Get product attributes content
+                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                product_attributes_content = description_elem if description_elem else ''
+                # Get keywords
+                key_words_elem = soup.select_one(key_words_selector)
+                keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                keywords = keyWords.split('//')
+                if len(product_attributes_content)>0:
+                    keywords = extract_top_keywords(product_attributes_content)
+                    ar_keywords = []
+                    for k in keyWords.split('//'):
+                        keywords.append(k)
+
+                    for keyW in keywords:
+                        ar_keywords.append(translate(keyW))
+                else:
+                    ar_keywords = []
+                    for keyW in keywords:
+                        ar_keywords.append(translate(keyW))
+                driver.get(href.replace('/en', ''))
+                ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
+                ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
+                ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if ar_soup.select_one(description_selector) else ''
+                ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
+                product = {
+                    "Arabic Name": ar_title,
+                    "English Name": title,
+                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content)>3 else request.data['arabic_description'],
+                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                    "Category Id": request.data['db_category'],
+                    "Arabic Brand": "",
+                    "English Brand": "",
+                    "Unit Price": price,
+                    "Discount Type": "Flat" if discount != "0" else "",
+                    "Discount": discount if discount != "0" else "",
+                    "Unit": "PC",
+                    "Current Stock": in_stock,
+                    "Main Image URL": image,
+                    "Photos URLs": str((",").join(images)) if images else image,
+                    "Video Youtube URL": "",
+                    "English Meta Tags": ','.join(keywords),
+                    "Arabic Meta Tags": ','.join(ar_keywords),
+                    "features": '',
+                    "features_ar": '',
                     "wholesale": "no",
                     "reference_link": href,
                 }
@@ -1684,6 +1820,7 @@ def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_th
     return top_keywords
 
 def change_text(driver, text):
+    driver.refresh()
     # switch to selected iframe
     until_visible(driver, '#paraphraser-input-box')
     # driver.execute_script('''document.querySelectorAll('.MuiDialog-root').forEach(function (e){e.remove()})''')
