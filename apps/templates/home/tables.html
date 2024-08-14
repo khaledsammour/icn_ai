@@ -1,568 +1,649 @@
 {% extends "layouts/base.html" %}
 
-{% block title %} Tables {% endblock %} 
+{% block title %} Tables {% endblock %}
 
 <!-- Specific Page CSS goes HERE  -->
 {% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
 
-  <div class="content">
+<div class="content">
     <div class="row">
-      <div class="col-md-12">
-        <div class="card ">
-          <div class="card-header">
-            <h4 class="card-title"> Simple Table</h4>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table tablesorter " id="">
-                <thead class=" text-primary">
-                  <tr>
-                    <th>
-                      Name
-                    </th>
-                    <th>
-                      Products
-                    </th>
-                    <th>
-                      Last Scraped Date
-                    </th>
-                    <th class="text-center">
-                      Scrap
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <p>Change Text</p>
-                      <input type="text" class="form-control mt-3" placeholder="id" id="change_text_id" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="changeText()">
-                        Change Text
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Oriental</p>
-                      <input type="number" class="form-control mt-3" placeholder="category" id="oriental_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="number" class="form-control mt-3" placeholder="DB category" id="oriental_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="scrap()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Cashmere</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="cashmere_url" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="cashmere_db_category" />
-                    </td>
-                    <td>
-                      <p>07-10-2024</p>
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="secScrapView('https://www.cashmerecosmetics.com/language/en/product-category/bath-body/bath-shower-gel/')">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Gameak</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="gameak_url" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="gameak_db_category" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="gameakScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Palestinian house</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="palestinian_url" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="palestinian_db_category" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="palestinianScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Vikusha</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="vikusha_url" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="vikusha_db_category" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="vikushaScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>GTS</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="gts_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="gts_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="gts_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="gts_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="gtsScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>TXON</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="txon_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="txon_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="txon_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="txon_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="txonScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>City Center</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="city_center_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="city_center_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="city_center_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="city_center_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="cityCenterScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>BCI</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="bci_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="bci_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="bci_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="bci_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="bciScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Rokon Baghdad</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="rokon_baghdad_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="rokon_baghdad_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="rokon_baghdad_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="rokon_baghdad_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="rokonBaghdadScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Dada Group</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="baba_group_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="baba_group_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="baba_group_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="baba_group_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="dadaGroupScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <p>Bashiti</p>
-                      <input type="text" class="form-control mt-3" placeholder="URL" id="bashiti_url" />
-                      <input type="text" class="form-control mt-3" placeholder="Description" id="bashiti_description" />
-                    </td>
-                    <td>
-                      <p>3</p>
-                      <input type="text" class="form-control mt-3" placeholder="Category" id="bashiti_db_category" />
-                      <input type="text" class="form-control mt-3" placeholder="Arabic description" id="bashiti_arabic_description" />
-                    </td>
-                    <td>
-                      07-10-2024
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn" onclick="bashitiScrapView()">
-                        Scrap
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <div class="col-md-12">
+            <div class="card ">
+                <div class="card-header">
+                    <h4 class="card-title"> Simple Table</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table tablesorter " id="">
+                            <thead class=" text-primary">
+                            <tr>
+                                <th>
+                                    Name
+                                </th>
+                                <th>
+                                    Products
+                                </th>
+                                <th>
+                                    Last Scraped Date
+                                </th>
+                                <th class="text-center">
+                                    Scrap
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <p>Change Text</p>
+                                    <input type="text" class="form-control mt-3" placeholder="id" id="change_text_id"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="changeText()">
+                                        Change Text
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Oriental</p>
+                                    <input type="number" class="form-control mt-3" placeholder="category"
+                                           id="oriental_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="number" class="form-control mt-3" placeholder="DB category"
+                                           id="oriental_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="scrap()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Cashmere</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="cashmere_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="cashmere_db_category"/>
+                                </td>
+                                <td>
+                                    <p>07-10-2024</p>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn"
+                                            onclick="secScrapView('https://www.cashmerecosmetics.com/language/en/product-category/bath-body/bath-shower-gel/')">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Gameak</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="gameak_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="gameak_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="gameakScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Palestinian house</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL"
+                                           id="palestinian_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="palestinian_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="palestinianScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Vikusha</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="vikusha_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="vikusha_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="vikushaScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>GTS</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="gts_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="gts_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="gts_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="gts_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="gtsScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>TXON</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="txon_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="txon_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="txon_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="txon_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="txonScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>City Center</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL"
+                                           id="city_center_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="city_center_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="city_center_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="city_center_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="cityCenterScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>BCI</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="bci_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="bci_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="bci_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="bci_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="bciScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Rokon Baghdad</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL"
+                                           id="rokon_baghdad_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="rokon_baghdad_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="rokon_baghdad_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="rokon_baghdad_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="rokonBaghdadScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Dada Group</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="baba_group_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="baba_group_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="baba_group_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="baba_group_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="dadaGroupScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Bashiti</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="bashiti_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="bashiti_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="bashiti_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="bashiti_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="bashitiScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Temu</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="temu_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="temu_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="temuScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
+</div>
 
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
 {% block javascripts %}
 <script>
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
 
-const csrftoken = getCookie('csrftoken');
+    const csrftoken = getCookie('csrftoken');
 
-  function scrap(url) {
-    fetch("/api/scrap", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "1",
-        url: url, 
-        category: document.getElementById('oriental_category').value, 
-        db_category: document.getElementById('oriental_db_category').value,
-        description: document.getElementById('description').value,
-        arabic_description: document.getElementById('arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function scrap(url) {
+        fetch("/api/scrap", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1",
+                url: url,
+                category: document.getElementById('oriental_category').value,
+                db_category: document.getElementById('oriental_db_category').value,
+                description: document.getElementById('description').value,
+                arabic_description: document.getElementById('arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
-  function secScrapView() {
-    fetch("/api/SecScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "2786",
-        url: document.getElementById('cashmere_url').value, 
-        db_category: document.getElementById('cashmere_db_category').value, 
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    }
 
-  }
+    function secScrapView() {
+        fetch("/api/SecScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2786",
+                url: document.getElementById('cashmere_url').value,
+                db_category: document.getElementById('cashmere_db_category').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  function gameakScrapView() {
-    fetch("/api/GameakScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "1",
-      url: document.getElementById('gameak_url').value, 
-      db_category: document.getElementById('gameak_db_category').value, 
-    })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    }
 
-  }
-  
-  function palestinianScrapView() {
-    fetch("/api/PalestinianScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "1",
-      url: document.getElementById('palestinian_url').value, 
-      db_category: document.getElementById('palestinian_db_category').value, 
-    })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function gameakScrapView() {
+        fetch("/api/GameakScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1",
+                url: document.getElementById('gameak_url').value,
+                db_category: document.getElementById('gameak_db_category').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
+    }
 
-  function vikushaScrapView() {
-    fetch("/api/VikushaScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "1",
-      url: document.getElementById('vikusha_url').value, 
-      db_category: document.getElementById('vikusha_db_category').value, 
-    })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function palestinianScrapView() {
+        fetch("/api/PalestinianScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1",
+                url: document.getElementById('palestinian_url').value,
+                db_category: document.getElementById('palestinian_db_category').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
+    }
 
-  function gtsScrapView() {
-    fetch("/api/GTSScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "2802",
-      url: document.getElementById('gts_url').value, 
-      db_category: document.getElementById('gts_db_category').value,
-      description: document.getElementById('gts_description').value,
-      arabic_description: document.getElementById('gts_arabic_description').value,
-    })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function vikushaScrapView() {
+        fetch("/api/VikushaScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1",
+                url: document.getElementById('vikusha_url').value,
+                db_category: document.getElementById('vikusha_db_category').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
+    }
 
-  function txonScrapView() {
-    fetch("/api/TXONScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ id: "2812",
-      url: document.getElementById('txon_url').value, 
-      db_category: document.getElementById('txon_db_category').value,
-      description: document.getElementById('txon_description').value,
-      arabic_description: document.getElementById('txon_arabic_description').value,
-    })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function gtsScrapView() {
+        fetch("/api/GTSScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2802",
+                url: document.getElementById('gts_url').value,
+                db_category: document.getElementById('gts_db_category').value,
+                description: document.getElementById('gts_description').value,
+                arabic_description: document.getElementById('gts_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
-  function cityCenterScrapView() {
-    fetch("/api/CityCenterScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "2830",
-        url: document.getElementById('city_center_url').value, 
-        db_category: document.getElementById('city_center_db_category').value,
-        description: document.getElementById('city_center_description').value,
-        arabic_description: document.getElementById('city_center_arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    }
 
-  }
-  
-  function bciScrapView() {
-    fetch("/api/BCIScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "2835",
-        url: document.getElementById('bci_url').value, 
-        db_category: document.getElementById('bci_db_category').value,
-        description: document.getElementById('bci_description').value,
-        arabic_description: document.getElementById('bci_arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function txonScrapView() {
+        fetch("/api/TXONScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2812",
+                url: document.getElementById('txon_url').value,
+                db_category: document.getElementById('txon_db_category').value,
+                description: document.getElementById('txon_description').value,
+                arabic_description: document.getElementById('txon_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
-  
-  function rokonBaghdadScrapView() {
-    fetch("/api/RokonBaghdadScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "2843",
-        url: document.getElementById('rokon_baghdad_url').value, 
-        db_category: document.getElementById('rokon_baghdad_db_category').value,
-        description: document.getElementById('rokon_baghdad_description').value,
-        arabic_description: document.getElementById('rokon_baghdad_arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    }
 
-  }
-  function dadaGroupScrapView() {
-    fetch("/api/DadaGroupScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "1617",
-        url: document.getElementById('baba_group_url').value, 
-        db_category: document.getElementById('baba_group_db_category').value,
-        description: document.getElementById('baba_group_description').value,
-        arabic_description: document.getElementById('baba_group_arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function cityCenterScrapView() {
+        fetch("/api/CityCenterScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2830",
+                url: document.getElementById('city_center_url').value,
+                db_category: document.getElementById('city_center_db_category').value,
+                description: document.getElementById('city_center_description').value,
+                arabic_description: document.getElementById('city_center_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
-  function bashitiScrapView() {
-    fetch("/api/BashitiScrapView", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({ 
-        id: "2871",
-        url: document.getElementById('bashiti_url').value, 
-        db_category: document.getElementById('bashiti_db_category').value,
-        description: document.getElementById('bashiti_description').value,
-        arabic_description: document.getElementById('bashiti_arabic_description').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    }
 
-  }
-  function changeText() {
-    fetch("/api/ChangeText", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({
-        id: document.getElementById('change_text_id').value,
-      })
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error:", error));
+    function bciScrapView() {
+        fetch("/api/BCIScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2835",
+                url: document.getElementById('bci_url').value,
+                db_category: document.getElementById('bci_db_category').value,
+                description: document.getElementById('bci_description').value,
+                arabic_description: document.getElementById('bci_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
 
-  }
+    }
+
+    function rokonBaghdadScrapView() {
+        fetch("/api/RokonBaghdadScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2843",
+                url: document.getElementById('rokon_baghdad_url').value,
+                db_category: document.getElementById('rokon_baghdad_db_category').value,
+                description: document.getElementById('rokon_baghdad_description').value,
+                arabic_description: document.getElementById('rokon_baghdad_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function dadaGroupScrapView() {
+        fetch("/api/DadaGroupScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1617",
+                url: document.getElementById('baba_group_url').value,
+                db_category: document.getElementById('baba_group_db_category').value,
+                description: document.getElementById('baba_group_description').value,
+                arabic_description: document.getElementById('baba_group_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function bashitiScrapView() {
+        fetch("/api/BashitiScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "2871",
+                url: document.getElementById('bashiti_url').value,
+                db_category: document.getElementById('bashiti_db_category').value,
+                description: document.getElementById('bashiti_description').value,
+                arabic_description: document.getElementById('bashiti_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function temuScrapView() {
+        fetch("/api/TemuScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                url: document.getElementById('temu_url').value,
+                db_category: document.getElementById('temu_db_category').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function changeText() {
+        fetch("/api/ChangeText", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: document.getElementById('change_text_id').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
 </script>
 {% endblock javascripts %}

@@ -29,6 +29,8 @@ import re
 from deep_translator import GoogleTranslator
 import yake
 from .googleSuggetion import api_call
+import undetected_chromedriver as uc
+import traceback
 # import torch
 # from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
@@ -1650,7 +1652,7 @@ class BashitiScrapView(APIView):
                     if len(e.find_elements(By.CSS_SELECTOR, ".out-of-stock"))==0:
                         hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
             index = index + 1
-        driver.quit()
+
         def get_details(href):
             try:
                 driver = create_browser()
@@ -1729,7 +1731,6 @@ class BashitiScrapView(APIView):
                 errors.append({
                     "url": href
                 })
-        drivers = []
         executor = ThreadPoolExecutor(max_workers=10)
         for href in hrefs:
             executor.submit(get_details, href)
@@ -1753,7 +1754,54 @@ class BashitiScrapView(APIView):
             df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-    
+
+
+class TemuScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = uc.Chrome(use_subprocess=False)
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = []
+        until_visible(driver, '.js-goods-list > div > div a')
+        elements = driver.find_elements(By.CSS_SELECTOR, ".js-goods-list > div > div")
+        for e in elements:
+            if len(e.find_elements(By.CSS_SELECTOR, "a"))>0:
+                e.click()
+                sleep(5)
+                try:
+                    driver.switch_to.window(driver.window_handles[1])
+                    until_visible_with_xpath(driver, "//div[contains(@aria-label, 'reviews from Jordan')]", 60)
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    if len(soup.select("div[aria-label*='reviews from Jordan'] span")) == 0:
+                        return
+                    title = soup.select_one("meta[name*='title']")['content']
+                    desc = soup.select_one("meta[name*='description']")['content']
+                    in_stock = soup.select_one("div[aria-label*='reviews from Jordan'] span").get_text(strip=True)
+
+                    product = {
+                        "Name": title,
+                        "Description": desc,
+                        "Sells": in_stock,
+                        "reference_link": driver.current_url,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    traceback.print_exc()
+                    errors.append({
+                        "url": driver.current_url,
+                    })
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
+
+        df = pd.DataFrame(data)
+        df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})
+
 class ChangeText(APIView):
     def post(self, request, *args, **kwargs):
         chrome_options = Options()
@@ -1912,7 +1960,7 @@ def until_visible(driver, element, max_counter=10,refresh=False,refresh_wait_ele
         sleep(1)
 
 
-def until_visible_with_xpath(driver, element):
+def until_visible_with_xpath(driver, element, max_counter=10):
     counter = 0
     run = True
     while run:
@@ -1925,7 +1973,7 @@ def until_visible_with_xpath(driver, element):
 
         counter += 1
 
-        if counter > 10:
+        if counter > max_counter:
             print("Timed out waiting for element {}".format(element))
             raise ValueError("Timed out waiting for element {}".format(element))
 
