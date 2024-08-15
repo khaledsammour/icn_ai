@@ -1652,14 +1652,16 @@ class BashitiScrapView(APIView):
                     if len(e.find_elements(By.CSS_SELECTOR, ".out-of-stock"))==0:
                         hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
             index = index + 1
-
-        def get_details(href):
+        error = False
+        def get_details(driver, href):
+            # d['working'] = True
             try:
-                driver = create_browser()
+                # driver = d['driver']
                 driver.get(href.replace('?lang=ar', '?lang=en'))
-                title_selector = '.product_title '
+                title_selector = '.product_title'
                 description_selector = '.woocommerce-Tabs-panel--description'
                 key_words_selector = "meta[property*='og:title']"
+                until_visible(driver, title_selector)
                 href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 soup = BeautifulSoup(href_res, 'html.parser')
                 title = soup.select_one(title_selector).get_text(strip=True)
@@ -1696,7 +1698,8 @@ class BashitiScrapView(APIView):
                     ar_keywords = []
                     for keyW in keywords:
                         ar_keywords.append(translate(keyW))
-                driver.get(href.replace('/en', ''))
+                driver.get(href.replace('en/', ''))
+                until_visible(driver, title_selector)
                 ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
                 ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
@@ -1727,14 +1730,23 @@ class BashitiScrapView(APIView):
                 }
                 data.append(product)
             except Exception as e:
+                error = True
                 print(e)
+                traceback.print_exc()
                 errors.append({
                     "url": href
                 })
-        executor = ThreadPoolExecutor(max_workers=10)
+            # finally:
+            #     d['working'] = False
+        # executor = ThreadPoolExecutor(max_workers=1)
+        # drivers = []
+        # for i in range(1):
+        #     drivers.append({'driver': create_browser(), 'working': False})
         for href in hrefs:
-            executor.submit(get_details, href)
-        executor.shutdown(wait=True)
+            get_details(driver, href)
+            # if not error and 'https://bashitidepot.com/en/shop/tools-hardware/hand-tools-tools/pliers-cutters/end-cutting-nipper-9-inch/' in href:
+            #     executor.submit(get_details, [d for d in drivers if d['working'] == False][0], href)
+        # executor.shutdown(wait=True)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
             err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
@@ -1773,14 +1785,14 @@ class TemuScrapView(APIView):
                 sleep(5)
                 try:
                     driver.switch_to.window(driver.window_handles[1])
-                    until_visible_with_xpath(driver, "//div[contains(@aria-label, 'reviews from Jordan')]", 60)
+                    until_visible_with_xpath(driver, "//div[contains(@aria-label, 'reviews from Jordan')]")
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
                     if len(soup.select("div[aria-label*='reviews from Jordan'] span")) == 0:
                         return
                     title = soup.select_one("meta[name*='title']")['content']
                     desc = soup.select_one("meta[name*='description']")['content']
-                    in_stock = soup.select_one("div[aria-label*='reviews from Jordan'] span").get_text(strip=True)
+                    in_stock = soup.select_one("div[aria-label*='reviews from Jordan'] span").get_text(strip=True).replace('(','').replace(')','').strip()
 
                     product = {
                         "Name": title,
@@ -1794,9 +1806,10 @@ class TemuScrapView(APIView):
                     errors.append({
                         "url": driver.current_url,
                     })
-                driver.close()
-                driver.switch_to.window(driver.window_handles[0])
-
+                finally:
+                    driver.close()
+                    driver.switch_to.window(driver.window_handles[0])
+        data.sort(key=lambda x: int(x['Sells']), reverse=True)
         df = pd.DataFrame(data)
         df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
