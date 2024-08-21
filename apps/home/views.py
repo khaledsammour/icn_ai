@@ -1958,7 +1958,7 @@ class SportEquipmentScrapView(APIView):
                     # Get the product price
                     price = soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('د.ا','').replace('.','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one("meta[property*='product:price:amount']")['content']
                     # Get discount
-                    discount_elem = soup.select_one("meta[property*='product:price:amount']")['content'] if len(soup.select(".summary .price .amount > bdi"))>1 else None
+                    discount_elem = soup.select_one("meta[property*='product:price:amount']")['content'] if len(soup.select(".summary .price .amount > bdi"))>1 and ' – ' not in str(soup.select_one('.summary .price .amount > bdi').parent.parent) else None
                     discount = float(price) - float(discount_elem) if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.wd-carousel-wrap > div > figure > a')
