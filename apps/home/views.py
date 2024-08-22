@@ -1615,7 +1615,7 @@ class DadaGroupScrapView(APIView):
 def create_browser():
     chrome_options = Options()
     # chrome_options.page_load_strategy = 'eager'
-    # chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+    chrome_options.add_argument('--blink-settings=imagesEnabled=false')
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-web-security')
@@ -1623,7 +1623,7 @@ def create_browser():
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-setuid-sandbox')
     chrome_options.add_argument('--disable-features=NetworkService')
-    # chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
     chrome_options.add_argument('--disable-features=IsolateOrigins')
     chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
     # chrome_options.add_argument('--headless')
@@ -1922,8 +1922,6 @@ class DarwishScrapView(APIView):
         driver.quit()
         return JsonResponse({})
     
-
-
 class SportEquipmentScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = create_browser()
@@ -2067,7 +2065,149 @@ class SportEquipmentScrapView(APIView):
             df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-    
+
+class ACIScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = []
+
+        elements = driver.find_elements(By.CSS_SELECTOR, ".products > .product")
+        for e in elements:
+            hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
+
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    if len(driver.find_elements(By.CSS_SELECTOR, '.summary .out-of-stock'))==0:
+                        title_selector = '.product_title'
+                        description_selector = '#tab-description'
+                        key_words_selector = "meta[property*='og:title']"
+                        product_attributes_selector = ".woocommerce-product-attributes > tbody > tr"
+                        until_visible(driver, title_selector)
+                        href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                        soup = BeautifulSoup(href_res, 'html.parser')
+                        title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                        # Get the product price
+                        price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','.').strip()
+                        # Get discount
+                        discount_elem = soup.select_one('.onsale').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".onsale"))>1 else None
+                        discount = discount_elem if discount_elem else '0'
+                        # Get the main image URL
+                        main_image_elem = soup.select_one('.owl-stage > div.owl-item > div > figure > a')
+                        image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                        # Get additional images
+                        image_elems = soup.select('.owl-stage > div.owl-item > div > figure > a')
+                        images = []
+                        for img in image_elems:
+                            if len(img['href'])>10:
+                                res = getImageUrl(request.data['id'], img['href'])
+                                if res:
+                                    images.append(res)
+                        # Check stock status
+                        in_stock = '3'
+                        # Get product attributes content
+                        description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                        product_attributes_content = description_elem if description_elem else ''
+                        # Get keywords
+                        key_words_elem = soup.select_one(key_words_selector)
+                        keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                        keywords = keyWords.split('//')
+                        if len(product_attributes_content)>0:
+                            keywords = extract_top_keywords(product_attributes_content)
+                            ar_keywords = []
+                            for k in keyWords.split('//'):
+                                keywords.append(k)
+
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        else:
+                            ar_keywords = []
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        
+                        product_attributes_content_json = {}                
+                        product_attributes = soup.select(product_attributes_selector)
+                        for attr in product_attributes:
+                            key = attr.select_one("th").get_text(strip=True)
+                            val = attr.select_one("td").get_text(strip=True)
+                            product_attributes_content_json[translate(key, dest='en')] = translate(val, dest='en')
+
+                        driver.get(href.replace('/en/', '/'))
+                        if len(driver.find_elements(By.CSS_SELECTOR,'.page-header h3.title'))>0:
+                            ar_title = translate(title)
+                            ar_product_attributes_content = translate(product_attributes_content)
+                        else:
+                            until_visible(driver, title_selector)
+                            ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                            ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
+                            ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
+                            ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if ar_soup.select_one(description_selector) else ''
+                            ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
+                            ar_product_attributes_content_json = {}
+                            ar_product_attributes = ar_soup.select(product_attributes_selector)
+                            for attr in ar_product_attributes:
+                                key = attr.select_one("th").get_text(strip=True)
+                                val = attr.select_one("td").get_text(strip=True)
+                                ar_product_attributes_content_json[key] = val
+                        product = {
+                            "Arabic Name": ar_title,
+                            "English Name": title,
+                            "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content)>3 else request.data['arabic_description'],
+                            "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                            "Category Id": request.data['db_category'],
+                            "Arabic Brand": "",
+                            "English Brand": "",
+                            "Unit Price": price,
+                            "Discount Type": "Flat" if discount != "0" else "",
+                            "Discount": discount if discount != "0" else "",
+                            "Unit": "PC",
+                            "Current Stock": in_stock,
+                            "Main Image URL": image,
+                            "Photos URLs": str((",").join(images)) if images else image,
+                            "Video Youtube URL": "",
+                            "English Meta Tags": ','.join(keywords),
+                            "Arabic Meta Tags": ','.join(ar_keywords),
+                            "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                            "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
+                            "wholesale": "no",
+                            "reference_link": href,
+                        }
+                        data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})
+     
 
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
