@@ -1965,7 +1965,12 @@ class SportEquipmentScrapView(APIView):
                     image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
                     # Get additional images
                     image_elems = soup.select('.wd-carousel-wrap > div > figure > a')
-                    images = [getImageUrl(request.data['id'], img['href']) for img in image_elems if len(img['href'])>10]
+                    images = []
+                    for img in image_elems:
+                        if len(img['href'])>10:
+                            res = getImageUrl(request.data['id'], img['href'])
+                            if res:
+                                images.append(res)
                     # Check stock status
                     in_stock = '3'
                     # Get product attributes content
