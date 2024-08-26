@@ -387,6 +387,29 @@
                             </tr>
                             <tr>
                                 <td>
+                                    <p>DiamondStar</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="diamond_star_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="diamond_star_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="diamond_star_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="diamond_star_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="diamondStarScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
                                     <p>Temu</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="temu_url"/>
                                 </td>
@@ -739,7 +762,7 @@
             .catch(error => console.error("Error:", error));
 
     }
-
+    
     function aCIScrapView() {
         fetch("/api/ACIScrapView", {
             method: "POST",
@@ -753,6 +776,27 @@
                 db_category: document.getElementById('aci_db_category').value,
                 description: document.getElementById('aci_description').value,
                 arabic_description: document.getElementById('aci_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function diamondStarScrapView() {
+        fetch("/api/DiamondStarScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "1769",
+                url: document.getElementById('diamond_star_url').value,
+                db_category: document.getElementById('diamond_star_db_category').value,
+                description: document.getElementById('diamond_star_description').value,
+                arabic_description: document.getElementById('diamond_star_arabic_description').value,
             })
         })
             .then(response => response.json())
