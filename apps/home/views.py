@@ -2416,6 +2416,134 @@ class DiamondStarScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
 
+
+class AlrefaiScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            driver.get(url+'&page='+str(index))
+            sleep(3)
+            isExist = check_if_exist(driver, ".products-grid .product", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".products-grid .product")
+            for e in elements:
+                if len(e.find_elements(By.CSS_SELECTOR, '.outofstock')) == 0:
+                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a").get_attribute("href"))
+            index = index + 1
+
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    until_visible_click(driver, 'header .open-menu')
+                    if len(driver.find_elements(By.XPATH, '//*[contains(@class, "language")]/a[contains(text(),"English")]')) > 0:
+                        until_visible_xpath_click(driver, '//*[contains(@class, "language")]/a[contains(text(),"English")]')
+                        until_visible(driver, '.details_content .details_name')
+                    title_selector = '.details_content .details_name'
+                    description_selector = '.details_content .details_text'
+                    key_words_selector = "meta[property*='og:title']"
+                    until_visible(driver, title_selector)
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    # Get the product price
+                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if soup.select_one(".details_content .details_price .theprice") else ''
+                    # Get discount
+                    discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else None
+                    discount = discount_elem if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.slick-track picture img')
+                    image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.slick-track picture img')
+                    images = []
+                    for img in image_elems:
+                        if len(img['src'])>10:
+                            res = getImageUrl(request.data['id'], img['src'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": title,
+                        "English Name": translate(title, dest='en'),
+                        "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})  
+    
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = uc.Chrome(use_subprocess=False)
@@ -2762,3 +2890,108 @@ def click_on_overlay(driver, name):
             except:
                 element.click()
             break
+
+class GenerateBlog(APIView):
+    def post(self, request, *args, **kwargs):
+        options = Options()
+        options.add_experimental_option('detach', True)
+        # options.headless = True
+
+        # Create an instance of Chrome WebDriver
+        driver = webdriver.Chrome(options=options)
+
+        # Open the webpage
+        driver.get('https://katteb.com/ar/sign-in/')
+        driver.maximize_window()
+
+        email_element = driver.find_element(By.ID, 'username')
+        email_element.send_keys("icnnobar@gmail.com")
+        password_element = driver.find_element(By.ID, 'password')
+        password_element.send_keys("Icn@nobar123")
+
+        # Find and click the login button
+        login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
+        login_button.click()
+
+        wait = WebDriverWait(driver, 15)
+        wait.until(EC.url_contains('/dashboard/'))
+
+        headline = request.data['headline']
+        driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
+        until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
+        until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
+        # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
+        # until_visible_click(driver, '.-step-excerpt')
+        # sleep(2)
+        # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
+        # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
+        # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
+        # search.send_keys(Keys.ENTER)
+        # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
+        # until_visible_click(driver, '.-step-excerpt')
+        # sleep(2)
+        until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
+        # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
+        # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        until_visible_click(driver, 'multistep-form-next')
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
+
+        show_article = WebDriverWait(driver, 600).until(
+            EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
+        )
+
+        show_article.click()
+
+        articles_holder = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR,
+                                            'div.fr-element.fr-view'))
+        )  # Replace 'your_div_id' with the actual ID of the div element
+        titleToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1) > h2').get_attribute('innerHTML')
+        descToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1)').get_attribute('innerHTML')
+        if(len(titleToAnalysis)>75):
+            trimmed_string = titleToAnalysis[:75]
+            last_word_index = trimmed_string.rfind(' ')
+
+            if last_word_index != -1:
+                titleToAnalysis = trimmed_string[:last_word_index]
+
+        if(len(descToAnalysis)>251):
+            trimmed_string = descToAnalysis[:251]
+            last_word_index = trimmed_string.rfind(' ')
+
+            if last_word_index != -1:
+                descToAnalysis = trimmed_string[:last_word_index]
+
+        # Copy the selected text to clipboard
+        # for ti in articles_holder.find_elements('streaming-area'):
+
+        ar_output = articles_holder.get_attribute('outerHTML')
+        soup = BeautifulSoup(ar_output, 'html.parser')
+        headers_components = soup.select('streaming-area')
+        res = []
+        en_res = []
+        for comp in headers_components:
+            title = comp.select_one('h2').get_text(strip=True)
+            comp.select_one('h2').extract()
+            content = comp.get_text(" ", strip=True)
+            res.append({
+                'title': title,
+                'description': content,
+            })
+            en_res.append({
+                'title': translate(title, dest='en'),
+                'description': translate(content, dest='en'),
+            })
+        print(res)
+        print(en_res)
+        en_output = translate(ar_output, dest='en')
+        df = pd.DataFrame(res)
+        df.to_excel('output.xlsx', index=False)
+

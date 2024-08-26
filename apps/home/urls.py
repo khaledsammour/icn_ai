@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView
+from .views import ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView
 
 urlpatterns = [
 
@@ -31,5 +31,7 @@ urlpatterns = [
     path('api/SportEquipmentScrapView', SportEquipmentScrapView.as_view()),
     path('api/ACIScrapView', ACIScrapView.as_view()),
     path('api/DiamondStarScrapView', DiamondStarScrapView.as_view()),
+    path('api/GenerateBlog', GenerateBlog.as_view()),
+    path('api/AlrefaiScrapView', AlrefaiScrapView.as_view()),
     path('api/ChangeText', ChangeText.as_view()),
 ]
