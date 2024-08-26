@@ -2306,17 +2306,17 @@ class DiamondStarScrapView(APIView):
                     # Get the product price
                     price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','.').strip()
                     # Get discount
-                    discount_elem = soup.select_one('.onsale').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".onsale"))>1 else None
+                    discount_elem = soup.select_one('.summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text"))>1 else None
                     discount = discount_elem if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.owl-stage > div.owl-item > div > figure > a')
-                    image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                    image = getImageBase64(driver, request.data['id'], main_image_elem['href']) if main_image_elem else ''
                     # Get additional images
                     image_elems = soup.select('.owl-stage > div.owl-item > div > figure > a')
                     images = []
                     for img in image_elems:
                         if len(img['href'])>10:
-                            res = getImageUrl(request.data['id'], img['href'])
+                            res = getImageBase64(driver, request.data['id'], img['href'])
                             if res:
                                 images.append(res)
                     # Check stock status
@@ -2374,7 +2374,7 @@ class DiamondStarScrapView(APIView):
                         "Arabic Brand": "",
                         "English Brand": "",
                         "Unit Price": price,
-                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount Type": "Percent" if discount != "0" else "",
                         "Discount": discount if discount != "0" else "",
                         "Unit": "PC",
                         "Current Stock": in_stock,
@@ -2561,6 +2561,7 @@ def change_text(driver, text):
 
     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
     soup = BeautifulSoup(href_res, 'html.parser')
+    print(soup.select_one('#paraphraser-output-box').get_text(" ",strip=True))
     return soup.select_one('#paraphraser-output-box').get_text(" ",strip=True)
 
 def replace_dimensions(url):
