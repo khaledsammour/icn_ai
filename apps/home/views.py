@@ -2440,6 +2440,8 @@ class AlrefaiScrapView(APIView):
 
         error = False
         for href in hrefs:
+            if 'https://alrefai-petshop.com/product/334652/%D8%B7%D8%B9%D8%A7%D9%85-%D8%A8%D9%8A%D8%B7%D8%B1%D9%8A-%D9%84%D9%84%D9%82%D8%B7%D8%B7-%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%A8%D9%87-%D8%A8%D8%A7%D9%84%D8%AD%D8%B5%D9%88%D8%A7%D8%AA' not in href:
+                continue
             if not error:
                 try:
                     driver.get(href)
@@ -2456,9 +2458,9 @@ class AlrefaiScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if soup.select_one(".details_content .details_price .theprice") else ''
+                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
                     # Get discount
-                    discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else None
+                    discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and len(soup.select(".details_content .details_price .theprice"))>0 else None
                     discount = discount_elem if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.slick-track picture img')
@@ -2493,30 +2495,61 @@ class AlrefaiScrapView(APIView):
                         for keyW in keywords:
                             ar_keywords.append(translate(keyW))
                     
-                    product = {
-                        "Arabic Name": title,
-                        "English Name": translate(title, dest='en'),
-                        "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
-                        "Category Id": request.data['db_category'],
-                        "Arabic Brand": "",
-                        "English Brand": "",
-                        "Unit Price": price,
-                        "Discount Type": "Flat" if discount != "0" else "",
-                        "Discount": discount if discount != "0" else "",
-                        "Unit": "PC",
-                        "Current Stock": in_stock,
-                        "Main Image URL": image,
-                        "Photos URLs": str((",").join(images)) if images else image,
-                        "Video Youtube URL": "",
-                        "English Meta Tags": ','.join(keywords),
-                        "Arabic Meta Tags": ','.join(ar_keywords),
-                        "features": '',
-                        "features_ar": '',
-                        "wholesale": "no",
-                        "reference_link": href,
-                    }
-                    data.append(product)
+                    if len(soup.select('.additions .addition'))>0:
+                        prices = soup.select('.additions .addition')
+                        for pr in prices:
+                            softfix = pr.select_one('.addition-name').get_text(strip=True)
+                            price = pr.select_one('.addition-price').get_text(strip=True).replace('+','').replace('JOD','').strip()
+                            new_title = title + ' - ' + softfix
+                            product = {
+                            "Arabic Name": new_title,
+                            "English Name": translate(new_title, dest='en'),
+                            "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
+                            "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                            "Category Id": request.data['db_category'],
+                            "Arabic Brand": "",
+                            "English Brand": "",
+                            "Unit Price": price,
+                            "Discount Type": "Flat" if discount != "0" else "",
+                            "Discount": discount if discount != "0" else "",
+                            "Unit": "PC",
+                            "Current Stock": in_stock,
+                            "Main Image URL": image,
+                            "Photos URLs": str((",").join(images)) if images else image,
+                            "Video Youtube URL": "",
+                            "English Meta Tags": ','.join(keywords),
+                            "Arabic Meta Tags": ','.join(ar_keywords),
+                            "features": '',
+                            "features_ar": '',
+                            "wholesale": "no",
+                            "reference_link": href,
+                            }
+                            data.append(product)
+                    else:
+                        product = {
+                            "Arabic Name": title,
+                            "English Name": translate(title, dest='en'),
+                            "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
+                            "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                            "Category Id": request.data['db_category'],
+                            "Arabic Brand": "",
+                            "English Brand": "",
+                            "Unit Price": price,
+                            "Discount Type": "Flat" if discount != "0" else "",
+                            "Discount": discount if discount != "0" else "",
+                            "Unit": "PC",
+                            "Current Stock": in_stock,
+                            "Main Image URL": image,
+                            "Photos URLs": str((",").join(images)) if images else image,
+                            "Video Youtube URL": "",
+                            "English Meta Tags": ','.join(keywords),
+                            "Arabic Meta Tags": ','.join(ar_keywords),
+                            "features": '',
+                            "features_ar": '',
+                            "wholesale": "no",
+                            "reference_link": href,
+                        }
+                        data.append(product)
                 except Exception as e:
                     error = True
                     print(e)
