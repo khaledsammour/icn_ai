@@ -2440,8 +2440,6 @@ class AlrefaiScrapView(APIView):
 
         error = False
         for href in hrefs:
-            if 'https://alrefai-petshop.com/product/334652/%D8%B7%D8%B9%D8%A7%D9%85-%D8%A8%D9%8A%D8%B7%D8%B1%D9%8A-%D9%84%D9%84%D9%82%D8%B7%D8%B7-%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%A8%D9%87-%D8%A8%D8%A7%D9%84%D8%AD%D8%B5%D9%88%D8%A7%D8%AA' not in href:
-                continue
             if not error:
                 try:
                     driver.get(href)
@@ -2458,9 +2456,9 @@ class AlrefaiScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
+                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() != '' else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
                     # Get discount
-                    discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and len(soup.select(".details_content .details_price .theprice"))>0 else None
+                    discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() != '' and len(soup.select(".details_content .details_price .theprice"))>0 else None
                     discount = discount_elem if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.slick-track picture img')
