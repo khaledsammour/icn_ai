@@ -83,21 +83,22 @@
   const csrftoken = getCookie('csrftoken');
 
   function diamondStarScrapView() {
-    fetch("/api/GenerateBlog", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        'X-CSRFToken': csrftoken,
-      },
-      body: JSON.stringify({
-        id: "1769",
-        headline: document.getElementById('keyword').value,
-        category: document.getElementById('category').value
-      })
-    })
-      .then(response => response.json())
-      .then(data => console.log(data))
-      .catch(error => console.error("Error:", error));
+    const formData = new FormData();
+formData.append('id', '1769');
+formData.append('headline', document.getElementById('keyword').value);
+formData.append('category', document.getElementById('category').value);
+formData.append('image', document.getElementById('avatar').files[0]);
+
+fetch("/api/GenerateBlog", {
+  method: "POST",
+  headers: {
+    'X-CSRFToken': csrftoken, // Ensure CSRF token is included
+  },
+  body: formData, // Use FormData as the body of the request
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error("Error:", error));
 
   }
 </script>

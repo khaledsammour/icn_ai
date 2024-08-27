@@ -2524,10 +2524,10 @@ class AlrefaiScrapView(APIView):
                             }
                             data.append(product)
                     else:
-                        unit = soup.select_one('.details_price .unit').get_text(strip=True)
+                        unit = soup.select_one('.details_price .unit').get_text(strip=True) if len(soup.select('.details_price .unit'))>0 else ''
                         product = {
-                            "Arabic Name": title + ' - ' + unit,
-                            "English Name": translate(title + ' - ' + unit, dest='en'),
+                            "Arabic Name": f'{title} {' - ' +unit}',
+                            "English Name": translate(f'{title} {' - ' +unit}', dest='en'),
                             "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
                             "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
                             "Category Id": request.data['db_category'],
@@ -2622,7 +2622,28 @@ class TemuScrapView(APIView):
         df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-
+def remove_emoji(string):
+    emoji_pattern = re.compile("["
+                               u"\U0001F600-\U0001F64F"  # emoticons
+                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                               u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                               u"\U00002500-\U00002BEF"  # chinese char
+                               u"\U00002702-\U000027B0"
+                               u"\U00002702-\U000027B0"
+                               u"\U000024C2-\U0001F251"
+                               u"\U0001f926-\U0001f937"
+                               u"\U00010000-\U0010ffff"
+                               u"\u2640-\u2642"
+                               u"\u2600-\u2B55"
+                               u"\u200d"
+                               u"\u23cf"
+                               u"\u23e9"
+                               u"\u231a"
+                               u"\ufe0f"  # dingbats
+                               u"\u3030"
+                               "]+", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', string)
 class ChangeText(APIView):
     def post(self, request, *args, **kwargs):
         chrome_options = Options()
@@ -2650,31 +2671,56 @@ class ChangeText(APIView):
         products = []
         for index, row in dataframe1.iterrows():
             data = row.to_dict()
-            new_desc = change_text(driver, data['English Description'])
-            ar_new_desc = translate(new_desc)
-            products.append({
-                "Arabic Name": data['Arabic Name'],
-                "English Name": data['English Name'],
-                "Arabic Description": ar_new_desc if len(ar_new_desc)>0 else data['Arabic Description'],
-                "English Description": new_desc if len(new_desc)>0 else data['English Description'],
-                "Category Id": data['Category Id'],
-                "Arabic Brand": data['Arabic Brand'],
-                "English Brand": data['English Brand'],
-                "Unit Price": data['Unit Price'],
-                "Discount Type": data['Discount Type'],
-                "Discount": data['Discount'],
-                "Unit": data['Unit'],
-                "Current Stock": data['Current Stock'],
-                "Main Image URL": data['Main Image URL'],
-                "Photos URLs": data['Photos URLs'],
-                "Video Youtube URL": data['Video Youtube URL'],
-                "English Meta Tags": data['English Meta Tags'],
-                "Arabic Meta Tags": data['Arabic Meta Tags'],
-                "features": data['features'],
-                "features_ar": data['features_ar'],
-                "wholesale": data['wholesale'],
-                "reference_link": data['reference_link'],
-            })
+            if data['English Description'] != ' ':
+                new_desc = change_text(driver, translate(remove_emoji(data['English Description']), dest='en'))
+                ar_new_desc = translate(new_desc)
+                products.append({
+                    "Arabic Name": data['Arabic Name'],
+                    "English Name": data['English Name'],
+                    "Arabic Description": ar_new_desc if len(ar_new_desc)>0 else data['Arabic Description'],
+                    "English Description": new_desc if len(new_desc)>0 else data['English Description'],
+                    "Category Id": data['Category Id'],
+                    "Arabic Brand": data['Arabic Brand'],
+                    "English Brand": data['English Brand'],
+                    "Unit Price": data['Unit Price'],
+                    "Discount Type": data['Discount Type'],
+                    "Discount": data['Discount'],
+                    "Unit": data['Unit'],
+                    "Current Stock": data['Current Stock'],
+                    "Main Image URL": data['Main Image URL'],
+                    "Photos URLs": data['Photos URLs'],
+                    "Video Youtube URL": data['Video Youtube URL'],
+                    "English Meta Tags": data['English Meta Tags'],
+                    "Arabic Meta Tags": data['Arabic Meta Tags'],
+                    "features": data['features'],
+                    "features_ar": data['features_ar'],
+                    "wholesale": data['wholesale'],
+                    "reference_link": data['reference_link'],
+                })
+            else: 
+                products.append({
+                    "Arabic Name": data['Arabic Name'],
+                    "English Name": data['English Name'],
+                    "Arabic Description": data['Arabic Description'],
+                    "English Description": data['English Description'],
+                    "Category Id": data['Category Id'],
+                    "Arabic Brand": data['Arabic Brand'],
+                    "English Brand": data['English Brand'],
+                    "Unit Price": data['Unit Price'],
+                    "Discount Type": data['Discount Type'],
+                    "Discount": data['Discount'],
+                    "Unit": data['Unit'],
+                    "Current Stock": data['Current Stock'],
+                    "Main Image URL": data['Main Image URL'],
+                    "Photos URLs": data['Photos URLs'],
+                    "Video Youtube URL": data['Video Youtube URL'],
+                    "English Meta Tags": data['English Meta Tags'],
+                    "Arabic Meta Tags": data['Arabic Meta Tags'],
+                    "features": data['features'],
+                    "features_ar": data['features_ar'],
+                    "wholesale": data['wholesale'],
+                    "reference_link": data['reference_link'],
+                })
 
         df = pd.DataFrame(products)
         df.to_excel('excel/new_'+request.data['id']+'_products.xlsx', index=False)
@@ -2925,6 +2971,7 @@ def click_on_overlay(driver, name):
 
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
+        image = request.FILES.get('image')
         options = Options()
         options.add_experimental_option('detach', True)
         # options.headless = True
@@ -2949,58 +2996,43 @@ class GenerateBlog(APIView):
         wait.until(EC.url_contains('/dashboard/'))
 
         headline = request.data['headline']
-        driver.get('https://katteb.com/ar/dashboard/activities/2873537@content-producer/')
-        # driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
-        # until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
-        # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
+        driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
+        until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
+        until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
+        # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
         # until_visible_click(driver, '.-step-excerpt')
         # sleep(2)
-        # # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
-        # # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
-        # # until_visible_click(driver, '.-step-excerpt')
-        # # sleep(2)
-        # # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
-        # # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
-        # # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
-        # # search.send_keys(Keys.ENTER)
-        # # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
-        # # until_visible_click(driver, '.-step-excerpt')
-        # # sleep(2)
-        # until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
-        # # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
-        # # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
+        # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
+        # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
+        # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
+        # search.send_keys(Keys.ENTER)
+        # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
         # until_visible_click(driver, '.-step-excerpt')
         # sleep(2)
-        # until_visible_click(driver, 'multistep-form-next')
-        # until_visible_click(driver, '.-step-excerpt')
-        # sleep(2)
-        # until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
+        until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
+        # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
+        # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        until_visible_click(driver, 'multistep-form-next')
+        until_visible_click(driver, '.-step-excerpt')
+        sleep(2)
+        until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
 
-        # show_article = WebDriverWait(driver, 600).until(
-        #     EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
-        # )
+        show_article = WebDriverWait(driver, 600).until(
+            EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
+        )
 
-        # show_article.click()
+        show_article.click()
 
         articles_holder = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR,
                                             'div.fr-element.fr-view'))
         )  # Replace 'your_div_id' with the actual ID of the div element
-        # titleToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1) > h2').get_attribute('innerHTML')
-        # descToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1)').get_attribute('innerHTML')
-        # if(len(titleToAnalysis)>75):
-        #     trimmed_string = titleToAnalysis[:75]
-        #     last_word_index = trimmed_string.rfind(' ')
-
-        #     if last_word_index != -1:
-        #         titleToAnalysis = trimmed_string[:last_word_index]
-
-        # if(len(descToAnalysis)>251):
-        #     trimmed_string = descToAnalysis[:251]
-        #     last_word_index = trimmed_string.rfind(' ')
-
-        #     if last_word_index != -1:
-        #         descToAnalysis = trimmed_string[:last_word_index]
+        titleToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1) > h2').get_attribute('innerHTML')
 
         ar_output = articles_holder.get_attribute('outerHTML')
         soup = BeautifulSoup(ar_output, 'html.parser')
@@ -3019,58 +3051,53 @@ class GenerateBlog(APIView):
                 'title': translate(title, dest='en'),
                 'description': translate(content, dest='en'),
             })
-        print(res)
-        print(en_res)
-        data = {'data': {
-            "category_id": 70,
+        data = {'data': json.dumps({
+            "category_id": request.data['category'],
             "author": {
             "en": "ICN",
             "sa": "ICN"
             },
             "title": {
-                "en": "English Title",
-                "sa": "عنوان عربي"
+                "en": translate(titleToAnalysis, dest='en'),
+                "sa": titleToAnalysis
             },
             "short_description": {
-                "en": "Short description in English.",
-                "sa": "وصف قصير باللغة العربية."
+                "en": en_res[0]['description'],
+                "sa": res[0]['description']
             },
             'description': {
                 "en": [e['description'] for e in en_res],
-                "ar": [e['description'] for e in res]
+                "sa": [e['description'] for e in res]
             },
             'bookmark': {
                 "en": [e['title'] for e in en_res],
-                "ar": [e['title'] for e in res]
+                "sa": [e['title'] for e in res]
             },
             "meta_description": {
-                "en": "Meta description in English.",
-                "sa": "وصف ميتا باللغة العربية."
+                "en": en_res[0]['description'],
+                "sa": res[0]['description']
             },
             "meta_keywords": {
                 "en": "keyword1, keyword2",
                 "sa": "الكلمة المفتاحية1, الكلمة المفتاحية2"
             },
             "meta_title": {
-                "en": "Meta Title in English",
-                "sa": "عنوان ميتا باللغة العربية"
+                "en": translate(titleToAnalysis, dest='en'),
+                "sa": titleToAnalysis
             }
-        }}
+        })}
         try:
             # Send the POST request and wait for the response
-            response = requests.post('https://www.icn.com/api/v1/blog/store', data=data)
+            response = requests.post('https://www.icn.com/api/v1/blog/store', data=data, files=[('image',image)])
             
             # Check if the request was successful
             if response.status_code == 200:
                 print('Request was successful!')
                 print('Response:', response.text)  # If the response contains JSON data
-                return True if response.text == "1" else False
             else:
                 print('Request failed with status code:', response.status_code)
                 print('Response:', response.text)
         except requests.exceptions.RequestException as e:
             print('An error occurred:', e)
-        en_output = translate(ar_output, dest='en')
-        df = pd.DataFrame(res)
-        df.to_excel('output.xlsx', index=False)
-
+        driver.quit()
+        return JsonResponse({})
