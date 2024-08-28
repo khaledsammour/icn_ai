@@ -2576,6 +2576,246 @@ class AlrefaiScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
     
+class NumberOneScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            driver.get(url+'?page='+str(index))
+            sleep(3)
+            isExist = check_if_exist(driver, ".main-products > .product-layout", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".main-products > .product-layout:not(.out-of-stock)")
+            for e in elements:
+                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-img").get_attribute("href"))
+            index = index + 1
+
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.page-title'
+                    description_selector = '.short_description'
+                    key_words_selector = "meta[property*='og:title']"
+                    until_visible(driver, title_selector)
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    # Get the product price
+                    price = soup.select_one('.product-price-old').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-info .product-labels > span > b"))>0 and soup.select_one('.product-info .product-labels > span > b').get_text(strip=True).replace('%','').replace('-','.').strip() != '' else soup.select_one('.product-price').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-price"))>0 else ''
+                    # Get discount
+                    discount_elem = soup.select_one('.product-info .product-labels > span > b').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".product-info .product-labels > span > b"))>0 else None
+                    discount = discount_elem if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.product-info .main-image .swiper-wrapper .swiper-slide img')
+                    image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.product-info .main-image .swiper-wrapper .swiper-slide img')
+                    images = []
+                    for img in image_elems:
+                        if len(img['src'])>10:
+                            res = getImageUrl(request.data['id'], img['src'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Percent" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})  
+
+class DermacolScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            if index != 1:
+                driver.get(url+str(index)+'/')
+            sleep(3)
+            isExist = check_if_exist(driver, ".c-products__list > .c-products__item a", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".c-products__list > .c-products__item a")
+            for e in elements:
+                hrefs.append(e.get_attribute("href"))
+            index = index + 1
+
+        error = False
+        for href in [hrefs[0]]:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.b-detail-desc__subtitle'
+                    description_selector = '.grid:nth-child(2)'
+                    key_words_selector = "meta[property*='og:title']"
+                    until_visible(driver, title_selector)
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.slick-track > li > a')
+                    image = getImageUrl(request.data['id'], 'https://www.dermacol.com.ar/'+main_image_elem['href']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.slick-track > li > a')
+                    images = []
+                    for img in image_elems:
+                        if len(img['href'])>10:
+                            res = getImageUrl(request.data['id'], 'https://www.dermacol.com.ar/'+img['href'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text("\n",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": 'Dermacol - ' + translate(title),
+                        "English Name": 'Dermacol - ' + title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": "0",
+                        "Discount Type": "",
+                        "Discount": "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, translate(d['English Description'], dest='en')) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+        driver.quit()
+        return JsonResponse({})  
+  
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = uc.Chrome(use_subprocess=False)
@@ -3031,8 +3271,7 @@ class GenerateBlog(APIView):
         articles_holder = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR,
                                             'div.fr-element.fr-view'))
-        )  # Replace 'your_div_id' with the actual ID of the div element
-        titleToAnalysis  = driver.find_element(By.CSS_SELECTOR, 'div.fr-element.fr-view streaming-area:nth-child(1) > h2').get_attribute('innerHTML')
+        )
 
         ar_output = articles_holder.get_attribute('outerHTML')
         soup = BeautifulSoup(ar_output, 'html.parser')
@@ -3051,6 +3290,11 @@ class GenerateBlog(APIView):
                 'title': translate(title, dest='en'),
                 'description': translate(content, dest='en'),
             })
+        keywords = extract_top_keywords(en_res[0]['description'])
+        ar_keywords = []
+        for keyW in keywords:
+            ar_keywords.append(translate(keyW))
+            
         data = {'data': json.dumps({
             "category_id": request.data['category'],
             "author": {
@@ -3058,8 +3302,8 @@ class GenerateBlog(APIView):
             "sa": "ICN"
             },
             "title": {
-                "en": translate(titleToAnalysis, dest='en'),
-                "sa": titleToAnalysis
+                "en": translate(headline, dest='en'),
+                "sa": headline
             },
             "short_description": {
                 "en": en_res[0]['description'],
@@ -3078,12 +3322,12 @@ class GenerateBlog(APIView):
                 "sa": res[0]['description']
             },
             "meta_keywords": {
-                "en": "keyword1, keyword2",
-                "sa": "الكلمة المفتاحية1, الكلمة المفتاحية2"
+                "en": ','.join(keywords),
+                "sa": ','.join(ar_keywords)
             },
             "meta_title": {
-                "en": translate(titleToAnalysis, dest='en'),
-                "sa": titleToAnalysis
+                "en": translate(headline, dest='en'),
+                "sa": headline
             }
         })}
         try:
