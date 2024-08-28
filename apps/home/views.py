@@ -2750,12 +2750,11 @@ class DermacolScrapView(APIView):
                     in_stock = '3'
                     # Get product attributes content
                     descs = soup.select('.grid:nth-child(2) > .grid__cell > .b-content:not(.hide-mobile-up)')
-                    product_attributes_content = '<div class="row" style="text-align: end;">'
+                    product_attributes_content = '<div class="row">'
                     for desc in descs:
                         product_attributes_content += '<div class="col-6">'
                         product_attributes_content += '<h2 style="font-weight: bold;">' + desc.select_one('h2').get_text(strip=True) + '</h2>'
-                        desc.select_one('h2').unwrap()
-                        product_attributes_content += '<p>' + desc.get_text(strip=True) + '</p>'
+                        product_attributes_content += '<p>' + desc.get_text(strip=True).replace(desc.select_one('h2').get_text(strip=True), '') + '</p>'
                         product_attributes_content += '</div>'
                     product_attributes_content += '</div>'
                     # description_elem = soup.select_one(description_selector).get_text("\n",strip=True) if soup.select_one(description_selector) else ''
@@ -2763,25 +2762,26 @@ class DermacolScrapView(APIView):
                     # Get keywords
                     key_words_elem = soup.select_one(key_words_selector)
                     keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-                    keywords = keyWords.split('//')
+                    ar_keywords = keyWords.split('//')
                     if len(product_attributes_content)>0:
-                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = extract_top_keywords(product_attributes_content)
                         ar_keywords = []
+                        keywords = []
                         for k in keyWords.split('//'):
-                            keywords.append(k)
+                            ar_keywords.append(k)
 
-                        for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
+                        for keyW in ar_keywords:
+                            keywords.append(translate(keyW, dest='en'))
                     else:
-                        ar_keywords = []
+                        keywords = []
                         for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
+                            keywords.append(translate(keyW, dest='en'))
                     
                     product = {
                         "Arabic Name": 'Dermacol - ' + translate(title),
                         "English Name": 'Dermacol - ' + title,
                         "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": translate(product_attributes_content,dest='en').replace('text-align: end','text-align: start') if len(product_attributes_content) > 3 else request.data['description'],
+                        "English Description": translate(product_attributes_content,dest='en') if len(product_attributes_content) > 3 else request.data['description'],
                         "Category Id": request.data['db_category'],
                         "Arabic Brand": "",
                         "English Brand": "",
