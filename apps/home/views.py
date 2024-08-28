@@ -2302,6 +2302,8 @@ class DiamondStarScrapView(APIView):
                     until_visible(driver, title_selector)
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
+                    if len(soup.select('.summary .price .amount > bdi'))==0:
+                        continue
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
                     price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','.').strip()
@@ -2610,9 +2612,9 @@ class NumberOneScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select_one('.product-price-old').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-info .product-labels > span > b"))>0 and soup.select_one('.product-info .product-labels > span > b').get_text(strip=True).replace('%','').replace('-','.').strip() != '' else soup.select_one('.product-price').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-price"))>0 else ''
+                    price = soup.select_one('.product-price-old').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-info .product-labels > span:last-child > b"))>0 and soup.select_one('.product-info .product-labels > span:last-child > b').get_text(strip=True).replace('%','').replace('-','.').strip() != '' else soup.select_one('.product-price').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-price"))>0 else ''
                     # Get discount
-                    discount_elem = soup.select_one('.product-info .product-labels > span > b').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".product-info .product-labels > span > b"))>0 else None
+                    discount_elem = soup.select_one('.product-info .product-labels > span:last-child > b').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".product-info .product-labels > span:last-child > b"))>0 else None
                     discount = discount_elem if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.product-info .main-image .swiper-wrapper .swiper-slide img')
@@ -2720,18 +2722,19 @@ class DermacolScrapView(APIView):
             index = index + 1
 
         error = False
-        for href in [hrefs[0]]:
+        for href in hrefs:
             if not error:
                 try:
                     driver.get(href)
                     sleep(1)
-                    title_selector = '.b-detail-desc__subtitle'
-                    description_selector = '.grid:nth-child(2)'
+                    title_selector = '.h2.b-detail-desc__title'
                     key_words_selector = "meta[property*='og:title']"
                     until_visible(driver, title_selector)
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    if 'ml' not in title and len(soup.select('.b-detail-desc__unit strong'))>0:
+                        title += ' ' + soup.select_one('.b-detail-desc__unit strong').get_text(strip=True)
                     # Get the main image URL
                     main_image_elem = soup.select_one('.slick-track > li > a')
                     image = getImageUrl(request.data['id'], 'https://www.dermacol.com.ar/'+main_image_elem['href']) if main_image_elem else ''
@@ -2746,8 +2749,17 @@ class DermacolScrapView(APIView):
                     # Check stock status
                     in_stock = '3'
                     # Get product attributes content
-                    description_elem = soup.select_one(description_selector).get_text("\n",strip=True) if soup.select_one(description_selector) else ''
-                    product_attributes_content = description_elem if description_elem else ''
+                    descs = soup.select('.grid:nth-child(2) > .grid__cell > .b-content:not(.hide-mobile-up)')
+                    product_attributes_content = '<div class="row" style="text-align: end;">'
+                    for desc in descs:
+                        product_attributes_content += '<div class="col-6">'
+                        product_attributes_content += '<h2 style="font-weight: bold;">' + desc.select_one('h2').get_text(strip=True) + '</h2>'
+                        desc.select_one('h2').unwrap()
+                        product_attributes_content += '<p>' + desc.get_text(strip=True) + '</p>'
+                        product_attributes_content += '</div>'
+                    product_attributes_content += '</div>'
+                    # description_elem = soup.select_one(description_selector).get_text("\n",strip=True) if soup.select_one(description_selector) else ''
+                    # product_attributes_content = description_elem if description_elem else ''
                     # Get keywords
                     key_words_elem = soup.select_one(key_words_selector)
                     keyWords = key_words_elem['content'].strip() if key_words_elem else ''
@@ -2768,8 +2780,8 @@ class DermacolScrapView(APIView):
                     product = {
                         "Arabic Name": 'Dermacol - ' + translate(title),
                         "English Name": 'Dermacol - ' + title,
-                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": translate(product_attributes_content,dest='en').replace('text-align: end','text-align: start') if len(product_attributes_content) > 3 else request.data['description'],
                         "Category Id": request.data['db_category'],
                         "Arabic Brand": "",
                         "English Brand": "",
@@ -2802,17 +2814,7 @@ class DermacolScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, translate(d['English Description'], dest='en')) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            
         driver.quit()
         return JsonResponse({})  
   
