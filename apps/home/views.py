@@ -31,42 +31,15 @@ import yake
 from .googleSuggetion import api_call
 import undetected_chromedriver as uc
 import traceback
-# import torch
-# from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-
-# model = AutoModelForSeq2SeqLM.from_pretrained("ramsrigouthamg/t5-large-paraphraser-diverse-high-quality")
-# tokenizer = AutoTokenizer.from_pretrained("ramsrigouthamg/t5-large-paraphraser-diverse-high-quality")
-
-# import torch
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# print ("device ",device)
-# model = model.to(device)
-
-# def get_paraphrased_sentences(model, tokenizer, sentence):
-#   # tokenize the text to be form of a list of token IDs
-#   encoding = tokenizer.encode_plus(sentence,max_length =len(sentence), padding='max_length', return_tensors="pt")
-#   input_ids,attention_mask  = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
-#   # generate the paraphrased sentences
-#   model.eval()
-#   beam_outputs = model.generate(
-#     input_ids=input_ids,attention_mask=attention_mask,
-#     max_length=len(sentence),  # Reduced max_length
-#     early_stopping=True,
-#     num_beams=5,     # Reduced number of beams
-#     num_return_sequences=1,
-#     length_penalty=1.0
-#   )
-#   # decode the generated sentences using the tokenizer to get them back to text
-#   return tokenizer.batch_decode(beam_outputs, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-# print('-'*50, get_paraphrased_sentences(model, tokenizer, "Luxcl Hair Straightener 60W LHS-5302 220-240V 50-60Hz 35W LED lights for 6 temperatures Precise digital temperature 155-230Â°C 2 x 120mm ceramic heating plates Auto shut-off after 1 hour Temperature control Hinge lock for easy storage PTC rapid heating system 360Â° rotatable cable"))
+from openpyxl import load_workbook
+import io
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 def index(request):
     context = {'segment': 'index'}
 
     html_template = loader.get_template('home/index.html')
     return HttpResponse(html_template.render(context, request))
-
-
 
 def pages(request):
     context = {}
@@ -92,8 +65,6 @@ def pages(request):
     except:
         html_template = loader.get_template('home/page-500.html')
         return HttpResponse(html_template.render(context, request))
-
-
 
 def checkProduct(url):
     url = 'https://www.icn.com/api/v1/check/product'
@@ -1685,10 +1656,6 @@ def create_browser():
     driver.maximize_window()
     return driver
 
-# drivers = []
-# for i in range(10):
-#     drivers.append({'driver': create_browser(), 'working': False})
-
 class BashitiScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = create_browser()
@@ -2299,14 +2266,17 @@ class DiamondStarScrapView(APIView):
                     description_selector = '#tab-description'
                     key_words_selector = "meta[property*='og:title']"
                     product_attributes_selector = ".woocommerce-product-attributes > tbody > tr"
-                    until_visible(driver, title_selector)
+                    try: 
+                        until_visible(driver, title_selector)
+                    except: 
+                        continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
                     if len(soup.select('.summary .price .amount > bdi'))==0:
                         continue
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','.').strip()
+                    price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','').strip()
                     # Get discount
                     discount_elem = soup.select_one('.summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text"))>1 else None
                     discount = discount_elem if discount_elem else '0'
@@ -2418,7 +2388,6 @@ class DiamondStarScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
 
-
 class AlrefaiScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = create_browser()
@@ -2458,7 +2427,7 @@ class AlrefaiScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() != '' else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','.').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
+                    price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','').strip() != '' else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
                     # Get discount
                     discount_elem = soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','.').strip() != '' and len(soup.select(".details_content .details_price .theprice"))>0 else None
                     discount = discount_elem if discount_elem else '0'
@@ -2612,7 +2581,7 @@ class NumberOneScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select_one('.product-price-old').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-info .product-labels > span:last-child > b"))>0 and soup.select_one('.product-info .product-labels > span:last-child > b').get_text(strip=True).replace('%','').replace('-','.').strip() != '' else soup.select_one('.product-price').get_text(strip=True).replace('JOD','').replace(',','.').strip() if len(soup.select(".product-price"))>0 else ''
+                    price = soup.select_one('.product-price-old').get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select(".product-info .product-labels > span:last-child > b"))>0 and soup.select_one('.product-info .product-labels > span:last-child > b').get_text(strip=True).replace('%','').replace('-','.').strip() != '' else soup.select_one('.product-price').get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select(".product-price"))>0 else ''
                     # Get discount
                     discount_elem = soup.select_one('.product-info .product-labels > span:last-child > b').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".product-info .product-labels > span:last-child > b"))>0 else None
                     discount = discount_elem if discount_elem else '0'
@@ -2729,7 +2698,8 @@ class DermacolScrapView(APIView):
                     sleep(1)
                     title_selector = '.h2.b-detail-desc__title'
                     key_words_selector = "meta[property*='og:title']"
-                    until_visible(driver, title_selector)
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
@@ -2817,6 +2787,407 @@ class DermacolScrapView(APIView):
             
         driver.quit()
         return JsonResponse({})  
+  
+class UpdateStoreScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            if index != 1:
+                driver.get(url+str(index)+'/')
+            sleep(3)
+            isExist = check_if_exist(driver, ".products > .wd-product a.product-image-link", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".products > .wd-product a.product-image-link")
+            for e in elements:
+                hrefs.append(e.get_attribute("href"))
+            index = index + 1
+
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.product_title'
+                    key_words_selector = "meta[property*='og:title']"
+                    description_selector = 'div.single-product-page > div > section:nth-child(4) .elementor-widget-wrap'
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = soup.select_one(title_selector).get_text(strip=True)
+                    # Get the product price
+                    price = soup.select_one('.single-product-page div[data-widget_type*="wd_single_product_price.default"] .price .woocommerce-Price-amount.amount bdi').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select('.single-product-page div[data-widget_type*="wd_single_product_price.default"] .price .woocommerce-Price-amount.amount bdi'))>0 else ''
+                    # Get discount
+                    discount_elem = soup.select_one('div.single-product-page > div > section:nth-child(2) .onsale').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select("div.single-product-page > div > section:nth-child(2) .onsale"))>0 else None
+                    discount = discount_elem if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.woocommerce-product-gallery__wrapper > .wd-carousel-wrap > div > figure > a')
+                    image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.woocommerce-product-gallery__wrapper > .wd-carousel-wrap > div > figure > a')
+                    images = []
+                    for img in image_elems:
+                        if len(img['href'])>10:
+                            res = getImageUrl(request.data['id'], img['href'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product_attributes_content_json = {}                
+                    ar_product_attributes_content_json = {}                
+                    product_attributes = soup.select('div.single-product-page > div > section:nth-child(5) .elementor-widget-wrap table > tbody > tr')
+                    for attr in product_attributes:
+                        key = attr.select_one("th").get_text(strip=True)
+                        val = attr.select_one("td").get_text(strip=True)
+                        ar_product_attributes_content_json[translate(key)] = translate(val)
+                        product_attributes_content_json[key] = val
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Percent" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                        "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            
+        driver.quit()
+        return JsonResponse({})  
+
+class TahboubScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        url = request.data['url']
+        driver.get(url)
+        sleep(1)
+        isExist = True
+        index = 1
+        data = []
+        errors = []
+        hrefs = []
+        while(isExist):
+            if index != 1:
+                driver.get(url+'?page='+str(index))
+            sleep(3)
+            isExist = check_if_exist(driver, ".product-list > .product-item a.product-item__title.link", "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, ".product-list > .product-item a.product-item__title.link")
+            for e in elements:
+                hrefs.append(e.get_attribute("href"))
+            index = index + 1
+
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.product-meta__title '
+                    key_words_selector = "meta[property*='og:title']"
+                    description_selector = '.product-block-list__item--description .card__section'
+                    until_visible(driver, '.product-gallery__carousel .product-gallery__carousel-item img')
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = soup.select_one(title_selector).get_text(strip=True)
+                    # Get the product price
+                    price = soup.select_one('.product-block-list__item--info .price-list > .price.price--compare').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select('.product-block-list__item--info .price-list > .price.price--compare'))>0 else ''
+                    # Get discount
+                    discount_elem = soup.select_one('.product-block-list__item--info .product-label--on-sale > span').get_text(strip=True).replace('JD','').replace('-','').strip() if len(soup.select(".product-block-list__item--info .product-label--on-sale > span"))>0 else None
+                    discount = discount_elem if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.product-gallery__carousel .product-gallery__carousel-item >div > div > img')
+                    image = getImageUrl(request.data['id'], 'https:'+main_image_elem['data-zoom']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.product-gallery__carousel .product-gallery__carousel-item >div > div > img')
+                    images = []
+                    for img in image_elems:
+                        print(img)
+                        if len(img['data-zoom'])>10:
+                            res = getImageUrl(request.data['id'], 'https:'+img['data-zoom'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    # product_attributes_content_json = {}                
+                    # ar_product_attributes_content_json = {}                
+                    # product_attributes = soup.select('div.single-product-page > div > section:nth-child(5) .elementor-widget-wrap table > tbody > tr')
+                    # for attr in product_attributes:
+                    #     key = attr.select_one("th").get_text(strip=True)
+                    #     val = attr.select_one("td").get_text(strip=True)
+                    #     ar_product_attributes_content_json[translate(key)] = translate(val)
+                    #     product_attributes_content_json[key] = val
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            driver.get('https://www.scribbr.com/paraphrasing-tool/')
+            until_visible(driver, '#QuillBotPphrIframe')
+            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+            driver.get(iframe.get_attribute('src'))
+            for d in data:
+                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
+                if len(changed_product_attributes_content)>5:
+                    d['English Description'] = changed_product_attributes_content
+                    d['Arabic Description'] = translate(changed_product_attributes_content)
+            df = pd.DataFrame(data)
+            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            
+        driver.quit()
+        return JsonResponse({})  
+  
+class DelfyScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get('file')
+        brand = request.data['brand']
+        title_selector = request.data['title_selector']
+        description_selector = request.data['description_selector']
+        image_selector = request.data['image_selector']
+        image_attr = request.data['image_attr']
+        store_id = request.data['id']
+        key_words_selector = "meta[property*='og:title']"
+        if not file or not isinstance(file, InMemoryUploadedFile):
+            return JsonResponse({"error": "No file provided or invalid file"})
+        
+        try:
+            # Read the file and load it into openpyxl
+            file_content = file.read()
+            file_name = file.name
+            wb = load_workbook(filename=io.BytesIO(file_content))
+            sheet = wb.active
+            
+            # Process the Excel file (example: read cell values)
+            headers = [str(cell.value).strip() for cell in sheet[1]]
+            
+            # Process the Excel file and format data as an array of objects
+            excel_data = []
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                if all(cell is None for cell in row):
+                    continue  # Skip empty rows
+                row_data = {headers[i]: row[i] for i in range(len(headers))}
+                excel_data.append(row_data)
+
+            # You can process or save the data as needed
+            driver = create_browser()
+            sleep(1)
+            data = []
+            errors = []
+            error = False
+            for d in excel_data[:5]:
+                href = d['LINK']
+                price = d['price']
+                category = d['category  ID']
+                if not error:
+                    try:
+                        driver.get(href)
+                        sleep(1)
+                        until_visible(driver, image_selector)
+                        href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                        soup = BeautifulSoup(href_res, 'html.parser')
+                        title = soup.select_one(title_selector).get_text(strip=True)
+                        # Get the main image URL
+                        main_image_elem = soup.select_one(image_selector)
+                        image = getImageUrl(store_id, main_image_elem[image_attr]) if main_image_elem else ''
+                        # Get additional images
+                        image_elems = soup.select(image_selector)
+                        images = []
+                        for img in image_elems:
+                            if len(img[image_attr])>10:
+                                res = getImageUrl(store_id, img[image_attr])
+                                if res:
+                                    images.append(res)
+                        description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                        product_attributes_content = description_elem if description_elem else ''
+                        # Get keywords
+                        key_words_elem = soup.select_one(key_words_selector)
+                        keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                        keywords = keyWords.split('//')
+                        if len(product_attributes_content)>0:
+                            keywords = extract_top_keywords(product_attributes_content)
+                            ar_keywords = []
+                            for k in keyWords.split('//'):
+                                keywords.append(k)
+
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        else:
+                            ar_keywords = []
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        
+                        product = {
+                            "Arabic Name": brand + ' ' + translate(title),
+                            "English Name": brand + ' ' + title,
+                            "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else '',
+                            "English Description": product_attributes_content if len(product_attributes_content) > 3 else '',
+                            "Category Id": category,
+                            "Arabic Brand": "",
+                            "English Brand": "",
+                            "Unit Price": price,
+                            "Discount Type": "",
+                            "Discount": "",
+                            "Unit": "PC",
+                            "Current Stock": '3',
+                            "Main Image URL": image,
+                            "Photos URLs": str((",").join(images)) if images else image,
+                            "Video Youtube URL": "",
+                            "English Meta Tags": ','.join(keywords),
+                            "Arabic Meta Tags": ','.join(ar_keywords),
+                            "features": '',
+                            "features_ar": '',
+                            "wholesale": "no",
+                            "reference_link": href,
+                        }
+                        data.append(product)
+                    except Exception as e:
+                        error = True
+                        print(e)
+                        traceback.print_exc()
+                        errors.append({
+                            "url": href
+                        })   
+            if len(errors)>0:
+                err_df = pd.DataFrame(errors)
+                err_df.to_excel('excel/'+file_name+'_errors.xlsx', index=False)
+            else:
+                df = pd.DataFrame(data)
+                df.to_excel('excel/'+file_name+'_products.xlsx', index=False)
+                driver.get('https://www.scribbr.com/paraphrasing-tool/')
+                until_visible(driver, '#QuillBotPphrIframe')
+                iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+                driver.get(iframe.get_attribute('src'))
+                for d in data:
+                    changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 else ''
+                    if len(changed_product_attributes_content)>5:
+                        d['English Description'] = changed_product_attributes_content
+                        d['Arabic Description'] = translate(changed_product_attributes_content)
+                df = pd.DataFrame(data)
+                df.to_excel('excel/new_'+file_name+'_products.xlsx', index=False)
+                
+            driver.quit()
+            return JsonResponse({})  
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
   
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
