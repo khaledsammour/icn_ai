@@ -1043,13 +1043,34 @@
     function delfyScrapView() {
         const csrftoken = getCookie('csrftoken');
         const formData = new FormData();
-        formData.append('id', '2982');
-        formData.append('brand', document.getElementById('brand').value);
+        let id =''
+        let brand = document.getElementById('brand').value
+        if (brand == 'Delfy'){
+            id = '2982'
+            title_selector= '.detail-product-name'
+            description_selector = '#description'
+            image_selector = '#lightSlider > li'
+            image_attr = 'data-src'
+        } else if (brand == 'Lacabine') {
+            id = '3011'
+            title_selector= 'h1[itemprop*="name"]'
+            description_selector = 'div[itemprop*="description"]'
+            image_selector = '.owl-stage li > img'
+            image_attr = 'data-image-large-src'
+        } else if (brand == 'Garnier') {
+            id = '2959'
+            title_selector= '.product-detail__header--brand'
+            description_selector = '#product_information .product-note__description'
+            image_selector = '.product-media__carousel-wrapper img[srcset]'
+            image_attr = 'srcset'
+        }
+        formData.append('id', id);
+        formData.append('brand', brand);
         formData.append('file', document.getElementById('file').files[0]);
-        formData.append('title_selector', '.detail-product-name');
-        formData.append('description_selector', '#description');
-        formData.append('image_selector', '#lightSlider > li');
-        formData.append('image_attr', 'data-src');
+        formData.append('title_selector', title_selector);
+        formData.append('description_selector', description_selector);
+        formData.append('image_selector', image_selector);
+        formData.append('image_attr', image_attr);
         fetch("/api/DelfyScrapView", {
         method: "POST",
         headers: {

@@ -2276,7 +2276,7 @@ class DiamondStarScrapView(APIView):
                         continue
                     title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
                     # Get the product price
-                    price = soup.select('.summary .price .amount > bdi')[1].get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','').strip()
+                    price = soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('JD','').replace(',','').strip()
                     # Get discount
                     discount_elem = soup.select_one('.summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select(".summary .berocket_better_labels_position_left .berocket_better_labels_line .b_span_text"))>1 else None
                     discount = discount_elem if discount_elem else '0'
@@ -2346,8 +2346,8 @@ class DiamondStarScrapView(APIView):
                         "Arabic Brand": "",
                         "English Brand": "",
                         "Unit Price": price,
-                        "Discount Type": "Percent" if discount != "0" else "",
-                        "Discount": discount if discount != "0" else "",
+                        "Discount Type": "",
+                        "Discount": "",
                         "Unit": "PC",
                         "Current Stock": in_stock,
                         "Main Image URL": image,
@@ -2951,7 +2951,10 @@ class TahboubScrapView(APIView):
                     title_selector = '.product-meta__title '
                     key_words_selector = "meta[property*='og:title']"
                     description_selector = '.product-block-list__item--description .card__section'
-                    until_visible(driver, '.product-gallery__carousel .product-gallery__carousel-item img')
+                    try:
+                        until_visible(driver, '.product-gallery__carousel .product-gallery__carousel-item img')
+                    except: 
+                        pass
                     if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
                         continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
@@ -3100,24 +3103,27 @@ class DelfyScrapView(APIView):
                 if not error:
                     try:
                         driver.get(href)
-                        sleep(1)
+                        sleep(5)
                         until_visible(driver, image_selector)
                         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                         soup = BeautifulSoup(href_res, 'html.parser')
                         title = soup.select_one(title_selector).get_text(strip=True)
                         # Get the main image URL
                         main_image_elem = soup.select_one(image_selector)
-                        image = getImageUrl(store_id, main_image_elem[image_attr]) if main_image_elem else ''
+                        if store_id == '2959':
+                            image = getImageBase64(driver, store_id, 'https://www.garnierarabia.com'+main_image_elem[image_attr].split('?')[0]) if main_image_elem else ''
+                        else:
+                            image = getImageBase64(driver, store_id, main_image_elem[image_attr]) if main_image_elem else ''
                         # Get additional images
                         image_elems = soup.select(image_selector)
                         images = []
                         for img in image_elems:
-                            if len(img[image_attr])>10:
-                                res = getImageUrl(store_id, img[image_attr])
-                                print(img[image_attr])
-                                print(res)
-                                if res:
-                                    images.append(res)
+                            if store_id == '2959':
+                                res = getImageBase64(driver, store_id, 'https://www.garnierarabia.com'+img[image_attr].split('?')[0])
+                            else:
+                                res = getImageBase64(driver, store_id, img[image_attr])
+                            if res:
+                                images.append(res)
                         description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
                         product_attributes_content = description_elem if description_elem else ''
                         # Get keywords
@@ -3382,7 +3388,6 @@ def change_text(driver, text):
 
     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
     soup = BeautifulSoup(href_res, 'html.parser')
-    print(soup.select_one('#paraphraser-output-box').get_text(" ",strip=True))
     return soup.select_one('#paraphraser-output-box').get_text(" ",strip=True)
 
 def replace_dimensions(url):
