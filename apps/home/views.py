@@ -2801,7 +2801,7 @@ class UpdateStoreScrapView(APIView):
         hrefs = []
         while(isExist):
             if index != 1:
-                driver.get(url+str(index)+'/')
+                driver.get(url+'page/'+str(index)+'/')
             sleep(3)
             isExist = check_if_exist(driver, ".products > .wd-product a.product-image-link", "products")
             elements = driver.find_elements(By.CSS_SELECTOR, ".products > .wd-product a.product-image-link")
@@ -2824,7 +2824,7 @@ class UpdateStoreScrapView(APIView):
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = soup.select_one(title_selector).get_text(strip=True)
                     # Get the product price
-                    price = soup.select_one('.single-product-page div[data-widget_type*="wd_single_product_price.default"] .price .woocommerce-Price-amount.amount bdi').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select('.single-product-page div[data-widget_type*="wd_single_product_price.default"] .price .woocommerce-Price-amount.amount bdi'))>0 else ''
+                    price = soup.select_one('meta[property*="product:price:amount"]')['content'] if len(soup.select('meta[property*="product:price:amount"]'))>0 else ''
                     # Get discount
                     discount_elem = soup.select_one('div.single-product-page > div > section:nth-child(2) .onsale').get_text(strip=True).replace('%','').replace('-','').strip() if len(soup.select("div.single-product-page > div > section:nth-child(2) .onsale"))>0 else None
                     discount = discount_elem if discount_elem else '0'
@@ -3093,7 +3093,7 @@ class DelfyScrapView(APIView):
             data = []
             errors = []
             error = False
-            for d in excel_data[:5]:
+            for d in excel_data:
                 href = d['LINK']
                 price = d['price']
                 category = d['category  ID']
@@ -3114,6 +3114,8 @@ class DelfyScrapView(APIView):
                         for img in image_elems:
                             if len(img[image_attr])>10:
                                 res = getImageUrl(store_id, img[image_attr])
+                                print(img[image_attr])
+                                print(res)
                                 if res:
                                     images.append(res)
                         description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
