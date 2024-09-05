@@ -522,6 +522,52 @@
                             </tr>
                             <tr>
                                 <td>
+                                    <p>Real Cosmetics</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="real_cosmetics_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="real_cosmetics_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="real_cosmetics_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="real_cosmetics_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="realCosmeticsScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>New vision</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="new_vision_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Description"
+                                           id="new_vision_description"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="new_vision_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
+                                           id="new_vision_arabic_description"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="newVisionScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
                                     <p>Delfy</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="brand"/>
                                 </td>
@@ -1018,7 +1064,7 @@
             .catch(error => console.error("Error:", error));
 
     }
-
+    
     function tahboubScrapView() {
         fetch("/api/TahboubScrapView", {
             method: "POST",
@@ -1032,6 +1078,48 @@
                 db_category: document.getElementById('tahboub_db_category').value,
                 description: document.getElementById('tahboub_description').value,
                 arabic_description: document.getElementById('tahboub_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+    
+    function realCosmeticsScrapView() {
+        fetch("/api/RealCosmeticsScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3057",
+                url: document.getElementById('real_cosmetics_url').value,
+                db_category: document.getElementById('real_cosmetics_db_category').value,
+                description: document.getElementById('real_cosmetics_description').value,
+                arabic_description: document.getElementById('real_cosmetics_arabic_description').value,
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function newVisionScrapView() {
+        fetch("/api/NewVisionScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3058",
+                url: document.getElementById('new_vision_url').value,
+                db_category: document.getElementById('new_vision_db_category').value,
+                description: document.getElementById('new_vision_description').value,
+                arabic_description: document.getElementById('new_vision_arabic_description').value,
             })
         })
             .then(response => response.json())

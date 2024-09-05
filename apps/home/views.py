@@ -1,10 +1,4 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
 from django import template
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
@@ -12,8 +6,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import requests
 import json
@@ -23,17 +15,13 @@ from selenium.webdriver import Chrome
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from bs4 import BeautifulSoup
-import language_tool_python
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import re
-from deep_translator import GoogleTranslator
-import yake
-from .googleSuggetion import api_call
 import undetected_chromedriver as uc
 import traceback
 from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from .utils import get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 
 def index(request):
     context = {'segment': 'index'}
@@ -65,115 +53,6 @@ def pages(request):
     except:
         html_template = loader.get_template('home/page-500.html')
         return HttpResponse(html_template.render(context, request))
-
-def checkProduct(url):
-    url = 'https://www.icn.com/api/v1/check/product'
-    data = {
-        'link': url
-    }
-
-    try:
-        # Send the POST request and wait for the response
-        response = requests.post(url, data=data)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            print('Request was successful!')
-            print('Response:', response.text)  # If the response contains JSON data
-            return True if response.text == "1" else False
-        else:
-            print('Request failed with status code:', response.status_code)
-            print('Response:', response.text)
-    except requests.exceptions.RequestException as e:
-        print('An error occurred:', e)
-
-def save_image(image_data, file_path):
-    with open(file_path, 'wb') as file:
-        file.write(image_data)
-
-def getImageBase64(driver, id, image_url):
-    js_code = """
-    function getImageBlob(url) {
-        return new Promise((resolve, reject) => {
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function() {
-                var reader = new FileReader();
-                reader.onloadend = function() {
-                    resolve(new Uint8Array(reader.result));
-                };
-                reader.readAsArrayBuffer(xhr.response);
-            };
-            xhr.open('GET', url);
-            xhr.responseType = 'blob';
-            xhr.send();
-        });
-    }
-
-    return getImageBlob(arguments[0]);
-    """
-    # Execute the JavaScript code to get the ArrayBuffer
-    array_buffer = driver.execute_script(js_code, image_url)
-    
-    # Convert the ArrayBuffer to bytes
-    image_data = bytes(array_buffer)        
-
-    url = 'https://www.icn.com/api/v1/image/upload'
-    files=[
-        ('image',(image_url.split('/')[-1],image_data,'image/png'))
-    ]
-    data = {
-        'user_id': id,
-    }
-
-    try:
-        # Send the POST request and wait for the response
-        response = requests.post(url, data=data, files=files)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            # print('Request was successful!')
-            # print('Response:', response.text)  # If the response contains JSON data
-            return response.text
-        else:
-            print('Request failed with status code:', response.status_code)
-            print('Response:', response.text)
-            return ''
-    except requests.exceptions.RequestException as e:
-        print('An error occurred:', e)
-
-def getImageUrl(id, image_url):
-    url = 'https://www.icn.com/api/v1/image/upload'
-    data = {
-        'user_id': id,
-        'image_url': image_url
-    }
-
-    try:
-        # Send the POST request and wait for the response
-        response = requests.post(url, data=data)
-        
-        # Check if the request was successful
-        if response.status_code == 200:
-            # print('Request was successful!')
-            # print('Response:', response.text)  # If the response contains JSON data
-            return response.text
-        else:
-            print('Request failed with status code:', response.status_code)
-            print('Response:', response.text)
-            return ''
-    except requests.exceptions.RequestException as e:
-        print('An error occurred:', e)
-
-def checkImageUrl(image_url):
-    try:
-        response = requests.get(image_url)
-        
-        if response.status_code == 200:
-            return image_url
-        else:
-            raise Exception("status: "+response.status_code)
-    except requests.exceptions.RequestException as e:
-        print('An error occurred:', e)
 
 class ScrapView(APIView):
     def post(self, request, *args, **kwargs):
@@ -294,20 +173,9 @@ class GameakScrapView(APIView):
         driver = Chrome(options=options)
         driver.maximize_window()
         url = request.data['url']
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'&page='+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, "#CollectionLoop > .product-item", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, "#CollectionLoop > .product-item")
-            for e in elements:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-link").get_attribute("href"))
-            index = index + 1
-        
+        hrefs = get_hrefs(driver, url, '&page=', "#CollectionLoop > .product-item a.product-link")
         for href in hrefs:
             try:
                 driver.get(href)
@@ -415,20 +283,9 @@ class PalestinianScrapView(APIView):
         driver = Chrome(options=options)
         driver.maximize_window()
         url = request.data['url']
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'&page='+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".products-grid .product", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products-grid .product")
-            for e in elements:
-                if len(e.find_elements(By.CSS_SELECTOR, '.outofstock')) == 0:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a").get_attribute("href"))
-            index = index + 1
+        hrefs = get_hrefs(driver, url, '&page=', ".products-grid .product", not_contains_class='.outofstock', inner_selector='a')
         for href in hrefs:
             try:
                 driver.get(href)
@@ -538,20 +395,9 @@ class SecScrapView(APIView):
         driver.maximize_window()
         url = request.data['url']
         driver.get(url)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'/page/'+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".shop-container .products > .product-small", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".shop-container .products > .product-small")
-            for e in elements:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, ".image-zoom_in a").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '/page/', ".shop-container .products > .product-small", inner_selector=".image-zoom_in a")
         for href in hrefs:
             try:
                 driver.get(href)
@@ -670,29 +516,12 @@ class SecScrapView(APIView):
 
 class VikushaScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        # id = request.data['id']
-        options = Options()
-        # options.add_argument('--headless=new')
-        driver = Chrome(options=options)
-        driver.maximize_window()
+        driver = create_browser()
         url = request.data['url']
         driver.get(url)
-        driver.execute_script("window.open('https://www.freetranslations.org/english-to-arabic-translation.html');")
-        driver.switch_to.window(driver.window_handles[0])
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'/page/'+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".products > .instock", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products > .instock")
-            for e in elements:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.woocommerce-LoopProduct-link").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '/page/', ".products > .instock a.woocommerce-LoopProduct-link")
         for href in hrefs:
             try:
                 driver.get(href)
@@ -743,9 +572,9 @@ class VikushaScrapView(APIView):
 
                 # Create product dictionary
                 product = {
-                    "Arabic Name": translate(driver, title),
+                    "Arabic Name": translate(title),
                     "English Name": title,
-                    "Arabic Description": translate(driver, product_attributes_content) if len(product_attributes_content) > 3 else '',
+                    "Arabic Description": translate(product_attributes_content) if len(product_attributes_content) > 3 else '',
                     "English Description": product_attributes_content if len(product_attributes_content) > 3 else '',
                     "Category Id": request.data['db_category'],
                     "Arabic Brand": "",
@@ -759,7 +588,7 @@ class VikushaScrapView(APIView):
                     "Photos URLs": str((",").join(images)) if images else image,
                     "Video Youtube URL": "",
                     "English Meta Tags": keyWords.replace('//', ','),
-                    "Arabic Meta Tags": translate(driver, keyWords).replace('//', ','),
+                    "Arabic Meta Tags": translate(keyWords).replace('//', ','),
                     "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
                     "wholesale": "no",
                     "reference_link": href,
@@ -770,7 +599,6 @@ class VikushaScrapView(APIView):
                 errors.append({
                     "url": href
                 })
-        index = index + 1
 
         df = pd.DataFrame(data)
         df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
@@ -1623,38 +1451,9 @@ class DadaGroupScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})
-
-def create_browser():
-    chrome_options = Options()
-    # chrome_options.page_load_strategy = 'eager'
-    # chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-web-security')
-    chrome_options.add_argument('--allow-running-insecure-content')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-setuid-sandbox')
-    chrome_options.add_argument('--disable-features=NetworkService')
-    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-    chrome_options.add_argument('--disable-features=IsolateOrigins')
-    chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
-    # chrome_options.add_argument('--headless')
-    driver = Chrome(options=chrome_options)
-    driver.maximize_window()
-    return driver
 
 class BashitiScrapView(APIView):
     def post(self, request, *args, **kwargs):
@@ -1782,17 +1581,7 @@ class BashitiScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})
 
@@ -1804,19 +1593,7 @@ class DarwishScrapView(APIView):
         sleep(1)
         data = []
         errors = []
-        hrefs = []
-        isExist = True
-        index = 1
-        while (isExist):
-            driver.get(url+'?p='+str(index))
-            sleep(3)
-            isExist = True if len(driver.find_elements(By.CSS_SELECTOR, ".main .products.list > .product"))>0 else False
-            if isExist:
-                elements = driver.find_elements(By.CSS_SELECTOR, ".main .products.list > .product")
-                for e in elements:
-                    if len(e.find_elements(By.CSS_SELECTOR, ".stock.unavailable"))==0:
-                        hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-item-link").get_attribute("href"))
-            index = index + 1
+        hrefs = get_hrefs(driver, url, '?p=', ".main .products.list > .product", not_contains_class='.stock.unavailable', inner_selector='a.product-item-link')
         error = False
         def get_details(driver, href):
             try:
@@ -1929,17 +1706,7 @@ class DarwishScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})
     
@@ -2073,17 +1840,7 @@ class SportEquipmentScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})
 
@@ -2093,20 +1850,9 @@ class ACIScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'/page/'+str(index))
-            sleep(5)
-            isExist = check_if_exist(driver, ".products > .product", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products > .product")
-            for e in elements:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '/page/', ".products > .product a.product-image-link")
         error = False
         for href in hrefs:
             if not error:
@@ -2221,17 +1967,7 @@ class ACIScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})
 
@@ -2241,21 +1977,9 @@ class DiamondStarScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'/page/'+str(index))
-            sleep(5)
-            isExist = check_if_exist(driver, ".products > .product", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products > .product")
-            for e in elements:
-                if len(e.find_elements(By.CSS_SELECTOR, '.out-of-stock'))==0:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image-link").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '/page/', ".products > .product", not_contains_class='.out-of-stock', inner_selector='a.product-image-link')
         error = False
         for href in hrefs:
             if not error:
@@ -2374,17 +2098,7 @@ class DiamondStarScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})  
 
@@ -2394,21 +2108,9 @@ class AlrefaiScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'&page='+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".products-grid .product", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products-grid .product")
-            for e in elements:
-                if len(e.find_elements(By.CSS_SELECTOR, '.outofstock')) == 0:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '&page=', ".products-grid .product", not_contains_class='.outofstock', inner_selector='a')
         error = False
         for href in hrefs:
             if not error:
@@ -2533,17 +2235,7 @@ class AlrefaiScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})  
     
@@ -2553,20 +2245,9 @@ class NumberOneScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            driver.get(url+'?page='+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".main-products > .product-layout", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".main-products > .product-layout:not(.out-of-stock)")
-            for e in elements:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-img").get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '?page=', ".main-products > .product-layout:not(.out-of-stock) a.product-img")
         error = False
         for href in hrefs:
             if not error:
@@ -2655,17 +2336,7 @@ class NumberOneScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
         driver.quit()
         return JsonResponse({})  
 
@@ -2675,21 +2346,9 @@ class DermacolScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            if index != 1:
-                driver.get(url+str(index)+'/')
-            sleep(3)
-            isExist = check_if_exist(driver, ".c-products__list > .c-products__item a", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".c-products__list > .c-products__item a")
-            for e in elements:
-                hrefs.append(e.get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '', ".c-products__list > .c-products__item a")
         error = False
         for href in hrefs:
             if not error:
@@ -2784,7 +2443,7 @@ class DermacolScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            
+
         driver.quit()
         return JsonResponse({})  
   
@@ -2794,21 +2453,9 @@ class UpdateStoreScrapView(APIView):
         url = request.data['url']
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            if index != 1:
-                driver.get(url+'page/'+str(index)+'/')
-            sleep(3)
-            isExist = check_if_exist(driver, ".products > .wd-product a.product-image-link", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".products > .wd-product a.product-image-link")
-            for e in elements:
-                hrefs.append(e.get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, 'page/', ".products > .wd-product a.product-image-link")
         error = False
         for href in hrefs:
             if not error:
@@ -2906,42 +2553,20 @@ class UpdateStoreScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
             
         driver.quit()
         return JsonResponse({})  
 
 class TahboubScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        driver = create_browser()
         url = request.data['url']
+        driver = create_browser()
         driver.get(url)
         sleep(1)
-        isExist = True
-        index = 1
         data = []
         errors = []
-        hrefs = []
-        while(isExist):
-            if index != 1:
-                driver.get(url+'?page='+str(index))
-            sleep(3)
-            isExist = check_if_exist(driver, ".product-list > .product-item a.product-item__title.link", "products")
-            elements = driver.find_elements(By.CSS_SELECTOR, ".product-list > .product-item a.product-item__title.link")
-            for e in elements:
-                hrefs.append(e.get_attribute("href"))
-            index = index + 1
-
+        hrefs = get_hrefs(driver, url, '?page=', ".product-list > .product-item a.product-item__title.link")
         error = False
         for href in hrefs:
             if not error:
@@ -2999,14 +2624,6 @@ class TahboubScrapView(APIView):
                         for keyW in keywords:
                             ar_keywords.append(translate(keyW))
                     
-                    # product_attributes_content_json = {}                
-                    # ar_product_attributes_content_json = {}                
-                    # product_attributes = soup.select('div.single-product-page > div > section:nth-child(5) .elementor-widget-wrap table > tbody > tr')
-                    # for attr in product_attributes:
-                    #     key = attr.select_one("th").get_text(strip=True)
-                    #     val = attr.select_one("td").get_text(strip=True)
-                    #     ar_product_attributes_content_json[translate(key)] = translate(val)
-                    #     product_attributes_content_json[key] = val
                     product = {
                         "Arabic Name": translate(title),
                         "English Name": title,
@@ -3044,17 +2661,7 @@ class TahboubScrapView(APIView):
         else:
             df = pd.DataFrame(data)
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            driver.get('https://www.scribbr.com/paraphrasing-tool/')
-            until_visible(driver, '#QuillBotPphrIframe')
-            iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-            driver.get(iframe.get_attribute('src'))
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 and d['English Description'] != request.data['description'] else ''
-                if len(changed_product_attributes_content)>5:
-                    d['English Description'] = changed_product_attributes_content
-                    d['Arabic Description'] = translate(changed_product_attributes_content)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
             
         driver.quit()
         return JsonResponse({})  
@@ -3104,6 +2711,8 @@ class DelfyScrapView(APIView):
                     try:
                         driver.get(href)
                         sleep(5)
+                        if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                            continue
                         until_visible(driver, image_selector)
                         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                         soup = BeautifulSoup(href_res, 'html.parser')
@@ -3180,22 +2789,227 @@ class DelfyScrapView(APIView):
             else:
                 df = pd.DataFrame(data)
                 df.to_excel('excel/'+file_name+'_products.xlsx', index=False)
-                driver.get('https://www.scribbr.com/paraphrasing-tool/')
-                until_visible(driver, '#QuillBotPphrIframe')
-                iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-                driver.get(iframe.get_attribute('src'))
-                for d in data:
-                    changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 else ''
-                    if len(changed_product_attributes_content)>5:
-                        d['English Description'] = changed_product_attributes_content
-                        d['Arabic Description'] = translate(changed_product_attributes_content)
-                df = pd.DataFrame(data)
-                df.to_excel('excel/new_'+file_name+'_products.xlsx', index=False)
+                change_content(driver, data, request.data['db_category'])
                 
             driver.quit()
             return JsonResponse({})  
         except Exception as e:
             return JsonResponse({"error": str(e)})
+  
+class RealCosmeticsScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        driver = create_browser()
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = get_hrefs(driver, url, '&page=', ".tab-content .row > div.col-product .product-img > a")
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.product-details-content > h1'
+                    key_words_selector = "meta[property*='og:title']"
+                    # description_selector = '.product-block-list__item--description .card__section'
+                    try:
+                        until_visible(driver, '.product-details > img')
+                    except: 
+                        pass
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = soup.select_one(title_selector).get_text(strip=True)
+                    # Get the product price
+                    price = soup.select_one('.product-details-price span.old').get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select('.product-details-price span.old'))>0 else soup.select_one('.product-details-price span').get_text(strip=True).replace('JOD','').replace(',','').strip()
+                    # Get discount
+                    discount_elem = soup.select_one('.product-details > span').get_text(strip=True).replace('%','').strip() if len(soup.select(".product-details > span"))>0 and '%' in soup.select_one('.product-details > span').get_text(strip=True) else None
+                    discount = discount_elem if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.product-details > img')
+                    image = getImageBase64(driver, request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.product-details > img')
+                    images = []
+                    for img in image_elems:
+                        if len(img['src'])>10:
+                            res = getImageBase64(driver, request.data['id'], img['src'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    # description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    # product_attributes_content = description_elem if description_elem else ''
+                    product_attributes_content = ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Percent" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
+            
+        driver.quit()
+        return JsonResponse({})  
+
+class NewVisionScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        driver = create_browser()
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = get_hrefs(driver, url, 'page/', ".wd-products > .wd-product a.product-image-link")
+        error = False
+        for href in hrefs[:10]:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.product_title'
+                    key_words_selector = "meta[property*='og:title']"
+                    description_selector = '.woocommerce-product-details__short-description'
+                    try:
+                        until_visible(driver, '.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
+                    except: 
+                        pass
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = soup.select_one(title_selector).get_text(strip=True)
+                    # Get the product price
+                    price = soup.select_one('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount').get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount'))>0 else ''
+                    # Get discount
+                    discount_elem = soup.select('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount')[1].get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select(".single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount"))>1 else None
+                    discount = float(price) - float(discount_elem) if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
+                    image = getImageBase64(driver, request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
+                    images = []
+                    for img in image_elems:
+                        if len(img['href'])>10:
+                            res = getImageBase64(driver, request.data['id'], img['href'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
+            
+        driver.quit()
+        return JsonResponse({})  
   
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
@@ -3243,28 +3057,7 @@ class TemuScrapView(APIView):
         df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-def remove_emoji(string):
-    emoji_pattern = re.compile("["
-                               u"\U0001F600-\U0001F64F"  # emoticons
-                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
-                               u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                               u"\U00002500-\U00002BEF"  # chinese char
-                               u"\U00002702-\U000027B0"
-                               u"\U00002702-\U000027B0"
-                               u"\U000024C2-\U0001F251"
-                               u"\U0001f926-\U0001f937"
-                               u"\U00010000-\U0010ffff"
-                               u"\u2640-\u2642"
-                               u"\u2600-\u2B55"
-                               u"\u200d"
-                               u"\u23cf"
-                               u"\u23e9"
-                               u"\u231a"
-                               u"\ufe0f"  # dingbats
-                               u"\u3030"
-                               "]+", flags=re.UNICODE)
-    return emoji_pattern.sub(r'', string)
+
 class ChangeText(APIView):
     def post(self, request, *args, **kwargs):
         chrome_options = Options()
@@ -3347,247 +3140,6 @@ class ChangeText(APIView):
         df.to_excel('excel/new_'+request.data['id']+'_products.xlsx', index=False)
         driver.quit()
         return JsonResponse({})
-
-def extract_top_keywords(text, language="en", max_ngram_size=2, deduplication_threshold=0.1, deduplication_algo='seqm', window_size=1, num_of_keywords=5):
-    if not isinstance(text, str):
-        raise ValueError("Input must be a string")
-
-    try:
-        custom_kw_extractor = yake.KeywordExtractor(lan=language, n=max_ngram_size, dedupLim=deduplication_threshold, dedupFunc=deduplication_algo, windowsSize=window_size, top=num_of_keywords, features=None)
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("YAKE library not installed")
-
-    keywords = custom_kw_extractor.extract_keywords(text)
-
-    top_keywords = [kw[0] for kw in keywords]
-
-    return top_keywords
-
-def change_text(driver, text):
-    driver.refresh()
-    # switch to selected iframe
-    until_visible(driver, '#paraphraser-input-box')
-    # driver.execute_script('''document.querySelectorAll('.MuiDialog-root').forEach(function (e){e.remove()})''')
-    driver.find_element(By.CSS_SELECTOR, '#paraphraser-input-box').clear()
-    until_visible_send_keys(driver, '#paraphraser-input-box', text)
-    driver.switch_to.window(driver.window_handles[0])
-    until_visible_xpath_click(driver, "//button/*[contains(text(), 'Paraphrase')]")
-    driver.switch_to.window(driver.window_handles[0])
-    try: 
-        until_visible_with_xpath(driver, "//button/*[contains(text(), 'Rephrase')]")
-    except:
-        driver.refresh()
-        until_visible(driver, '#paraphraser-input-box')
-        # driver.execute_script('''document.querySelectorAll('.MuiDialog-root').forEach(function (e){e.remove()})''')
-        driver.find_element(By.CSS_SELECTOR, '#paraphraser-input-box').clear()
-        until_visible_send_keys(driver, '#paraphraser-input-box', text)
-        driver.switch_to.window(driver.window_handles[0])
-        until_visible_xpath_click(driver, "//button/*[contains(text(), 'Paraphrase')]")
-        driver.switch_to.window(driver.window_handles[0])
-        until_visible_with_xpath(driver, "//button/*[contains(text(), 'Rephrase')]")
-
-    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-    soup = BeautifulSoup(href_res, 'html.parser')
-    return soup.select_one('#paraphraser-output-box').get_text(" ",strip=True)
-
-def replace_dimensions(url):
-    pattern = r'\d+x\d+.webp'
-    return re.sub(pattern, '1200x1200.webp', url)
-
-def translate(text, dest='ar'):
-    try:
-        translation = GoogleTranslator(source='auto', target=dest).translate(text)
-        return translation
-    except Exception as e:
-        print(e)
-        print(text)
-        return text
-
-def unwrap_divs(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Unwrap divs, figures, and images
-    for tag in soup.find_all(['div', 'figure', 'img']):
-        tag.unwrap()
-    
-    # Remove all style attributes and classes
-    for tag in soup.find_all(True):  # True matches all tags
-        if tag.has_attr('style'):
-            del tag['style']
-        if tag.has_attr('class'):
-            del tag['class']
-    
-    return soup.prettify()
-
-def correct_spelling(text, lang):
-    tool = language_tool_python.LanguageTool(lang)
-    matches = tool.check(text)
-    corrected_text = language_tool_python.utils.correct(text, matches)
-    return corrected_text
-
-def until_visible(driver, element, max_counter=10,refresh=False,refresh_wait_element=None, secound_element=None):
-    counter=0
-    run = True
-    while run:
-        try:
-            if len(driver.find_elements(By.CSS_SELECTOR, element)) > 0 or (len(driver.find_elements(By.CSS_SELECTOR, secound_element)) > 0 if secound_element else False):
-                return
-            else:
-                if refresh:
-                    driver.refresh()
-                    if refresh_wait_element:
-                        until_visible(driver, refresh_wait_element)
-        except Exception as e:
-            print(f"Error while checking for element visibility: {e}")
-
-        counter += 1
-
-        if counter > max_counter:
-            print("Timed out waiting for element {}".format(element))
-            raise ValueError("Timed out waiting for element {}".format(element))
-        sleep(1)
-
-
-def until_visible_with_xpath(driver, element, max_counter=10):
-    counter = 0
-    run = True
-    while run:
-        sleep(1)
-        try:
-            if len(driver.find_elements(By.XPATH, element)) > 0:
-                break
-        except Exception as e:
-            pass
-
-        counter += 1
-
-        if counter > max_counter:
-            print("Timed out waiting for element {}".format(element))
-            raise ValueError("Timed out waiting for element {}".format(element))
-
-
-
-def until_not_visible(driver, element, counterAmount=10):
-    counter = 0
-    run = True
-    while run:
-        sleep(1)
-        try:
-            if len(driver.find_elements(By.CSS_SELECTOR, element)) == 0:
-                break
-        except Exception as e:
-            pass
-
-        counter += 1
-
-        if counter > counterAmount:
-            raise Exception
-
-
-def take_screen_shot(driver, name):
-    # TODO: assign proper permission to the directory
-    a = name
-    # screenshot = driver.get_screenshot_as_png()
-    # with open(name + '.png', 'wb') as f:
-    #     f.write(screenshot)
-
-def check_if_exist(driver, selector, name, secound_selector=None):
-    try:
-        until_visible(driver, selector, secound_element=secound_selector)
-        if len(driver.find_elements(By.CSS_SELECTOR, selector)) > 0 or (len(driver.find_elements(By.CSS_SELECTOR, secound_selector)) > 0 if secound_selector else False):
-            print('{} is shown'.format(name))
-            return True
-        else:
-            print('{} is not shown'.format(name))
-            return False
-    except Exception as e:
-        print('{} is not shown'.format(name))
-        return False
-
-def until_visible_xpath_click(driver, selector):
-    until_visible_with_xpath(driver, selector)
-    if '.v-overlay--active' in selector:
-        overlay = driver.find_elements(By.CSS_SELECTOR, '.v-overlay--active .v-overlay__scrim')
-        if len(overlay)>0:
-            driver.execute_script("arguments[0].style.display = 'none';", overlay[0])
-    element = driver.find_element(By.XPATH, selector)
-    try:
-        WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.XPATH, selector))
-        )
-    except:
-        pass
-    try:
-        ActionChains(driver).move_to_element(element).pause(1).click().perform()
-    except Exception as e:
-        try:
-            element = driver.find_element(By.XPATH, selector)
-            driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
-            ActionChains(driver).move_to_element(element).pause(1).click().perform()
-        except:
-            driver.find_element(By.XPATH, selector).click()
-
-
-def until_visible_click(driver, selector):
-    until_visible(driver, selector)
-    if '.v-overlay--active' in selector:
-        overlay = driver.find_elements(By.CSS_SELECTOR, '.v-overlay--active .v-overlay__scrim')
-        if len(overlay)>0:
-            driver.execute_script("arguments[0].style.display = 'none';", overlay[0])
-    element = driver.find_element(By.CSS_SELECTOR, selector)
-    try:
-        WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-        )
-    except:
-        pass
-    try:
-        ActionChains(driver).move_to_element(element).pause(1).click().perform()
-    except Exception as e:
-        try:
-            element = driver.find_element(By.CSS_SELECTOR, selector)
-            driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
-            ActionChains(driver).move_to_element(element).pause(1).click().perform()
-        except:
-            driver.find_element(By.CSS_SELECTOR, selector).click()
-    
-
-def until_visible_send_keys(driver, selector, key):
-    until_visible(driver, selector)
-    element = driver.find_element(By.CSS_SELECTOR, selector)
-    try:
-        ActionChains(driver).move_to_element(element).pause(1).perform()
-    except Exception as e:
-        try:
-            driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
-            ActionChains(driver).move_to_element(element).pause(1).perform()
-        except:
-            pass
-    WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-    )
-    driver.find_element(By.CSS_SELECTOR, selector).send_keys(key)
-
-def click_on_overlay(driver, name):
-    until_visible(driver, '.v-overlay--active.v-menu .v-list-item')
-    overlay = driver.find_elements(By.CSS_SELECTOR, '.v-overlay--active .v-overlay__scrim')
-    if len(overlay)>0:
-        driver.execute_script("arguments[0].style.display = 'none';", overlay[0])
-    elements = driver.find_elements(By.CSS_SELECTOR, '.v-overlay--active.v-menu .v-list-item')
-    for element in elements:
-        if name in element.get_attribute('innerHTML'):
-            try:
-                ActionChains(driver).move_to_element(element).perform()
-            except Exception as e:
-                pass
-            WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable(element)
-            )
-            try:
-                ActionChains(driver).move_to_element(element).pause(1).click().perform()
-            except:
-                element.click()
-            break
 
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
