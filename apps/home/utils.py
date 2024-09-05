@@ -27,15 +27,18 @@ from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector=''):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist=''):
     isExist = True
     index = 1
     hrefs = []
     while(isExist):
         if index != 1:
-            driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and pagination != 'p=' else ''))
+            driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
         sleep(3)
-        isExist = check_if_exist(driver, selector, "products")
+        if should_not_exist:
+            isExist = check_if_not_exist(driver, should_not_exist, "products")
+        else:
+            isExist = check_if_exist(driver, selector, "products")
         elements = driver.find_elements(By.CSS_SELECTOR, selector)
         for e in elements:
             if not_contains_class != '':
@@ -361,6 +364,19 @@ def check_if_exist(driver, selector, name, secound_selector=None):
         print('{} is not shown'.format(name))
         return False
 
+def check_if_not_exist(driver, selector, name, secound_selector=None):
+    try:
+        until_visible(driver, selector, secound_element=secound_selector)
+        if len(driver.find_elements(By.CSS_SELECTOR, selector)) > 0 or (len(driver.find_elements(By.CSS_SELECTOR, secound_selector)) > 0 if secound_selector else False):
+            print('{} is shown'.format(name))
+            return False
+        else:
+            print('{} is not shown'.format(name))
+            return True
+    except Exception as e:
+        print('{} is not shown'.format(name))
+        return False
+    
 def until_visible_xpath_click(driver, selector):
     until_visible_with_xpath(driver, selector)
     if '.v-overlay--active' in selector:
