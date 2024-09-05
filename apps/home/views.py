@@ -2914,7 +2914,7 @@ class NewVisionScrapView(APIView):
         errors = []
         hrefs = get_hrefs(driver, url, 'page/', ".wd-products > .wd-product a.product-image-link")
         error = False
-        for href in hrefs[:10]:
+        for href in hrefs:
             if not error:
                 try:
                     driver.get(href)

@@ -21,3 +21,4 @@ spacy
 BeautifulSoup4
 deep_translator
 yake
+undetected_chromedriver
