@@ -3035,6 +3035,8 @@ class GamersScrapView(APIView):
                         pass
                     if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
                         continue
+                    if len(driver.find_elements(By.CSS_SELECTOR, '.product-action button[title*="Out of stock"]'))>0:
+                        continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
                     title = soup.select_one(title_selector).get_text(strip=True)
