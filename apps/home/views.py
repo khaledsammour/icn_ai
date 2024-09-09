@@ -3270,13 +3270,14 @@ class BashitiCentralScrapView(APIView):
                     discount = discount_elem if discount_elem else '0'
                     # Get the main image URL
                     main_image_elem = soup.select_one('.easyzoom > a')
-                    image = getImageBase64(driver, request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                    image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
+                    print(image)
                     # Get additional images
                     image_elems = soup.select('.easyzoom > a')
                     images = []
                     for img in image_elems:
                         if len(img['href'])>10:
-                            res = getImageBase64(driver, request.data['id'], img['href'])
+                            res = getImageUrl(request.data['id'], img['href'])
                             if res:
                                 images.append(res)
                     # Check stock status
