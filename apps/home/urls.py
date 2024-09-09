@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import BashitiCentralScrapView, SkinhorizonsScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -42,5 +42,7 @@ urlpatterns = [
     path('api/NewVisionScrapView', NewVisionScrapView.as_view()),
     path('api/GamersScrapView', GamersScrapView.as_view()),
     path('api/PetsJoScrapView', PetsJoScrapView.as_view()),
+    path('api/SkinhorizonsScrapView', SkinhorizonsScrapView.as_view()),
+    path('api/BashitiCentralScrapView', BashitiCentralScrapView.as_view()),
     path('api/ChangeText', ChangeText.as_view()),
 ]
