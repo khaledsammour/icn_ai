@@ -27,12 +27,12 @@ from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist=''):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1):
     isExist = True
-    index = 1
     hrefs = []
+    fitst_index = index
     while(isExist):
-        if index != 1:
+        if index != fitst_index:
             driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
         sleep(3)
         if should_not_exist:

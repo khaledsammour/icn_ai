@@ -687,6 +687,82 @@
                                     </button>
                                 </td>
                             </tr>
+                            <tr>
+                                <td>
+                                    <p>Kira pet</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="kirapet_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="kirapet_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="kirapetScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Pets castle</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="pets_castle_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="pets_castle_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="petCastleJoScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Abu Tawileh</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="abu_tawileh_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="abu_tawileh_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="abuTawilehJoScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Arabi Emart</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="arabi_emart_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="arabi_emart_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="arabiEmartScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
@@ -1294,6 +1370,88 @@
 
     }
 
+    function kirapetScrapView() {
+        fetch("/api/KirapetScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3119",
+                url: document.getElementById('kirapet_url').value,
+                db_category: document.getElementById('kirapet_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function petCastleJoScrapView() {
+        fetch("/api/PetCastleJoScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3121",
+                url: document.getElementById('pets_castle_url').value,
+                db_category: document.getElementById('pets_castle_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+    function abuTawilehJoScrapView() {
+        fetch("/api/AbuTawilehJoScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3122",
+                url: document.getElementById('abu_tawileh_url').value,
+                db_category: document.getElementById('abu_tawileh_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+    function arabiEmartScrapView() {
+        fetch("/api/ArabiEmartScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3120",
+                url: document.getElementById('arabi_emart_url').value,
+                db_category: document.getElementById('arabi_emart_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+    
     function delfyScrapView() {
         const csrftoken = getCookie('csrftoken');
         const formData = new FormData();
@@ -1329,7 +1487,45 @@
             description_selector = '#description'
             image_selector = '.slick-track div[data-image] > img'
             image_attr = 'src'
+        } else if (brand == "L'Oréal cashmere") {
+            id = '2960'
+            title_selector= '.product-main .product_title'
+            description_selector = '#tab-description'
+            image_selector = '.product-gallery .product-images img'
+            image_attr = 'data-large_image'
+            brand.replace(' cashmere', '')
+        } else if (brand == "Baseline") {
+            id = '3113'
+            title_selector= '.productFullDetail-desktopHeading2Line-J6P'
+            description_selector = '.productFullDetail-informationBox-tag .richContent-root-CMO'
+            image_selector = '.swiper-wrapper > .swiper-slide > img'
+            image_attr = 'src'
+        } else if (brand == "Acnecinamide") {
+            id = '3097'
+            title_selector= '.wrapper.bg-light .post-title'
+            description_selector = '.wrapper.bg-light .accordion-item .collapse'
+            image_selector = '.wrapper.bg-light .swiper-wrapper .swiper-slide img'
+            image_attr = 'src'
+        } else if (brand == "Revigen") {
+            id = '3097'
+            title_selector= '.page-title'
+            description_selector = 'div[itemprop="description"]'
+            image_selector = '.view-first img'
+            image_attr = 'src'
+        } else if (brand == "Dentissimo") {
+            id = '3097'
+            title_selector= '.cat_s_title'
+            description_selector = '.col-12.col-md-12.d-flex.flex-column.justify-content-center.align-items-start.mt-4.text-justify'
+            image_selector = '.col-12.col-md-5 img'
+            image_attr = 'src'
+        } else if (brand == "Garnier") {
+            id = '3097'
+            title_selector= '.product-detail__header--brand'
+            description_selector = '#product_information .product-note__description'
+            image_selector = 'meta[property="og:image"]'
+            image_attr = 'content'
         }
+        
         formData.append('id', id);
         formData.append('brand', brand);
         formData.append('file', document.getElementById('file').files[0]);
