@@ -121,15 +121,18 @@ def getImageBase64(driver, id, image_url):
     """
     # Execute the JavaScript code to get the ArrayBuffer
     array_buffer = driver.execute_script(js_code, image_url)
-    print(image_url)
     
     # Convert the ArrayBuffer to bytes
     image_data = bytes(array_buffer)    
-    print(image_data)    
 
     url = 'https://www.icn.com/api/v1/image/upload'
+    file_name = ''
+    if '?' in image_url:
+        file_name = image_url.split('?')[0].split('/')[-1]
+    else:
+        file_name = image_url.split('/')[-1]
     files=[
-        ('image',(image_url.split('/')[-1],image_data,'image/png'))
+        ('image',(file_name,image_data,'image/png'))
     ]
     data = {
         'user_id': id,
@@ -138,10 +141,7 @@ def getImageBase64(driver, id, image_url):
     try:
         # Send the POST request and wait for the response
         response = requests.post(url, data=data, files=files)
-        
         # Check if the request was successful
-        print('res')
-        print(response.text)
         if response.status_code == 200:
             # print('Request was successful!')
             # print('Response:', response.text)  # If the response contains JSON data

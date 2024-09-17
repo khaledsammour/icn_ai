@@ -3460,6 +3460,113 @@ class PetsJoScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
   
+class PetsJoScrapView(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        driver = create_browser()
+        driver.get(url)
+        sleep(1)
+        data = []
+        errors = []
+        hrefs = get_hrefs(driver, url, '?page=', ".product-grid > .item-grid .picture > a", should_not_exist='#nopAjaxFiltersNoProductsDialog_wnd_title')
+        error = False
+        for href in hrefs:
+            if not error:
+                try:
+                    driver.get(href)
+                    sleep(1)
+                    title_selector = '.overview .product-name'
+                    key_words_selector = "meta[property*='og:title']"
+                    description_selector = '.overview .short-description'
+                    try:
+                        until_visible(driver, '.gallery .picture > a > img')
+                    except: 
+                        pass
+                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        continue
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    title = soup.select_one(title_selector).get_text(strip=True)
+                    # Get the product price
+                    price = soup.select_one('.prices > .product-price').get_text(strip=True).replace('د.ا.','').replace(',','').strip() if len(soup.select('.prices > .product-price'))>0 else soup.select_one('.product-single-details .price-box .new-price').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select('.product-single-details .price-box .new-price'))>0 else ''
+                    # Get discount
+                    discount_elem = soup.select_one('.product-single-details .price-box .new-price').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".product-single-details .price-box .old-price"))>0 else None
+                    discount = float(price) - float(discount_elem) if discount_elem else '0'
+                    # Get the main image URL
+                    main_image_elem = soup.select_one('.gallery .picture > a > img')
+                    image = getImageBase64(driver, request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    # Get additional images
+                    image_elems = soup.select('.gallery .picture > a > img')
+                    images = []
+                    for img in image_elems:
+                        if len(img['src'])>10:
+                            res = getImageBase64(driver, request.data['id'], img['src'])
+                            if res:
+                                images.append(res)
+                    # Check stock status
+                    in_stock = '3'
+                    # Get product attributes content
+                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    product_attributes_content = description_elem if description_elem else ''
+                    # Get keywords
+                    key_words_elem = soup.select_one(key_words_selector)
+                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                    keywords = keyWords.split('//')
+                    if len(product_attributes_content)>0:
+                        keywords = extract_top_keywords(product_attributes_content)
+                        ar_keywords = []
+                        for k in keyWords.split('//'):
+                            keywords.append(k)
+
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    else:
+                        ar_keywords = []
+                        for keyW in keywords:
+                            ar_keywords.append(translate(keyW))
+                    
+                    product = {
+                        "Arabic Name": translate(title),
+                        "English Name": title,
+                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "Category Id": request.data['db_category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": price,
+                        "Discount Type": "Flat" if discount != "0" else "",
+                        "Discount": discount if discount != "0" else "",
+                        "Unit": "PC",
+                        "Current Stock": in_stock,
+                        "Main Image URL": image,
+                        "Photos URLs": str((",").join(images)) if images else image,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": ','.join(keywords),
+                        "Arabic Meta Tags": ','.join(ar_keywords),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": href,
+                    }
+                    data.append(product)
+                except Exception as e:
+                    error = True
+                    print(e)
+                    traceback.print_exc()
+                    errors.append({
+                        "url": href
+                    })   
+        if len(errors)>0:
+            err_df = pd.DataFrame(errors)
+            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+        else:
+            df = pd.DataFrame(data)
+            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['db_category'])
+            
+        driver.quit()
+        return JsonResponse({})  
+  
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = uc.Chrome(use_subprocess=False)
@@ -3724,5 +3831,96 @@ class GenerateBlog(APIView):
                 print('Response:', response.text)
         except requests.exceptions.RequestException as e:
             print('An error occurred:', e)
+        driver.quit()
+        return JsonResponse({})
+
+class IntegrationTest(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = uc.Chrome(use_subprocess=False)
+        errors = []
+        def check_banners(navigate_to='', selector='.banner a'):
+            if navigate_to:
+                driver.get(navigate_to)
+            try:
+                until_visible(driver, selector, max_counter=3)
+            except:
+                pass
+            if len(driver.find_elements(By.CSS_SELECTOR, selector))>0:
+                hrefs = []
+                [hrefs.append(e.get_attribute('href')) for e in driver.find_elements(By.CSS_SELECTOR, selector)]
+                for href in hrefs:
+                    driver.get(href)
+                    try:
+                        until_not_visible(driver, 'img[src*="/404.svg"]', counterAmount=2)
+                    except Exception as e:
+                        traceback.print_exc()
+                        errors.append({
+                            'page': c,
+                            "url": href,
+                        })
+
+        def change_lang(href, dest='sa'):
+            try:
+                driver.get(href)
+                until_visible(driver, f'header #change_lang[data-flag={dest}]', max_counter=3)
+                until_visible_click(driver, f'header #change_lang[data-flag={dest}]')
+                sleep(6)
+            except Exception as e:
+                print(e)
+                pass
+
+        try:
+            # # home
+            # change_lang('https://icn.com/', dest='en')
+            # check_banners(selector=".header-row-banner a")
+            # check_banners(navigate_to='https://icn.com/')
+            # change_lang('https://icn.com/')
+            # check_banners(selector=".header-row-banner a")
+            # check_banners(navigate_to='https://icn.com/')
+            # if len(errors)>0:
+            #     df = pd.DataFrame(errors)
+            #     df.to_excel(f'excel/home.xlsx', index=False)
+
+            # # category
+            # change_lang('https://icn.com/', dest='en')
+            # categories = [{'href': e.get_attribute('href'), 'title': e.text} for e in driver.find_elements(By.CSS_SELECTOR, '.nav-categories .swiper-container a:not([href="#"])')]
+            # for c in categories:
+            #     errors = []
+            #     change_lang(c['href'], dest='en')
+            #     check_banners()
+            #     change_lang(c['href'])
+            #     check_banners()
+            #     if len(errors)>0:
+            #         df = pd.DataFrame(errors)
+            #         df.to_excel(f'excel/{c['title']}.xlsx', index=False)
+            
+            # filter
+            change_lang('https://icn.com/filter/category/All', dest='en')
+            until_visible(driver, '#accordion > .accordion-item > .accordion-header a')
+            elements = [{'href': e.find_element(By.CSS_SELECTOR, '.accordion-header a').get_attribute('href'),'title': e.find_element(By.CSS_SELECTOR, '.accordion-header a').text} for e in driver.find_elements(By.CSS_SELECTOR, '#accordion > .accordion-item')]
+            for e in elements:
+                # english
+                errors = []
+                change_lang(e['href'], dest='en')
+                check_banners()
+                categories = [e.get_attribute('href') for e in driver.find_elements(By.CSS_SELECTOR, '.collapse .accordion-item a')]
+                for c in categories:
+                    driver.get(c)
+                    check_banners()
+
+                # arabic
+                change_lang(e['href'])
+                check_banners()
+                categories = [e.get_attribute('href') for e in driver.find_elements(By.CSS_SELECTOR, '.collapse .accordion-item a')]
+                for c in categories:
+                    driver.get(c)
+                    check_banners()
+                    
+                if len(errors)>0:
+                    df = pd.DataFrame(errors)
+                    df.to_excel(f'excel/{e['title']}.xlsx', index=False)
+            
+        except:
+            traceback.print_exc()
         driver.quit()
         return JsonResponse({})

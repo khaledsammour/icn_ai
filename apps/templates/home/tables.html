@@ -1317,6 +1317,18 @@
             description_selector = '#product_information .product-note__description'
             image_selector = '.product-media__carousel-wrapper img[srcset]'
             image_attr = 'srcset'
+        } else if (brand == 'Bruno Vassari') {
+            id = '3095'
+            title_selector= '.product-image-summary .product_title'
+            description_selector = '.product-image-summary .woocommerce-product-details__short-description'
+            image_selector = '.product-image-wrap > figure > a'
+            image_attr = 'href'
+        } else if (brand == "L'Oréal") {
+            id = '2960'
+            title_selector= '.product-details-top .product-name'
+            description_selector = '#description'
+            image_selector = '.slick-track div[data-image] > img'
+            image_attr = 'src'
         }
         formData.append('id', id);
         formData.append('brand', brand);
