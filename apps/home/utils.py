@@ -187,11 +187,12 @@ def checkImageUrl(image_url):
     except requests.exceptions.RequestException as e:
         print('An error occurred:', e)
 
-def change_content(driver, data, id):
-    driver.get('https://www.scribbr.com/paraphrasing-tool/')
-    until_visible(driver, '#QuillBotPphrIframe')
-    iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
-    driver.get(iframe.get_attribute('src'))
+def change_content(driver, data, id, withoutReset=True):
+    if withoutReset:
+        driver.get('https://www.scribbr.com/paraphrasing-tool/')
+        until_visible(driver, '#QuillBotPphrIframe')
+        iframe = driver.find_element(By.CSS_SELECTOR, "#QuillBotPphrIframe")
+        driver.get(iframe.get_attribute('src'))
     for d in data:
         changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'])>5 else ''
         if len(changed_product_attributes_content)>5:

@@ -763,6 +763,44 @@
                                     </button>
                                 </td>
                             </tr>
+                            <tr>
+                                <td>
+                                    <p>Birds Land</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="birds_land_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="birds_land_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="birdsLandScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <p>Inimex Shop</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="inimex_shop_url"/>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="inimex_shop_db_category"/>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="inimexShopScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
@@ -1442,6 +1480,48 @@
                 id: "3120",
                 url: document.getElementById('arabi_emart_url').value,
                 db_category: document.getElementById('arabi_emart_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+    
+    function birdsLandScrapView() {
+        fetch("/api/BirdsLandScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3128",
+                url: document.getElementById('birds_land_url').value,
+                db_category: document.getElementById('birds_land_db_category').value,
+                description: ' ',
+                arabic_description: ' ',
+            })
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+
+    }
+
+    function inimexShopScrapView() {
+        fetch("/api/InimexShopScrapView", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                id: "3082",
+                url: document.getElementById('inimex_shop_url').value,
+                db_category: document.getElementById('inimex_shop_db_category').value,
                 description: ' ',
                 arabic_description: ' ',
             })

@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import ArabiEmartScrapView, AbuTawilehJoScrapView, PetCastleJoScrapView, KirapetScrapView, IntegrationTest, BashitiCentralScrapView, SkinhorizonsScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import InimexShopScrapView, BirdsLandScrapView, ArabiEmartScrapView, AbuTawilehJoScrapView, PetCastleJoScrapView, KirapetScrapView, IntegrationTest, BashitiCentralScrapView, SkinhorizonsScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, PalestinianScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -49,5 +49,7 @@ urlpatterns = [
     path('api/PetCastleJoScrapView', PetCastleJoScrapView.as_view()),
     path('api/AbuTawilehJoScrapView', AbuTawilehJoScrapView.as_view()),
     path('api/ArabiEmartScrapView', ArabiEmartScrapView.as_view()),
+    path('api/BirdsLandScrapView', BirdsLandScrapView.as_view()),
+    path('api/InimexShopScrapView', InimexShopScrapView.as_view()),
     path('api/ChangeText', ChangeText.as_view()),
 ]
