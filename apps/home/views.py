@@ -3844,6 +3844,15 @@ class AbuTawilehJoScrapView(APIView):
                         ar_keywords = []
                         for keyW in keywords:
                             ar_keywords.append(translate(keyW))
+
+                    product_attributes_content_json = {}                
+                    ar_product_attributes_content_json = {}                
+                    product_attributes = soup.select('.product-meta > .product-category > .field')
+                    for attr in product_attributes:
+                        key = attr.select_one(".field-label").get_text(strip=True)
+                        val = attr.select_one(".field-item").get_text(strip=True)
+                        ar_product_attributes_content_json[translate(key)] = translate(val)
+                        product_attributes_content_json[key] = val
                     
                     product = {
                         "Arabic Name": translate(title),
@@ -3863,8 +3872,8 @@ class AbuTawilehJoScrapView(APIView):
                         "Video Youtube URL": "",
                         "English Meta Tags": ','.join(keywords),
                         "Arabic Meta Tags": ','.join(ar_keywords),
-                        "features": '',
-                        "features_ar": '',
+                        "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                        "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
                         "wholesale": "no",
                         "reference_link": href,
                     }
@@ -4304,6 +4313,33 @@ class IntegrationTest(APIView):
             except Exception as e:
                 print(e)
                 pass
+
+        def register():
+            driver.get('https://www.icn.com/users/registration')
+            until_visible_send_keys(driver, 'input[name="name"]', 'test')
+            until_visible_send_keys(driver, 'input[name="phone"]', '111111111')
+            until_visible_send_keys(driver, 'input[name="password"]', 'Test$123')
+            until_visible_click(driver, '.aiz-square-check')
+            until_visible_click(driver, '#submit_reg')
+            until_not_visible(driver, 'input[name="name"]')
+
+        def login():
+            driver.get('https://www.icn.com/users/login')
+            until_visible_send_keys(driver, 'input[name="phone"]', '111111111')
+            until_visible_send_keys(driver, 'input[name="password"]', 'Test$123')
+            until_visible_click(driver, '#submit_reg')
+            until_not_visible(driver, 'input[name="name"]')
+
+        def logout():
+            until_visible_click(driver, 'header .dropdown-toggle[aria-expanded="true"]')
+            until_visible_click(driver, 'ul.dropdown-menu > li a[href*="logout"]')
+            until_not_visible(driver, 'ul.dropdown-menu > li a[href*="logout"]')
+
+        def deleteAccount():
+            driver.get('https://www.icn.com/dashboard')
+            until_visible_click(driver, '.sidemnenu .aiz-side-nav-item a.confirm-delete-user')
+            until_visible_click(driver, '#delete-modal-user .modal-body > a[href="https://www.icn.com/delete/account"]')
+            until_not_visible(driver, '#delete-modal-user .modal-body > a[href="https://www.icn.com/delete/account"]')
 
         try:
             # # home
