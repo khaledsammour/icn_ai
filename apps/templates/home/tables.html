@@ -748,11 +748,14 @@
                                 <td>
                                     <p>Arabi Emart</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="arabi_emart_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Index" id="arabi_emart_index"/>
                                 </td>
                                 <td>
                                     <p>3</p>
                                     <input type="text" class="form-control mt-3" placeholder="Category"
                                            id="arabi_emart_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Max Index"
+                                            id="arabi_emart_max_index"/>
                                 </td>
                                 <td>
                                     07-10-2024
@@ -1480,6 +1483,8 @@
                 id: "3120",
                 url: document.getElementById('arabi_emart_url').value,
                 db_category: document.getElementById('arabi_emart_db_category').value,
+                index: document.getElementById('arabi_emart_index').value,
+                max_index: document.getElementById('arabi_emart_max_index').value,
                 description: ' ',
                 arabic_description: ' ',
             })

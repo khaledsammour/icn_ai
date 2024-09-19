@@ -3904,8 +3904,8 @@ class ArabiEmartScrapView(APIView):
         sleep(1)
         data = []
         errors = []
-        hrefs = get_hrefs(driver, url, '/page', ".grid .card header a.no-underline")
-        # hrefs = get_hrefs(driver, url, '&page=', ".grid .card header a.no-underline")
+        # hrefs = get_hrefs(driver, url, '/page', ".grid .card header a.no-underline")
+        hrefs = get_hrefs(driver, url, '&page=', ".grid .card header a.no-underline", index=int(request.data['index']), max_index=int(request.data['max_index']), start_pagination=False)
         error = False
         for i, e in enumerate(hrefs):
             match = re.search(r'"item_url":"(/items/en/[^"]+)"', e)
@@ -3918,7 +3918,6 @@ class ArabiEmartScrapView(APIView):
         for href in hrefs:
             if not error:
                 try:
-                    print(href)
                     driver.get(href)
                     sleep(1)
                     title_selector = 'article .bigtitle'
@@ -4003,11 +4002,11 @@ class ArabiEmartScrapView(APIView):
                     })   
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
+            err_df.to_excel('excel/'+request.data['max_index']+'_errors.xlsx', index=False)
         else:
             df = pd.DataFrame(data)
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            change_content(driver, data, request.data['db_category'])
+            df.to_excel('excel/'+request.data['max_index']+'_products.xlsx', index=False)
+            change_content(driver, data, request.data['max_index'])
             
         driver.quit()
         return JsonResponse({})  
@@ -4133,95 +4132,110 @@ class InimexShopScrapView(APIView):
         sleep(1)
         data = []
         errors = []
-        hrefs = get_hrefs(driver, url, '?page=', ".product-panel > div > div.product-card-container")
+        isExist = True
+        hrefs = []
+        index=1
+        fitst_index = index
+        selector = ".product-panel > div > div.product-card-container"
+        pagination = '?page='
         error = False
-                
-        for href in hrefs:
-            if not error:
-                try:
-                    print(href)
-                    driver.get(href)
-                    sleep(1)
-                    title_selector = 'meta[property="og:title"]'
-                    key_words_selector = "meta[property*='og:title']"
-                    description_selector = 'meta[property="og:description"]'
+        while(isExist):
+            if index != fitst_index:
+                driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
+            sleep(3)
+            isExist = check_if_exist(driver, selector, "products")
+            elements = driver.find_elements(By.CSS_SELECTOR, selector)
+            u = driver.current_url
+            for i, e in enumerate(elements):
+                driver.get(u)
+                until_visible_click(driver, f'.product-panel > div > div.product-card-container:nth-child({i+1})')
+                if not error:
                     try:
-                        until_visible(driver, '.preview-container img.iiz__img')
-                    except: 
-                        pass
-                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
-                        continue
-                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                    soup = BeautifulSoup(href_res, 'html.parser')
-                    title = soup.select_one(title_selector)['content'].strip()
-                    # Get the product price
-                    price = soup.select_one('meta[property="og:price:amount"]')['content'].replace(',','').strip() if len(soup.select('meta[property="og:price:amount"]'))>0 else ''
-                    # Get discount
-                    discount = '0'
-                    # Get the main image URL
-                    main_image_elem = soup.select_one('.preview-container img.iiz__img')
-                    image = getImageBase64(driver, request.data['id'], main_image_elem['src']) if main_image_elem else ''
-                    # Get additional images
-                    image_elems = soup.select('.preview-container img.iiz__img')
-                    images = []
-                    for img in image_elems:
-                        if len(img['src'])>10:
-                            res = getImageBase64(driver, request.data['id'], img['src'])
-                            if res:
-                                images.append(res)
-                    # Check stock status
-                    in_stock = '3'
-                    # Get product attributes content
-                    description_elem = soup.select_one(description_selector)['content'].strip() if soup.select_one(description_selector) else ''
-                    product_attributes_content = description_elem if description_elem else ''
-                    # Get keywords
-                    key_words_elem = soup.select_one(key_words_selector)
-                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-                    keywords = keyWords.split('//')
-                    if len(product_attributes_content)>0:
-                        keywords = extract_top_keywords(product_attributes_content)
-                        ar_keywords = []
-                        for k in keyWords.split('//'):
-                            keywords.append(k)
+                        sleep(1)
+                        title_selector = 'meta[property="og:title"]'
+                        key_words_selector = "meta[property*='og:title']"
+                        description_selector = 'meta[property="og:description"]'
+                        try:
+                            until_visible(driver, '.preview-container img.iiz__img')
+                        except: 
+                            pass
+                        if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                            continue
+                        href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                        soup = BeautifulSoup(href_res, 'html.parser')
+                        title = soup.select_one(title_selector)['content'].strip()
+                        # Get the product price
+                        price = soup.select_one('meta[property="og:price:amount"]')['content'].replace(',','').strip() if len(soup.select('meta[property="og:price:amount"]'))>0 else ''
+                        # Get discount
+                        discount = '0'
+                        # Get the main image URL
+                        main_image_elem = soup.select_one('.preview-container img.iiz__img')
+                        image = getImageBase64(driver, request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                        # Get additional images
+                        image_elems = soup.select('.preview-container img.iiz__img')
+                        images = []
+                        for img in image_elems:
+                            if len(img['src'])>10:
+                                res = getImageBase64(driver, request.data['id'], img['src'])
+                                if res:
+                                    images.append(res)
+                        # Check stock status
+                        in_stock = '3'
+                        # Get product attributes content
+                        description_elem = soup.select_one(description_selector)['content'].strip() if soup.select_one(description_selector) else ''
+                        product_attributes_content = description_elem if description_elem else ''
+                        # Get keywords
+                        key_words_elem = soup.select_one(key_words_selector)
+                        keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                        keywords = keyWords.split('//')
+                        if len(product_attributes_content)>0:
+                            keywords = extract_top_keywords(product_attributes_content)
+                            ar_keywords = []
+                            for k in keyWords.split('//'):
+                                keywords.append(k)
 
-                        for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
-                    else:
-                        ar_keywords = []
-                        for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
-                    
-                    product = {
-                        "Arabic Name": translate(title),
-                        "English Name": title,
-                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
-                        "Category Id": request.data['db_category'],
-                        "Arabic Brand": "",
-                        "English Brand": "",
-                        "Unit Price": price,
-                        "Discount Type": "Flat" if discount != "0" else "",
-                        "Discount": discount if discount != "0" else "",
-                        "Unit": "PC",
-                        "Current Stock": in_stock,
-                        "Main Image URL": image,
-                        "Photos URLs": str((",").join(images)) if images else image,
-                        "Video Youtube URL": "",
-                        "English Meta Tags": ','.join(keywords),
-                        "Arabic Meta Tags": ','.join(ar_keywords),
-                        "features": '',
-                        "features_ar": '',
-                        "wholesale": "no",
-                        "reference_link": href,
-                    }
-                    data.append(product)
-                except Exception as e:
-                    error = True
-                    print(e)
-                    traceback.print_exc()
-                    errors.append({
-                        "url": href
-                    })   
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        else:
+                            ar_keywords = []
+                            for keyW in keywords:
+                                ar_keywords.append(translate(keyW))
+                        
+                        product = {
+                            "Arabic Name": translate(title),
+                            "English Name": title,
+                            "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                            "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                            "Category Id": request.data['db_category'],
+                            "Arabic Brand": "",
+                            "English Brand": "",
+                            "Unit Price": price,
+                            "Discount Type": "Flat" if discount != "0" else "",
+                            "Discount": discount if discount != "0" else "",
+                            "Unit": "PC",
+                            "Current Stock": in_stock,
+                            "Main Image URL": image,
+                            "Photos URLs": str((",").join(images)) if images else image,
+                            "Video Youtube URL": "",
+                            "English Meta Tags": ','.join(keywords),
+                            "Arabic Meta Tags": ','.join(ar_keywords),
+                            "features": '',
+                            "features_ar": '',
+                            "wholesale": "no",
+                            "reference_link": driver.current_url,
+                        }
+                        data.append(product)
+                    except Exception as e:
+                        error = True
+                        print(e)
+                        traceback.print_exc()
+                        errors.append({
+                            "url": driver.current_url
+                        })   
+
+            index = index + 1
+                
+            
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
             err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
