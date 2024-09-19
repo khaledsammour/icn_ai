@@ -2712,12 +2712,26 @@ class DelfyScrapView(APIView):
                     try:
                         driver.get(href)
                         sleep(5)
-                        if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                        if request.data['click_before_description']:
+                            try:
+                                if len(driver.find_elements(By.CSS_SELECTOR, '.container-main > .sticky .transition-all button'))>0:
+                                    until_visible_click(driver, request.data['click_before_description'])
+                            except:
+                                pass
+                        try:
+                            until_visible(driver, title_selector)
+                        except:
+                            print('title_selector isnt found')
                             continue
                         until_visible(driver, image_selector)
                         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                         soup = BeautifulSoup(href_res, 'html.parser')
                         title = soup.select_one(title_selector).get_text(strip=True)
+
+                        if request.data['not_in_stuck']:
+                            stuck = '0' if len(soup.select(request.data['not_in_stuck']))>0 else '3'
+                        else:
+                            stuck = '3'
                         # Get the main image URL
                         main_image_elem = soup.select_one(image_selector)
                         if store_id == '2959':
@@ -2765,7 +2779,7 @@ class DelfyScrapView(APIView):
                             "Discount Type": "",
                             "Discount": "",
                             "Unit": "PC",
-                            "Current Stock": '3',
+                            "Current Stock": stuck,
                             "Main Image URL": image,
                             "Photos URLs": str((",").join(images)) if images else image,
                             "Video Youtube URL": "",

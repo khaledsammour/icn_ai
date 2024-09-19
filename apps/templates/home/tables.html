@@ -1542,6 +1542,8 @@
         const formData = new FormData();
         let id =''
         let brand = document.getElementById('brand').value
+        let click_before_description = ''
+        let not_in_stuck = ''
         if (brand == 'Delfy'){
             id = '2982'
             title_selector= '.detail-product-name'
@@ -1609,6 +1611,21 @@
             description_selector = '#product_information .product-note__description'
             image_selector = 'meta[property="og:image"]'
             image_attr = 'content'
+        } else if (brand == "WOW") {
+            id = '3112'
+            title_selector= '.container-main > .sticky p.font-semibold.capitalize'
+            click_before_description = '.container-main > .sticky .transition-all button'
+            description_selector = '.container-main > .sticky .transition-all p > span > span'
+            image_selector = '.main-container > .hidden .main-image .main-image'
+            image_attr = 'src'
+            not_in_stuck = '.container-main .mt-5.flex.flex-col > div > p'
+        } else if (brand == "WOW2") {
+            id = '3112'
+            title_selector= '.product__row .product__title'
+            description_selector = '.product__row .product__description'
+            image_selector = '.slider--product > .slide--product img'
+            image_attr = 'src'
+            brand = "WOW"
         }
         
         formData.append('id', id);
@@ -1618,6 +1635,8 @@
         formData.append('description_selector', description_selector);
         formData.append('image_selector', image_selector);
         formData.append('image_attr', image_attr);
+        formData.append('click_before_description', click_before_description);
+        formData.append('not_in_stuck', not_in_stuck);
         fetch("/api/DelfyScrapView", {
         method: "POST",
         headers: {

@@ -137,6 +137,8 @@ def getImageBase64(driver, id, image_url):
         file_name = image_url.split('?')[0].split('/')[-1]
     else:
         file_name = image_url.split('/')[-1]
+    if '.' not in file_name:
+        file_name = file_name + '.png'
     files=[
         ('image',(file_name,image_data,'image/png'))
     ]
@@ -305,7 +307,7 @@ def remove_emoji(string):
                                u"\ufe0f"  # dingbats
                                u"\u3030"
                                "]+", flags=re.UNICODE)
-    return emoji_pattern.sub(r'', string)
+    return emoji_pattern.sub(r'', str(string))
 
 def until_visible(driver, element, max_counter=10,refresh=False,refresh_wait_element=None, secound_element=None):
     counter=0
