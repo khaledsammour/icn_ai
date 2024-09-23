@@ -3916,8 +3916,6 @@ class ArabiEmartScrapView(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
         driver = create_browser()
-        driver.get(url)
-        sleep(1)
         data = []
         errors = []
         hrefs = get_hrefs(driver, url, '&page=', ".grid .card header a.no-underline", index=int(request.data['index']), max_index=int(request.data['max_index']), start_pagination=True)
