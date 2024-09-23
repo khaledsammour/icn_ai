@@ -23,6 +23,7 @@ import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from .utils import get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
+from .models import Websites
 
 def index(request):
     context = {'segment': 'index'}
@@ -4027,14 +4028,15 @@ class ArabiEmartScrapView(APIView):
  
 class BirdsLandScrapView(APIView):
     def post(self, request, *args, **kwargs):
+        website = Websites.objects.get(name="Pets castle")
+        # website = Websites.objects.get(name="Birds Land")
         url = request.data['url']
         driver = create_browser()
         driver.get(url)
         sleep(1)
         data = []
         errors = []
-        hrefs = get_hrefs(driver, url, '/page', ".products > .product a.product-item-link")
-        print(hrefs)
+        hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector)
         error = False
                 
         for href in hrefs:
@@ -4042,50 +4044,61 @@ class BirdsLandScrapView(APIView):
                 try:
                     driver.get(href)
                     sleep(1)
-                    title_selector = '.page-title > span'
-                    key_words_selector = "meta[property*='og:title']"
-                    description_selector = '.description'
                     try:
-                        until_visible(driver, '.fotorama__stage > div  div[data-active="true"] img')
+                        until_visible(driver, website.title_selector)
                     except: 
                         pass
-                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
+                    if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))==0:
                         continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
-                    title = soup.select_one(title_selector).get_text(strip=True)
+                    title = soup.select_one(website.title_selector).get_text(strip=True)
                     # Get the product price
-                    price = soup.select_one('meta[itemprop="price"]')['content'].replace(',','').strip() if len(soup.select('meta[itemprop="price"]'))>0 else ''
+                    if website.price_attr:
+                        price = soup.select_one(website.price_selector)[website.price_attr].replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
+                    else:
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select_one(website.price_selector).get_text(strip=True))>0 else soup.select_one(website.second_price_selector).get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
                     # Get discount
                     discount = '0'
                     # Get the main image URL
-                    main_image_elem = soup.select_one('.fotorama__stage > div  div[data-active="true"] img')
-                    image = getImageBase64(driver, request.data['id'], main_image_elem['src']) if main_image_elem else ''
+                    main_image_elem = soup.select_one(website.main_img_selector)
+                    image = getImageBase64(driver, website.seller_id, main_image_elem[website.main_img_attr]) if main_image_elem else ''
                     # Get additional images
-                    image_elems = driver.find_elements(By.CSS_SELECTOR,'.fotorama__nav__shaft > .fotorama__nav__frame')
                     images = []
-                    for indx, i in enumerate(image_elems):
-                        until_visible_click(driver, '.fotorama__nav__shaft > .fotorama__nav__frame:nth-child('+str(indx+2)+')')
-                        sleep(1)
-                        img = driver.find_element(By.CSS_SELECTOR, '.fotorama__stage > div div[data-active="true"] img')
-                        if len(img.get_attribute('src'))>10:
-                            res = getImageBase64(driver, request.data['id'], img.get_attribute('src'))
-                            if res:
-                                images.append(res)
+                    if website.img_click:
+                        image_elems = driver.find_elements(By.CSS_SELECTOR, website.img_selector)
+                        for indx, i in enumerate(image_elems):
+                            until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+2)+')')
+                            sleep(1)
+                            img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
+                            if len(img.get_attribute(website.img_attr))>10:
+                                res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
+                                if res:
+                                    images.append(res)
+                    else:
+                        image_elems = soup.select(website.img_selector)
+                        for img in image_elems:
+                            if len(img[website.img_attr])>10:
+                                res = getImageBase64(driver, website.seller_id, img[website.img_attr])
+                                if res:
+                                    images.append(res)
                     # Check stock status
-                    in_stock = '3' if len(soup.select('.product-info-main .stock.unavailable'))==0 else '0'
+                    if website.is_stuck:
+                        in_stock = '3' if len(soup.select(website.stuck_selector))==0 else '0'
+                    else:
+                        in_stock = '3'
                     # Get product attributes content
-                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
+                    description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
                     product_attributes_content = description_elem if description_elem else ''
                     # Get keywords
-                    key_words_elem = soup.select_one(key_words_selector)
+                    key_words_elem = soup.select_one(website.key_words_selector)
                     keyWords = key_words_elem['content'].strip() if key_words_elem else ''
                     keywords = keyWords.split('//')
                     if len(product_attributes_content)>0:
                         keywords = extract_top_keywords(product_attributes_content)
                         ar_keywords = []
                         for k in keyWords.split('//'):
-                            keywords.append(k)
+                            keywords.append(translate(k, dest="en"))
 
                         for keyW in keywords:
                             ar_keywords.append(translate(keyW))
@@ -4096,9 +4109,9 @@ class BirdsLandScrapView(APIView):
                     
                     product = {
                         "Arabic Name": translate(title),
-                        "English Name": title,
+                        "English Name": translate(title, dest="en"),
                         "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
+                        "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
                         "Category Id": request.data['db_category'],
                         "Arabic Brand": "",
                         "English Brand": "",
@@ -4132,9 +4145,10 @@ class BirdsLandScrapView(APIView):
             df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
             df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
             change_content(driver, [d for d in data if d['Current Stock'] != '0'], request.data['db_category'])
-            df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
-            df.to_excel('excel/'+request.data['db_category']+'out_products.xlsx', index=False)
-            change_content(driver, [d for d in data if d['Current Stock'] == '0'], request.data['db_category']+'out', withoutReset=False)
+            if website.export_out_of_stuck:
+                df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
+                df.to_excel('excel/'+request.data['db_category']+'out_products.xlsx', index=False)
+                change_content(driver, [d for d in data if d['Current Stock'] == '0'], request.data['db_category']+'out', withoutReset=False)
             
         driver.quit()
         return JsonResponse({})  

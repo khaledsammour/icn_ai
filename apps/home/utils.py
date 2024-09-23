@@ -12,6 +12,7 @@ import language_tool_python
 import re
 from deep_translator import GoogleTranslator
 import yake
+from langdetect import detect
 
 def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=True):
     isExist = True
@@ -243,6 +244,10 @@ def replace_dimensions(url):
 
 def translate(text, dest='ar'):
     try:
+        lang = detect(text)
+        detected_lang = 'en' if lang == 'en' else 'ar'
+        if detected_lang == dest:
+            return text
         translation = GoogleTranslator(source='auto', target=dest).translate(text)
         return translation
     except Exception as e:

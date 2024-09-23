@@ -1,10 +1,32 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
-
+class Websites(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    seller_id = models.CharField(max_length=250, null=True, blank=True)
+    name = models.CharField(max_length=250, null=True, blank=True)
+    pagination_path = models.CharField(max_length=250, null=True, blank=True)
+    product_selector = models.CharField(max_length=250, null=True, blank=True)
+    title_selector = models.CharField(max_length=250, null=True, blank=True)
+    title_attr = models.CharField(max_length=250, null=True, blank=True)
+    description_selector = models.CharField(max_length=250, null=True, blank=True)
+    description_attr = models.CharField(max_length=250, null=True, blank=True)
+    key_words_selector = models.CharField(max_length=250, default="meta[property*='og:title']")
+    main_img_selector = models.CharField(max_length=250, null=True, blank=True)
+    main_img_attr = models.CharField(max_length=250, null=True, blank=True, default="src")
+    img_click = models.BooleanField(default=False, null=True, blank=True)
+    img_selector = models.CharField(max_length=250, null=True, blank=True)
+    img_attr = models.CharField(max_length=250, null=True, blank=True, default="src")
+    price_selector = models.CharField(max_length=250, null=True, blank=True)
+    price_attr = models.CharField(max_length=250, null=True, blank=True)
+    second_price_selector = models.CharField(max_length=250, null=True, blank=True)
+    second_price_attr = models.CharField(max_length=250, null=True, blank=True)
+    is_discount = models.BooleanField(default=False, null=True, blank=True)
+    discount_selector = models.CharField(max_length=250, null=True, blank=True)
+    discount_attr = models.CharField(max_length=250, null=True, blank=True)
+    is_stuck = models.BooleanField(default=False, null=True, blank=True)
+    stuck_selector = models.CharField(max_length=250, null=True, blank=True)
+    is_feature = models.BooleanField(default=False, null=True, blank=True)
+    features_selector = models.CharField(max_length=250, null=True, blank=True)
+    features_attr = models.CharField(max_length=250, null=True, blank=True)
+    export_out_of_stuck = models.BooleanField(default=False, null=True, blank=True)
