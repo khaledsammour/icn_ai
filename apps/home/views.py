@@ -4034,6 +4034,7 @@ class BirdsLandScrapView(APIView):
         data = []
         errors = []
         hrefs = get_hrefs(driver, url, '/page', ".products > .product a.product-item-link")
+        print(hrefs)
         error = False
                 
         for href in hrefs:
@@ -4072,7 +4073,7 @@ class BirdsLandScrapView(APIView):
                             if res:
                                 images.append(res)
                     # Check stock status
-                    in_stock = '3' if len(soup.select('.stock.unavailable'))==0 else '0'
+                    in_stock = '3' if len(soup.select('.product-info-main .stock.unavailable'))==0 else '0'
                     # Get product attributes content
                     description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
                     product_attributes_content = description_elem if description_elem else ''
