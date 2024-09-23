@@ -1,31 +1,17 @@
-from django import template
-from django.http import HttpResponse, HttpResponseRedirect
-from django.template import loader
-from django.urls import reverse
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 import pandas as pd
 import requests
-import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver import Chrome
-from rest_framework.views import APIView
-from django.http import JsonResponse
 from bs4 import BeautifulSoup
 import language_tool_python
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 from deep_translator import GoogleTranslator
 import yake
-import undetected_chromedriver as uc
-import traceback
-from openpyxl import load_workbook
-import io
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
 def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=True):
     isExist = True

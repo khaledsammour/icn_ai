@@ -2200,8 +2200,8 @@ class AlrefaiScrapView(APIView):
                     else:
                         unit = soup.select_one('.details_price .unit').get_text(strip=True) if len(soup.select('.details_price .unit'))>0 else ''
                         product = {
-                            "Arabic Name": f'{title} {' - ' +unit}',
-                            "English Name": translate(f'{title} {' - ' +unit}', dest='en'),
+                            "Arabic Name": f'{title} - {unit}',
+                            "English Name": translate(f'{title} - {unit}', dest='en'),
                             "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
                             "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
                             "Category Id": request.data['db_category'],
@@ -4640,7 +4640,8 @@ class IntegrationTest(APIView):
                     
                 if len(errors)>0:
                     df = pd.DataFrame(errors)
-                    df.to_excel(f'excel/{e['title']}.xlsx', index=False)
+                    t = e['title']
+                    df.to_excel(f'excel/{t}.xlsx', index=False)
             
         except:
             traceback.print_exc()
