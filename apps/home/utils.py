@@ -14,15 +14,15 @@ from deep_translator import GoogleTranslator
 import yake
 from langdetect import detect
 
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=True):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False):
     isExist = True
     hrefs = []
     fitst_index = index
+    if start_pagination:
+        driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
     while(isExist):
         if index != fitst_index:
             driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
-        # else:
-        #     driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
 
         sleep(3)
         if should_not_exist:

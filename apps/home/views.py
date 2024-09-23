@@ -42,6 +42,7 @@ def pages(request):
         if load_template == 'admin':
             return HttpResponseRedirect(reverse('admin:index'))
         context['segment'] = load_template
+        context['websites'] = Websites.objects.all()
 
         html_template = loader.get_template('home/' + load_template)
         return HttpResponse(html_template.render(context, request))
@@ -3919,8 +3920,7 @@ class ArabiEmartScrapView(APIView):
         sleep(1)
         data = []
         errors = []
-        # hrefs = get_hrefs(driver, url, '/page', ".grid .card header a.no-underline")
-        hrefs = get_hrefs(driver, url, '&page=', ".grid .card header a.no-underline", index=int(request.data['index']), max_index=int(request.data['max_index']), start_pagination=False)
+        hrefs = get_hrefs(driver, url, '&page=', ".grid .card header a.no-underline", index=int(request.data['index']), max_index=int(request.data['max_index']), start_pagination=True)
         error = False
         for i, e in enumerate(hrefs):
             match = re.search(r'"item_url":"(/items/en/[^"]+)"', e)
@@ -4028,8 +4028,7 @@ class ArabiEmartScrapView(APIView):
  
 class BirdsLandScrapView(APIView):
     def post(self, request, *args, **kwargs):
-        website = Websites.objects.get(name="Pets castle")
-        # website = Websites.objects.get(name="Birds Land")
+        website = Websites.objects.get(name=request.data['name'])
         url = request.data['url']
         driver = create_browser()
         driver.get(url)

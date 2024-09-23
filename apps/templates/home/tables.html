@@ -769,18 +769,23 @@
                             <tr>
                                 <td>
                                     <p>Birds Land</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="birds_land_url"/>
+                                    <select class="form-control" id="main">
+                                        {% for website in websites %}
+                                            <option>{{ website.name }}</option>
+                                        {% empty %}
+                                            <option>No items available.</option>
+                                        {% endfor %}
+                                    </select>
                                 </td>
                                 <td>
-                                    <p>3</p>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="main_url"/>
+                                </td>
+                                <td>
                                     <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="birds_land_db_category"/>
-                                </td>
-                                <td>
-                                    07-10-2024
+                                           id="main_db_category"/>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn" onclick="birdsLandScrapView()">
+                                    <button type="button" class="btn" onclick="mainScrapView()">
                                         Scrap
                                     </button>
                                 </td>
@@ -1495,7 +1500,7 @@
 
     }
     
-    function birdsLandScrapView() {
+    function mainScrapView() {
         fetch("/api/BirdsLandScrapView", {
             method: "POST",
             headers: {
@@ -1503,9 +1508,9 @@
                 'X-CSRFToken': csrftoken,
             },
             body: JSON.stringify({
-                id: "3128",
-                url: document.getElementById('birds_land_url').value,
-                db_category: document.getElementById('birds_land_db_category').value,
+                name: document.getElementById('main').value,
+                url: document.getElementById('main_url').value,
+                db_category: document.getElementById('main_db_category').value,
                 description: ' ',
                 arabic_description: ' ',
             })
