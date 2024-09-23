@@ -244,10 +244,11 @@ def replace_dimensions(url):
 
 def translate(text, dest='ar'):
     try:
-        lang = detect(text)
-        detected_lang = 'en' if lang == 'en' else 'ar'
-        if detected_lang == dest:
-            return text
+        # lang = detect(text)
+        # detected_lang = 'en' if lang == 'en' else 'ar'
+        # print(text, detected_lang)
+        # if detected_lang == dest:
+        #     return text
         translation = GoogleTranslator(source='auto', target=dest).translate(text)
         return translation
     except Exception as e:
