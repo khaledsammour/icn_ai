@@ -53,6 +53,30 @@
                             </tr>
                             <tr>
                                 <td>
+                                    <p>Main</p>
+                                    <select class="form-control" id="main">
+                                        {% for website in websites %}
+                                            <option>{{ website.name }}</option>
+                                        {% empty %}
+                                            <option>No items available.</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control mt-3" placeholder="URL" id="main_url"/>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control mt-3" placeholder="Category"
+                                           id="main_db_category"/>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="mainScrapView()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
                                     <p>Oriental</p>
                                     <input type="number" class="form-control mt-3" placeholder="category"
                                            id="oriental_category"/>
@@ -651,25 +675,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Skin Horizons</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="skin_horizons_url"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="skin_horizons_db_category"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="skinhorizonsScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>Bashiti</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="bashiti_central_url"/>
                                 </td>
@@ -683,49 +688,6 @@
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="bashitiCentralScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>Kira pet</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="kirapet_url"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="kirapet_db_category"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="kirapetScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>Main</p>
-                                    <select class="form-control" id="main">
-                                        {% for website in websites %}
-                                            <option>{{ website.name }}</option>
-                                        {% empty %}
-                                            <option>No items available.</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="main_url"/>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="main_db_category"/>
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="mainScrapView()">
                                         Scrap
                                     </button>
                                 </td>
@@ -1337,26 +1299,6 @@
             .catch(error => console.error("Error:", error));
 
     }
-    function skinhorizonsScrapView() {
-        fetch("/api/SkinhorizonsScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "3087",
-                url: document.getElementById('skin_horizons_url').value,
-                db_category: document.getElementById('skin_horizons_db_category').value,
-                description: ' ',
-                arabic_description: ' ',
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
     function bashitiCentralScrapView() {
         fetch("/api/BashitiCentralScrapView", {
             method: "POST",
@@ -1368,27 +1310,6 @@
                 id: "2871",
                 url: document.getElementById('bashiti_central_url').value,
                 db_category: document.getElementById('bashiti_central_db_category').value,
-                description: ' ',
-                arabic_description: ' ',
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
-    function kirapetScrapView() {
-        fetch("/api/KirapetScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "3119",
-                url: document.getElementById('kirapet_url').value,
-                db_category: document.getElementById('kirapet_db_category').value,
                 description: ' ',
                 arabic_description: ' ',
             })
@@ -1423,7 +1344,7 @@
     }
     
     function mainScrapView() {
-        fetch("/api/BirdsLandScrapView", {
+        fetch("/api/MainScrapView", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -1553,6 +1474,13 @@
             image_selector = '.slider--product > .slide--product img'
             image_attr = 'src'
             brand = "WOW"
+        } else if (brand == "dumyah") {
+            id = '3097'
+            title_selector= '.heading-title'
+            description_selector = '#tab-description'
+            image_selector = '.product-info .image > a > img'
+            image_attr = 'src'
+            brand = "dumyah"
         }
         
         formData.append('id', id);

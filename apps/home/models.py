@@ -7,6 +7,7 @@ class Websites(models.Model):
     name = models.CharField(max_length=250, null=True, blank=True)
     pagination_path = models.CharField(max_length=250, null=True, blank=True)
     product_selector = models.CharField(max_length=250, null=True, blank=True)
+    product_click = models.BooleanField(default=False, null=True, blank=True)
     title_selector = models.CharField(max_length=250, null=True, blank=True)
     title_attr = models.CharField(max_length=250, null=True, blank=True)
     description_selector = models.CharField(max_length=250, null=True, blank=True)
@@ -35,3 +36,4 @@ class Websites(models.Model):
     export_out_of_stuck = models.BooleanField(default=False, null=True, blank=True)
     start_index = models.IntegerField(default=1, null=True, blank=True)
     end_index = models.IntegerField(null=True, blank=True)
+    number_of_products = models.IntegerField(null=True, blank=True)
