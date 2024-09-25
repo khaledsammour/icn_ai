@@ -3608,7 +3608,10 @@ class MainScrapView(APIView):
             if website.price_attr:
                 price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
             else:
-                price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select_one(website.price_selector).get_text(strip=True))>0 else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                if website.price_selector:
+                    price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select_one(website.price_selector).get_text(strip=True))>0 else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                else:
+                    price = ''
             # Get discount
             discount = '0'
             # Get the main image URL
@@ -3639,7 +3642,10 @@ class MainScrapView(APIView):
             else:
                 in_stock = '3'
             # Get product attributes content
-            description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
+            if website.description_attr:
+                description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
+            else:
+                description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
             product_attributes_content = description_elem if description_elem else ''
             # Get keywords
             key_words_elem = soup.select_one(website.key_words_selector)
