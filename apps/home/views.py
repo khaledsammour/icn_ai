@@ -3669,10 +3669,11 @@ class MainScrapView(APIView):
             if website.is_feature:            
                 product_attributes = soup.select(website.features_selector)
                 for attr in product_attributes:
-                    key = attr.select_one(website.features_key_selector).get_text(strip=True)
-                    val = attr.select_one(website.features_value_selector).get_text(strip=True)
-                    ar_product_attributes_content_json[translate(key)] = translate(val)
-                    product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
+                    if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
+                        key = attr.select_one(website.features_key_selector).get_text(strip=True)
+                        val = attr.select_one(website.features_value_selector).get_text(strip=True)
+                        ar_product_attributes_content_json[translate(key)] = translate(val)
+                        product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
             
             product = {
                 "Arabic Name": translate(title),
