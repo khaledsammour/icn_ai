@@ -114,8 +114,10 @@ def getImageBase64(driver, id, image_url):
     """
     # Execute the JavaScript code to get the ArrayBuffer
     if '?' in image_url:
-        image_url = 'https:' + image_url.split('?')[0]
-        
+        image_url = image_url.split('?')[0]
+        if 'https:' not in image_url:
+            image_url = 'https:' + image_url
+            
     array_buffer = driver.execute_script(js_code, image_url)
     
     # Convert the ArrayBuffer to bytes
@@ -146,7 +148,7 @@ def getImageBase64(driver, id, image_url):
             return response.text
         else:
             print('Request failed with status code:', response.status_code)
-            print('Response:', response.text)
+            # print('Response:', response.text)
             return ''
     except requests.exceptions.RequestException as e:
         print('An error occurred:', e)
