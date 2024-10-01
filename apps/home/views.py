@@ -3609,7 +3609,7 @@ class MainScrapView(APIView):
                 price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
             else:
                 if website.price_selector:
-                    price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select_one(website.price_selector).get_text(strip=True))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                    price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                 else:
                     price = ''
             # Get discount

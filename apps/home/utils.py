@@ -93,6 +93,9 @@ def save_image(image_data, file_path):
         file.write(image_data)
 
 def getImageBase64(driver, id, image_url):
+    if 'youtube.com' in image_url:
+        return ''
+    image_url = image_url.replace('_60x.', '.')
     js_code = """
     function getImageBlob(url) {
         return new Promise((resolve, reject) => {
