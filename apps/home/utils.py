@@ -48,9 +48,10 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
         index = index + 1
     return hrefs
 
-def create_browser():
+def create_browser(page_load_strategy='normal'):
     chrome_options = Options()
-    # chrome_options.page_load_strategy = 'eager'
+    # none, eager, normal
+    chrome_options.page_load_strategy = page_load_strategy
     # chrome_options.add_argument('--blink-settings=imagesEnabled=false')
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-gpu')

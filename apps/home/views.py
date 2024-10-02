@@ -3585,7 +3585,8 @@ class MainScrapView(APIView):
     def post(self, request, *args, **kwargs):
         website = Websites.objects.get(name=request.data['name'])
         url = request.data['url']
-        driver = create_browser()
+
+        driver = create_browser(page_load_strategy='Indola stores' if request.data['name'] == 'eager' else 'normal')
         driver.get(url)
         sleep(1)
         data = []
