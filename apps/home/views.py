@@ -3601,7 +3601,7 @@ class MainScrapView(APIView):
         categoryKey = request.data['categoryKey']
         airtable = Airtable(baseId, 'patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715')
         all_records = airtable.iterate(tableId, view=viewId)
-        for r in all_records:
+        def process_record(r):
             url = r['fields'][urlKey]
             category = r['fields'][categoryKey]
             driver = create_browser(page_load_strategy='eager' if request.data['name'] == 'Indola stores' else 'normal')
@@ -3778,6 +3778,8 @@ class MainScrapView(APIView):
                     change_content(driver, [d for d in data if d['Current Stock'] == '0'], category+'out', withoutReset=False)
                 
             driver.quit()
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            list(executor.map(process_record, all_records))
         return JsonResponse({})  
  
 class InimexShopScrapView(APIView):
