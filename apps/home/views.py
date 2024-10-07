@@ -24,6 +24,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from .utils import get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
 from .models import Websites
+from airtable import Airtable
 
 def index(request):
     context = {'segment': 'index'}
@@ -2675,6 +2676,7 @@ class DelfyScrapView(APIView):
         brand = request.data['brand']
         title_selector = request.data['title_selector']
         description_selector = request.data['description_selector']
+        main_image_selector = request.data['main_image_selector']
         image_selector = request.data['image_selector']
         image_attr = request.data['image_attr']
         store_id = request.data['id']
@@ -2726,7 +2728,12 @@ class DelfyScrapView(APIView):
                         except:
                             print('title_selector isnt found')
                             continue
-                        until_visible(driver, image_selector)
+                        driver.execute_script("""
+                        var style = document.createElement('style');
+                        style.type = 'text/css';
+                        style.innerHTML = '.slick-track:before { content: none; } .slick-track:after { content: none; } .square-image:before { content: none; } .square-image:after { content: none; }';
+                        document.getElementsByTagName('body')[0].appendChild(style);
+                        """)
                         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                         soup = BeautifulSoup(href_res, 'html.parser')
                         title = soup.select_one(title_selector).get_text(strip=True)
@@ -2736,7 +2743,10 @@ class DelfyScrapView(APIView):
                         else:
                             stuck = '3'
                         # Get the main image URL
-                        main_image_elem = soup.select_one(image_selector)
+                        if main_image_selector:
+                            main_image_elem = soup.select_one(main_image_selector)
+                        else:
+                            main_image_elem = soup.select_one(image_selector)
                         if store_id == '2959':
                             image = getImageBase64(driver, store_id, 'https://www.garnierarabia.com'+main_image_elem[image_attr].split('?')[0]) if main_image_elem else ''
                         else:
@@ -3584,181 +3594,190 @@ class ArabiEmartScrapView(APIView):
 class MainScrapView(APIView):
     def post(self, request, *args, **kwargs):
         website = Websites.objects.get(name=request.data['name'])
-        url = request.data['url']
-
-        driver = create_browser(page_load_strategy='Indola stores' if request.data['name'] == 'eager' else 'normal')
-        driver.get(url)
-        sleep(1)
-        data = []
-        errors = []
-        error = False
-        def product_details(href):
-            try:
-                until_visible(driver, website.title_selector)
-            except: 
-                pass
-            if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))==0:
-                return
-            href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-            soup = BeautifulSoup(href_res, 'html.parser')
-            if website.title_attr:
-                title = soup.select_one(website.title_selector)[website.title_attr].strip()
-            else:
-                title = soup.select_one(website.title_selector).get_text(strip=True)
-            # Get the product price
-            if website.price_attr:
-                price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
-            else:
-                if website.price_selector:
-                    price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+        baseId = request.data['baseId']
+        tableId = request.data['tableId']
+        viewId = request.data['viewId']
+        urlKey = request.data['urlKey']
+        categoryKey = request.data['categoryKey']
+        airtable = Airtable(baseId, 'patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715')
+        all_records = airtable.iterate(tableId, view=viewId)
+        for r in all_records:
+            url = r['fields'][urlKey]
+            category = r['fields'][categoryKey]
+            driver = create_browser(page_load_strategy='eager' if request.data['name'] == 'Indola stores' else 'normal')
+            driver.get(url)
+            sleep(1)
+            data = []
+            errors = []
+            error = False
+            def product_details(href):
+                try:
+                    until_visible(driver, website.title_selector)
+                except: 
+                    pass
+                if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))==0:
+                    return
+                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                soup = BeautifulSoup(href_res, 'html.parser')
+                if website.title_attr:
+                    title = soup.select_one(website.title_selector)[website.title_attr].strip()
                 else:
-                    price = ''
-            # Get discount
-            discount = '0'
-            # Get the main image URL
-            main_image_elem = soup.select_one(website.main_img_selector)
-            image = getImageBase64(driver, website.seller_id, main_image_elem[website.main_img_attr]) if main_image_elem else ''
-            # Get additional images
-            images = []
-            if website.img_click:
-                image_elems = driver.find_elements(By.CSS_SELECTOR, website.img_selector)
-                for indx, i in enumerate(image_elems):
-                    until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+2)+')')
-                    sleep(1)
-                    img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
-                    if len(img.get_attribute(website.img_attr))>10:
-                        res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
-                        if res:
-                            images.append(res)
-            else:
-                image_elems = soup.select(website.img_selector)
-                for img in image_elems:
-                    if len(img[website.img_attr])>10:
-                        res = getImageBase64(driver, website.seller_id, img[website.img_attr])
-                        if res:
-                            images.append(res)
-            # Check stock status
-            if website.is_stuck:
-                in_stock = '3' if len(soup.select(website.stuck_selector))==0 else '0'
-            else:
-                in_stock = '3'
-            # Get product attributes content
-            if website.description_attr:
-                description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
-            else:
-                description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
-            product_attributes_content = description_elem if description_elem else ''
-            # Get keywords
-            key_words_elem = soup.select_one(website.key_words_selector)
-            keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-            keywords = keyWords.split('//')
-            if len(product_attributes_content)>0:
-                keywords = extract_top_keywords(product_attributes_content)
-                ar_keywords = []
-                for k in keyWords.split('//'):
-                    keywords.append(translate(k, dest="en"))
+                    title = soup.select_one(website.title_selector).get_text(strip=True)
+                # Get the product price
+                if website.price_attr:
+                    price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
+                else:
+                    if website.price_selector:
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                    else:
+                        price = ''
+                # Get discount
+                discount = '0'
+                # Get the main image URL
+                main_image_elem = soup.select_one(website.main_img_selector)
+                image = getImageBase64(driver, website.seller_id, main_image_elem[website.main_img_attr]) if main_image_elem else ''
+                # Get additional images
+                images = []
+                if website.img_click:
+                    image_elems = driver.find_elements(By.CSS_SELECTOR, website.img_selector)
+                    for indx, i in enumerate(image_elems):
+                        until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+2)+')')
+                        sleep(1)
+                        img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
+                        if len(img.get_attribute(website.img_attr))>10:
+                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
+                            if res:
+                                images.append(res)
+                else:
+                    image_elems = soup.select(website.img_selector)
+                    for img in image_elems:
+                        if len(img[website.img_attr])>10:
+                            res = getImageBase64(driver, website.seller_id, img[website.img_attr])
+                            if res:
+                                images.append(res)
+                # Check stock status
+                if website.is_stuck:
+                    in_stock = '3' if len(soup.select(website.stuck_selector))==0 else '0'
+                else:
+                    in_stock = '3'
+                # Get product attributes content
+                if website.description_attr:
+                    description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
+                else:
+                    description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
+                product_attributes_content = description_elem if description_elem else ''
+                # Get keywords
+                key_words_elem = soup.select_one(website.key_words_selector)
+                keyWords = key_words_elem['content'].strip() if key_words_elem else ''
+                keywords = keyWords.split('//')
+                if len(product_attributes_content)>0:
+                    keywords = extract_top_keywords(product_attributes_content)
+                    ar_keywords = []
+                    for k in keyWords.split('//'):
+                        keywords.append(translate(k, dest="en"))
 
-                for keyW in keywords:
-                    ar_keywords.append(translate(keyW))
-            else:
-                ar_keywords = []
-                for keyW in keywords:
-                    ar_keywords.append(translate(keyW))
+                    for keyW in keywords:
+                        ar_keywords.append(translate(keyW))
+                else:
+                    ar_keywords = []
+                    for keyW in keywords:
+                        ar_keywords.append(translate(keyW))
 
-            product_attributes_content_json = {}                
-            ar_product_attributes_content_json = {}    
-            if website.is_feature:            
-                product_attributes = soup.select(website.features_selector)
-                for attr in product_attributes:
-                    if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
-                        key = attr.select_one(website.features_key_selector).get_text(strip=True)
-                        val = attr.select_one(website.features_value_selector).get_text(strip=True)
-                        ar_product_attributes_content_json[translate(key)] = translate(val)
-                        product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
-            
-            product = {
-                "Arabic Name": translate(title),
-                "English Name": translate(title, dest="en"),
-                "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
-                "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
-                "Category Id": request.data['db_category'],
-                "Arabic Brand": "",
-                "English Brand": "",
-                "Unit Price": price,
-                "Discount Type": "Flat" if discount != "0" else "",
-                "Discount": discount if discount != "0" else "",
-                "Unit": "PC",
-                "Current Stock": in_stock,
-                "Main Image URL": image,
-                "Photos URLs": str((",").join(images)) if images else image,
-                "Video Youtube URL": "",
-                "English Meta Tags": ','.join(keywords),
-                "Arabic Meta Tags": ','.join(ar_keywords),
-                "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
-                "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
-                "wholesale": "no",
-                "reference_link": href,
-            }
-            data.append(product)
+                product_attributes_content_json = {}                
+                ar_product_attributes_content_json = {}    
+                if website.is_feature:            
+                    product_attributes = soup.select(website.features_selector)
+                    for attr in product_attributes:
+                        if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
+                            key = attr.select_one(website.features_key_selector).get_text(strip=True)
+                            val = attr.select_one(website.features_value_selector).get_text(strip=True)
+                            ar_product_attributes_content_json[translate(key)] = translate(val)
+                            product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
+                
+                product = {
+                    "Arabic Name": translate(title),
+                    "English Name": translate(title, dest="en"),
+                    "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                    "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
+                    "Category Id": category,
+                    "Arabic Brand": "",
+                    "English Brand": "",
+                    "Unit Price": price,
+                    "Discount Type": "Flat" if discount != "0" else "",
+                    "Discount": discount if discount != "0" else "",
+                    "Unit": "PC",
+                    "Current Stock": in_stock,
+                    "Main Image URL": image,
+                    "Photos URLs": str((",").join(images)) if images else image,
+                    "Video Youtube URL": "",
+                    "English Meta Tags": ','.join(keywords),
+                    "Arabic Meta Tags": ','.join(ar_keywords),
+                    "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
+                    "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
+                    "wholesale": "no",
+                    "reference_link": href,
+                }
+                data.append(product)
         
-        if website.product_click:
-            isExist = True
-            index = website.start_index
-            fitst_index = index
-            pagination = website.pagination_path
-            while(isExist):
-                if index != fitst_index:
-                    driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
-                sleep(3)
-                isExist = check_if_exist(driver, website.product_selector, "products")
-                elements = driver.find_elements(By.CSS_SELECTOR,  website.product_selector)
-                u = driver.current_url
-                for i, e in enumerate(elements):
-                    driver.get(u)
-                    until_visible_click(driver, f'{website.product_selector}:nth-child({i+1})')
-                    if website.number_of_products and website.number_of_products == i:
-                        break
+        
+            if website.product_click:
+                isExist = True
+                index = website.start_index
+                fitst_index = index
+                pagination = website.pagination_path
+                while(isExist):
+                    if index != fitst_index:
+                        driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
+                    sleep(3)
+                    isExist = check_if_exist(driver, website.product_selector, "products")
+                    elements = driver.find_elements(By.CSS_SELECTOR,  website.product_selector)
+                    u = driver.current_url
+                    for i, e in enumerate(elements):
+                        driver.get(u)
+                        until_visible_click(driver, f'{website.product_selector}:nth-child({i+1})')
+                        if website.number_of_products and website.number_of_products == i:
+                            break
+                        if not error:
+                            try:
+                                product_details(driver.current_url)
+                            except Exception as e:
+                                error = True
+                                print(e)
+                                traceback.print_exc()
+                                errors.append({
+                                    "url": driver.current_url
+                                })
+            else:
+                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index)
+                if website.number_of_products:
+                    hrefs = hrefs[:website.number_of_products]
+                        
+                for href in hrefs:
                     if not error:
                         try:
-                            product_details(driver.current_url)
+                            driver.get(href)
+                            sleep(1)
+                            product_details(href)
                         except Exception as e:
                             error = True
                             print(e)
                             traceback.print_exc()
                             errors.append({
-                                "url": driver.current_url
-                            })
-        else:
-            hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index)
-            if website.number_of_products:
-                hrefs = hrefs[:website.number_of_products]
-                    
-            for href in hrefs:
-                if not error:
-                    try:
-                        driver.get(href)
-                        sleep(1)
-                        product_details(href)
-                    except Exception as e:
-                        error = True
-                        print(e)
-                        traceback.print_exc()
-                        errors.append({
-                            "url": href
-                        })   
-        if len(errors)>0:
-            err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-        else:
-            df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            change_content(driver, [d for d in data if d['Current Stock'] != '0'], request.data['db_category'])
-            if website.export_out_of_stuck:
-                df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
-                df.to_excel('excel/'+request.data['db_category']+'out_products.xlsx', index=False)
-                change_content(driver, [d for d in data if d['Current Stock'] == '0'], request.data['db_category']+'out', withoutReset=False)
-            
-        driver.quit()
+                                "url": href
+                            })   
+            if len(errors)>0:
+                err_df = pd.DataFrame(errors)
+                err_df.to_excel('excel/'+category+'_errors.xlsx', index=False)
+            else:
+                df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
+                df.to_excel('excel/'+category+'_products.xlsx', index=False)
+                change_content(driver, [d for d in data if d['Current Stock'] != '0'], category)
+                if website.export_out_of_stuck:
+                    df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
+                    df.to_excel('excel/'+category+'out_products.xlsx', index=False)
+                    change_content(driver, [d for d in data if d['Current Stock'] == '0'], category+'out', withoutReset=False)
+                
+            driver.quit()
         return JsonResponse({})  
  
 class InimexShopScrapView(APIView):

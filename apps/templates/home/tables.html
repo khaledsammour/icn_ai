@@ -63,11 +63,15 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="main_url"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Base Id" id="baseId"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Table Id" id="tableId"/>
+                                    <input type="text" class="form-control mt-3" placeholder="View Id" id="viewId"/>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="main_db_category"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Url Key"
+                                           id="urlKey"/>
+                                    <input type="text" class="form-control mt-3" placeholder="Category Key"
+                                        id="categoryKey"/>
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="mainScrapView()">
@@ -1392,6 +1396,7 @@
         let brand = document.getElementById('brand').value
         let click_before_description = ''
         let not_in_stuck = ''
+        let main_image_selector = ''
         if (brand == 'Delfy'){
             id = '2982'
             title_selector= '.detail-product-name'
@@ -1488,6 +1493,21 @@
             image_selector = '.embla img'
             image_attr = 'src'
             brand = ""
+        } else if (brand == "Frezyderm") {
+            id = '3009'
+            title_selector= '.details > h1'
+            description_selector = '.details > .desc'
+            main_image_selector = '.product .top .media .img img'
+            image_selector = 'ul.thumbs > li > img'
+            image_attr = 'src'
+            brand = "Frezyderm"
+        } else if (brand == "perfecto") {
+            id = '3202'
+            title_selector= '.product-title'
+            description_selector = '.shortdesc'
+            image_selector = '#gallery .square-image img'
+            image_attr = 'src'
+            brand = ""
         }
         
         formData.append('id', id);
@@ -1499,6 +1519,7 @@
         formData.append('image_attr', image_attr);
         formData.append('click_before_description', click_before_description);
         formData.append('not_in_stuck', not_in_stuck);
+        formData.append('main_image_selector', main_image_selector);
         fetch("/api/DelfyScrapView", {
         method: "POST",
         headers: {
