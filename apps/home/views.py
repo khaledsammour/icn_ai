@@ -49,8 +49,8 @@ def pages(request):
         return HttpResponse(html_template.render(context, request))
 
     except template.TemplateDoesNotExist:
-        if request.path.split('/')[-1] == 'scrap':
-            scrap()
+        if 'asstes' in request.path:
+            return
         html_template = loader.get_template('home/page-404.html')
         return HttpResponse(html_template.render(context, request))
 
@@ -3591,14 +3591,15 @@ class ArabiEmartScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
  
+mainExecutor = None
 class MainScrapView(APIView):
     def post(self, request, *args, **kwargs):
         website = Websites.objects.get(name=request.data['name'])
-        baseId = request.data['baseId']
-        tableId = request.data['tableId']
+        baseId = website.base_id
+        tableId = website.table_id
         viewId = request.data['viewId']
-        urlKey = request.data['urlKey']
-        categoryKey = request.data['categoryKey']
+        urlKey = 'Link'
+        categoryKey = 'Category'
         airtable = Airtable(baseId, 'patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715')
         all_records = airtable.iterate(tableId, view=viewId)
         def process_record(r):
@@ -3624,11 +3625,13 @@ class MainScrapView(APIView):
                 else:
                     title = soup.select_one(website.title_selector).get_text(strip=True)
                 # Get the product price
-                if website.price_attr:
+                if website.static_price:
+                    price = website.static_price
+                elif website.price_attr:
                     price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
                     if website.price_selector:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     else:
                         price = ''
                 # Get discount
@@ -3661,10 +3664,13 @@ class MainScrapView(APIView):
                 else:
                     in_stock = '3'
                 # Get product attributes content
-                if website.description_attr:
-                    description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
+                if website.description_selector:
+                    if website.description_attr:
+                        description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
+                    else:
+                        description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
                 else:
-                    description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
+                    description_elem = None
                 product_attributes_content = description_elem if description_elem else ''
                 # Get keywords
                 key_words_elem = soup.select_one(website.key_words_selector)
@@ -3695,8 +3701,8 @@ class MainScrapView(APIView):
                             product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 
                 product = {
-                    "Arabic Name": translate(title),
-                    "English Name": translate(title, dest="en"),
+                    "Arabic Name": (website.title_prefix+' ' if website.title_prefix else '') + translate(title),
+                    "English Name": (website.title_prefix+' ' if website.title_prefix else '') + translate(title, dest="en"),
                     "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
                     "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": category,
@@ -3719,7 +3725,12 @@ class MainScrapView(APIView):
                 }
                 data.append(product)
         
-        
+            if website.require_login:
+                if len(driver.find_elements(By.CSS_SELECTOR, website.email_selector))>0:
+                    until_visible_send_keys(driver, website.email_selector, website.email)
+                    until_visible_send_keys(driver, website.password_selector, website.password)
+                    until_visible_click(driver, website.button_selector)
+                    sleep(3)
             if website.product_click:
                 isExist = True
                 index = website.start_index
@@ -3747,8 +3758,10 @@ class MainScrapView(APIView):
                                 errors.append({
                                     "url": driver.current_url
                                 })
+                    if website.no_pagination:
+                        isExist = False
             else:
-                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index)
+                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
                 if website.number_of_products:
                     hrefs = hrefs[:website.number_of_products]
                         
@@ -3779,9 +3792,17 @@ class MainScrapView(APIView):
                 
             driver.quit()
         with ThreadPoolExecutor(max_workers=6) as executor:
+            global mainExecutor
+            mainExecutor = executor
             list(executor.map(process_record, all_records))
         return JsonResponse({})  
  
+class StopProcess(APIView):
+    def post(self, request, *args, **kwargs):
+        global mainExecutor
+        mainExecutor.shutdown()
+        return JsonResponse({})
+
 class InimexShopScrapView(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']

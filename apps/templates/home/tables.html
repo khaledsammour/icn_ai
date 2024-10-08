@@ -63,19 +63,16 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control mt-3" placeholder="Base Id" id="baseId"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Table Id" id="tableId"/>
                                     <input type="text" class="form-control mt-3" placeholder="View Id" id="viewId"/>
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control mt-3" placeholder="Url Key"
-                                           id="urlKey"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Category Key"
-                                        id="categoryKey"/>
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="mainScrapView()">
                                         Scrap
+                                    </button>
+                                    <button type="button" class="btn" onclick="stopProcess()">
+                                        Stop
                                     </button>
                                 </td>
                             </tr>
@@ -1346,7 +1343,20 @@
             .catch(error => console.error("Error:", error));
 
     }
-    
+    function stopProcess() {
+        fetch("/api/stopProcess", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({})
+        })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error("Error:", error));
+    }
+
     function mainScrapView() {
         fetch("/api/MainScrapView", {
             method: "POST",
@@ -1356,11 +1366,7 @@
             },
             body: JSON.stringify({
                 name: document.getElementById('main').value,
-                baseId: document.getElementById('baseId').value,
-                tableId: document.getElementById('tableId').value,
                 viewId: document.getElementById('viewId').value,
-                urlKey: document.getElementById('urlKey').value,
-                categoryKey: document.getElementById('categoryKey').value,
                 description: ' ',
                 arabic_description: ' ',
             })

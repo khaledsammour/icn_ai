@@ -14,7 +14,7 @@ from deep_translator import GoogleTranslator
 import yake
 from langdetect import detect
 
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False):
     isExist = True
     hrefs = []
     fitst_index = index
@@ -46,6 +46,8 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
                 else:
                     hrefs.append(e.get_attribute(attr))
         index = index + 1
+        if no_pagination:
+            isExist = False
     return hrefs
 
 def create_browser(page_load_strategy='normal'):
