@@ -54,7 +54,7 @@ def pages(request):
         return HttpResponse(html_template.render(context, request))
 
     except template.TemplateDoesNotExist:
-        if 'asstes' in request.path:
+        if 'asstes' in request.path or 'media' in request.path:
             return
         html_template = loader.get_template('home/page-404.html')
         return HttpResponse(html_template.render(context, request))
