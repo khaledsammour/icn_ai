@@ -21,7 +21,7 @@ import traceback
 from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from .utils import get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
+from .utils import upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
 from .models import Websites
 from airtable import Airtable
@@ -3998,6 +3998,33 @@ class TemuScrapView(APIView):
 
 class ChangeText(APIView):
     def post(self, request, *args, **kwargs):
+        print('1')
+        if os.path.join('excel', request.data['id']+'_products.xlsx'):
+            print('2')
+            try:
+                url = "https://ai.icn.com/api/upload_image"
+                files = {
+                    'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+                }
+                print('3')
+                data = {
+                    'base_id': 'app8ZhKII0Cz7us07',
+                    'table_id': 'tblIRJLkRrnkWrM1X',
+                    'record_id': 'recU0TUaVmtnkyCrr',
+                }
+                # Send the POST request
+                response = requests.post(url, files=files, data=data)
+                print('4')
+                print(response.status_code)
+                print('5')
+                if response.status_code == 201:
+                    print('5')
+                    os.remove(os.path.join('excel', request.data['id']+'_products.xlsx'))
+                    os.remove(os.path.join('excel', 'new_'+request.data['id']+'_products.xlsx'))
+                return response.json()  # Return the response as JSON
+            except Exception as error:
+                print(error)
+        return JsonResponse({})
         chrome_options = Options()
         # chrome_options.page_load_strategy = 'eager'
         chrome_options.add_argument('--blink-settings=imagesEnabled=false')
