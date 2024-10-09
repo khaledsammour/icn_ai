@@ -4015,12 +4015,12 @@ class ChangeText(APIView):
                 # Send the POST request
                 response = requests.post(url, files=files, data=data)
                 print('4')
-                print(response.status_code)
+                print(response.json())
                 print('5')
                 if response.status_code == 201:
                     print('5')
-                    os.remove(os.path.join('excel', request.data['id']+'_products.xlsx'))
-                    os.remove(os.path.join('excel', 'new_'+request.data['id']+'_products.xlsx'))
+                    # os.remove(os.path.join('excel', request.data['id']+'_products.xlsx'))
+                    # os.remove(os.path.join('excel', 'new_'+request.data['id']+'_products.xlsx'))
                 return response.json()  # Return the response as JSON
             except Exception as error:
                 print(error)
@@ -4370,5 +4370,5 @@ class ImageUploadView(APIView):
         if upload:
             return Response({'message': 'Image uploaded successfully', 'status': 200}, status=status.HTTP_201_CREATED) 
         else:
-            return Response({'message': 'Image uploaded failed', 'status': 500}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Image uploaded failed', 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
