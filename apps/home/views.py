@@ -29,6 +29,7 @@ import os
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -47,6 +48,13 @@ def pages(request):
 
         if load_template == 'admin':
             return HttpResponseRedirect(reverse('admin:index'))
+        
+        if 'media' in request.path:
+            media_path = os.path.join(settings.MEDIA_ROOT, request.path.split('/media/')[-1])
+            if os.path.exists(media_path):
+                with open(media_path, 'rb') as media_file:
+                    return HttpResponse(media_file.read(), content_type='application/octet-stream')
+
         context['segment'] = load_template
         context['websites'] = Websites.objects.all()
 
@@ -54,8 +62,6 @@ def pages(request):
         return HttpResponse(html_template.render(context, request))
 
     except template.TemplateDoesNotExist:
-        if 'asstes' in request.path or 'media' in request.path:
-            return
         html_template = loader.get_template('home/page-404.html')
         return HttpResponse(html_template.render(context, request))
 
