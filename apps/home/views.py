@@ -3791,20 +3791,20 @@ class MainScrapView(APIView):
                             })   
             if len(errors)>0:
                 err_df = pd.DataFrame(errors)
-                err_df.to_excel('excel/'+category+'_errors.xlsx', index=False)
+                err_df.to_excel('excel/'+r['id']+'_errors.xlsx', index=False)
             else:
                 df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
-                df.to_excel('excel/'+category+'_products.xlsx', index=False)
-                change_content(driver, [d for d in data if d['Current Stock'] != '0'], category)
+                df.to_excel('excel/'+r['id']+'_products.xlsx', index=False)
+                change_content(driver, [d for d in data if d['Current Stock'] != '0'], r['id'])
                 if website.export_out_of_stuck:
                     df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
-                    df.to_excel('excel/'+category+'out_products.xlsx', index=False)
-                    change_content(driver, [d for d in data if d['Current Stock'] == '0'], category+'out', withoutReset=False)
-                if os.path.join('excel', category+'out_products.xlsx'):
+                    df.to_excel('excel/'+r['id']+'out_products.xlsx', index=False)
+                    change_content(driver, [d for d in data if d['Current Stock'] == '0'], r['id']+'out', withoutReset=False)
+                if os.path.join('excel', 'new_'+r['id']+'_products.xlsx'):
                     try:
                         url = "https://ai.icn.com/api/upload_image"
                         files = {
-                            'file': (category+'out_products.xlsx', open(os.path.join('excel', category+'out_products.xlsx'), 'rb'))  # Open the image in binary mode
+                            'file': ('new_'+r['id']+'_products.xlsx', open(os.path.join('excel', 'new_'+r['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
                         }
                         data = {
                             'base_id': baseId,
@@ -3813,9 +3813,6 @@ class MainScrapView(APIView):
                         }
                         # Send the POST request
                         response = requests.post(url, files=files, data=data)
-                        if response.status_code == 201:
-                            os.remove(os.path.join('excel', category+'_products.xlsx'))
-                            os.remove(os.path.join('excel', 'new_'+category+'_products.xlsx'))
                         return response.json()  # Return the response as JSON
                     except Exception as error:
                         print(error)
@@ -4004,33 +4001,6 @@ class TemuScrapView(APIView):
 
 class ChangeText(APIView):
     def post(self, request, *args, **kwargs):
-        print('1')
-        if os.path.join('excel', request.data['id']+'_products.xlsx'):
-            print('2')
-            try:
-                url = "https://ai.icn.com/api/upload_image"
-                files = {
-                    'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
-                }
-                print('3')
-                data = {
-                    'base_id': 'app8ZhKII0Cz7us07',
-                    'table_id': 'tblIRJLkRrnkWrM1X',
-                    'record_id': 'recU0TUaVmtnkyCrr',
-                }
-                # Send the POST request
-                response = requests.post(url, files=files, data=data)
-                print('4')
-                print(response.json())
-                print('5')
-                if response.status_code == 201:
-                    print('5')
-                    # os.remove(os.path.join('excel', request.data['id']+'_products.xlsx'))
-                    # os.remove(os.path.join('excel', 'new_'+request.data['id']+'_products.xlsx'))
-                return response.json()  # Return the response as JSON
-            except Exception as error:
-                print(error)
-        return JsonResponse({})
         chrome_options = Options()
         # chrome_options.page_load_strategy = 'eager'
         chrome_options.add_argument('--blink-settings=imagesEnabled=false')
