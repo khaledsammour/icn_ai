@@ -13,7 +13,11 @@ import re
 from deep_translator import GoogleTranslator
 import yake
 from langdetect import detect
+import os 
+from django.conf import settings  # Import project settings
+from airtable import Airtable
 
+API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False):
     isExist = True
     hrefs = []
@@ -475,3 +479,68 @@ def click_on_overlay(driver, name):
             except:
                 element.click()
             break
+
+
+def upload_file(file, base_id, table_id, record_id):
+    try:
+        image_data = file
+        image_name = image_data.name  # You can adjust the image format if needed
+        image_dir = os.path.join(settings.MEDIA_ROOT, 'uploaded_images')
+        print('1')
+        # Create the directory if it doesn't exist
+        os.makedirs(image_dir, exist_ok=True)
+        image_path = os.path.join(image_dir, image_name)
+        print(image_name)
+        print(image_dir)
+        print('2')
+        with open(image_path, 'wb+') as destination:
+            for chunk in image_data.chunks():
+                destination.write(chunk)
+        print(image_path)
+        print('3')
+        image_url = os.path.join(settings.MEDIA_URL, 'uploaded_images', image_name).replace("\\", "/")
+        airtable = Airtable(base_id, API_KEY)
+
+        # Fetch the existing record data
+        existing_record = airtable.get(table_id, record_id)
+        # critical_logger.critical('existing_record')
+        # Extract the existing attachments if they exist
+        existing_attachments = existing_record['fields'].get('Attachment', [])
+        # Define the URL of the new image you want to add
+        new_image_url = 'https://ai.icn.com' + image_url
+        # critical_logger.critical('url:'+new_image_url)
+        # Append the new image URL to the existing attachments
+        existing_attachments.append({'url': new_image_url})
+
+        # Update the record with the combined list of attachments
+        data = {
+            'Attachment': existing_attachments
+        }
+        print(new_image_url)
+        print('4')
+        # Data to update (replace with your fields)
+        print('5')
+        # Update the record
+        airtable.update(table_id, record_id, data)
+        includes = False
+        for i in range(10):
+            print('try ', i)
+            rec = airtable.get(table_id, record_id)
+            for recImg in rec['fields'].get('Attachment', []):
+                if recImg['filename'] == image_name:
+                    includes = True
+                    break
+            if includes:
+                break
+            sleep(1)
+        if includes:
+            print('successfully')
+            os.remove(image_path)
+            return True
+        else:
+            print('failed')
+            return False
+    except Exception as e:
+        print(e)
+        print('failed2')
+        return False

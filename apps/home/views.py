@@ -25,7 +25,12 @@ from .utils import get_hrefs, until_not_visible, until_visible, until_visible_cl
 import re 
 from .models import Websites
 from airtable import Airtable
+import os
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import status
 
+API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
     context = {'segment': 'index'}
 
@@ -3600,7 +3605,7 @@ class MainScrapView(APIView):
         viewId = request.data['viewId']
         urlKey = 'Link'
         categoryKey = 'Category'
-        airtable = Airtable(baseId, 'patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715')
+        airtable = Airtable(baseId, API_KEY)
         all_records = airtable.iterate(tableId, view=viewId)
         def process_record(r):
             url = r['fields'][urlKey]
@@ -3789,7 +3794,25 @@ class MainScrapView(APIView):
                     df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
                     df.to_excel('excel/'+category+'out_products.xlsx', index=False)
                     change_content(driver, [d for d in data if d['Current Stock'] == '0'], category+'out', withoutReset=False)
-                
+                if os.path.join('excel', category+'out_products.xlsx'):
+                    try:
+                        url = "https://ai.icn.com/api/upload_image"
+                        files = {
+                            'file': (category+'out_products.xlsx', open(os.path.join('excel', category+'out_products.xlsx'), 'rb'))  # Open the image in binary mode
+                        }
+                        data = {
+                            'base_id': baseId,
+                            'table_id': tableId,
+                            'record_id': r['id'],
+                        }
+                        # Send the POST request
+                        response = requests.post(url, files=files, data=data)
+                        if response.status_code == 201:
+                            os.remove(os.path.join('excel', category+'_products.xlsx'))
+                            os.remove(os.path.join('excel', 'new_'+category+'_products.xlsx'))
+                        return response.json()  # Return the response as JSON
+                    except Exception as error:
+                        print(error)
             driver.quit()
         with ThreadPoolExecutor(max_workers=6) as executor:
             global mainExecutor
@@ -4311,3 +4334,14 @@ class IntegrationTest(APIView):
             traceback.print_exc()
         driver.quit()
         return JsonResponse({})
+
+class ImageUploadView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        upload = upload_file(request.FILES['file'], request.data.get('base_id'), request.data.get('table_id'), request.data.get('record_id'))
+        if upload:
+            return Response({'message': 'Image uploaded successfully', 'status': 200}, status=status.HTTP_201_CREATED) 
+        else:
+            return Response({'message': 'Image uploaded failed', 'status': 500}, status=status.HTTP_201_CREATED)
+            
