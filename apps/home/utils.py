@@ -514,7 +514,7 @@ def upload_file(file, base_id, table_id, record_id):
 
         # Update the record with the combined list of attachments
         data = {
-            'Attachment': existing_attachments
+            'excel': existing_attachments
         }
         print(new_image_url)
         print('4')
