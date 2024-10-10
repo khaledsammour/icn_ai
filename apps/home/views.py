@@ -4087,7 +4087,7 @@ class GenerateBlog(APIView):
         image = request.FILES.get('image')
         options = Options()
         options.add_experimental_option('detach', True)
-        # options.headless = True
+        options.headless = True
 
         # Create an instance of Chrome WebDriver
         driver = webdriver.Chrome(options=options)
