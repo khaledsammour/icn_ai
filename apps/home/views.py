@@ -3778,10 +3778,11 @@ class MainScrapView(APIView):
             else:
                 hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
                 if website.inside_category_selector:
+                    driver.get(url)
                     category_hrefs = get_hrefs(driver, url, '/', website.inside_category_selector, index=1, no_pagination=True)
                     for cHref in category_hrefs:
                         driver.get(cHref)
-                        newHref = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
+                        newHref = get_hrefs(driver, cHref, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
                         for newH in newHref:
                             hrefs.append(newH)
                 if website.number_of_products:
