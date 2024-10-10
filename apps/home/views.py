@@ -3744,7 +3744,7 @@ class MainScrapView(APIView):
                     until_visible_send_keys(driver, website.password_selector, website.password)
                     until_visible_click(driver, website.button_selector)
                     sleep(3)
-            if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))>0:
+            if len(driver.find_elements(By.CSS_SELECTOR, website.main_img_selector))>0:
                 product_details(url)
             elif website.product_click:
                 isExist = True
