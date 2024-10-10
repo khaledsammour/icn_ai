@@ -11,6 +11,7 @@ import requests
 import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver import Chrome
 from rest_framework.views import APIView
 from django.http import JsonResponse
@@ -30,6 +31,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
+from webdriver_manager.chrome import ChromeDriverManager
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -4093,7 +4095,7 @@ class GenerateBlog(APIView):
         # options.headless = True
 
         # Create an instance of Chrome WebDriver
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
         # Open the webpage
         driver.get('https://katteb.com/ar/sign-in/')
