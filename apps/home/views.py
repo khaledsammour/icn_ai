@@ -3744,7 +3744,9 @@ class MainScrapView(APIView):
                     until_visible_send_keys(driver, website.password_selector, website.password)
                     until_visible_click(driver, website.button_selector)
                     sleep(3)
-            if website.product_click:
+            if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))>0:
+                product_details(url)
+            elif website.product_click:
                 isExist = True
                 index = website.start_index
                 fitst_index = index
@@ -3775,6 +3777,13 @@ class MainScrapView(APIView):
                         isExist = False
             else:
                 hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
+                if website.inside_category_selector:
+                    category_hrefs = get_hrefs(driver, url, '/', website.inside_category_selector, index=1, no_pagination=True)
+                    for cHref in category_hrefs:
+                        driver.get(cHref)
+                        newHref = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
+                        for newH in newHref:
+                            hrefs.append(newH)
                 if website.number_of_products:
                     hrefs = hrefs[:website.number_of_products]
                         
