@@ -4140,7 +4140,6 @@ class ChangeText(APIView):
 
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
-        image = request.FILES.get('image')
         options = Options()
         options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
@@ -4229,6 +4228,7 @@ class GenerateBlog(APIView):
             
         data = {'data': json.dumps({
             "category_id": request.data['category'],
+            "image": request.data['image'],
             "author": {
             "en": "ICN",
             "sa": "ICN"
@@ -4264,7 +4264,7 @@ class GenerateBlog(APIView):
         })}
         try:
             # Send the POST request and wait for the response
-            response = requests.post('https://www.icn.com/api/v1/blog/store', data=data, files=[('image',image)])
+            response = requests.post('https://www.icn.com/api/v1/blog/store', data=data)
             
             # Check if the request was successful
             if response.status_code == 200:

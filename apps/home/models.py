@@ -14,6 +14,7 @@ class Websites(models.Model):
     password = models.CharField(max_length=250, null=True, blank=True)
     button_selector = models.CharField(max_length=250, null=True, blank=True)
     no_pagination = models.BooleanField(default=False, null=True, blank=True)
+    pagination_click = models.CharField(max_length=250, null=True, blank=True)
     pagination_path = models.CharField(max_length=250, null=True, blank=True)
     product_selector = models.CharField(max_length=250, null=True, blank=True)
     inside_category_selector = models.CharField(max_length=250, null=True, blank=True)
