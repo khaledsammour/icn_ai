@@ -3702,21 +3702,65 @@ class MainScrapView(APIView):
                     for keyW in keywords:
                         ar_keywords.append(translate(keyW))
 
-                product_attributes_content_json = {}                
-                ar_product_attributes_content_json = {}    
-                if website.is_feature:            
-                    product_attributes = soup.select(website.features_selector)
-                    for attr in product_attributes:
-                        if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
-                            key = attr.select_one(website.features_key_selector).get_text(strip=True)
-                            val = attr.select_one(website.features_value_selector).get_text(strip=True)
-                            ar_product_attributes_content_json[translate(key)] = translate(val)
-                            product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
-                
+                if website.en_link:
+                    product_attributes_content_json = {}                
+                    if website.is_feature:            
+                        product_attributes = soup.select(website.features_selector)
+                        for attr in product_attributes:
+                            if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
+                                key = attr.select_one(website.features_key_selector).get_text(strip=True)
+                                val = attr.select_one(website.features_value_selector).get_text(strip=True)
+                                product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
+                    
+                    driver.get(driver.current_url.replace(website.en_link, website.ar_link))
+                    try:
+                        until_visible(driver, website.title_selector)
+                    except: 
+                        pass
+                    if len(driver.find_elements(By.CSS_SELECTOR, website.title_selector))==0:
+                        return
+                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                    soup = BeautifulSoup(href_res, 'html.parser')
+                    if website.title_attr:
+                        ar_title = soup.select_one(website.title_selector)[website.title_attr].strip()
+                    else:
+                        ar_title = soup.select_one(website.title_selector).get_text(strip=True)
+
+                    if website.description_selector:
+                        if website.description_attr:
+                            ar_description_elem = soup.select_one(website.description_selector)[website.description_attr] if soup.select_one(website.description_selector) else ''
+                        else:
+                            ar_description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
+                    else:
+                        ar_description_elem = None
+
+                    ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
+                    ar_description = ar_product_attributes_content if len(ar_product_attributes_content)>3 else request.data['arabic_description']
+                    ar_product_attributes_content_json = {}    
+                    if website.is_feature:            
+                        product_attributes = soup.select(website.features_selector)
+                        for attr in product_attributes:
+                            if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
+                                key = attr.select_one(website.features_key_selector).get_text(strip=True)
+                                val = attr.select_one(website.features_value_selector).get_text(strip=True)
+                                ar_product_attributes_content_json[translate(key)] = translate(val)
+                else:
+                    ar_title = (website.title_prefix+' ' if website.title_prefix else '') + translate(title)
+                    ar_description = translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description']
+                    product_attributes_content_json = {}                
+                    ar_product_attributes_content_json = {}    
+                    if website.is_feature:            
+                        product_attributes = soup.select(website.features_selector)
+                        for attr in product_attributes:
+                            if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
+                                key = attr.select_one(website.features_key_selector).get_text(strip=True)
+                                val = attr.select_one(website.features_value_selector).get_text(strip=True)
+                                ar_product_attributes_content_json[translate(key)] = translate(val)
+                                product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
-                    "Arabic Name": (website.title_prefix+' ' if website.title_prefix else '') + translate(title),
+                    "Arabic Name": ar_title,
                     "English Name": (website.title_prefix+' ' if website.title_prefix else '') + translate(title, dest="en"),
-                    "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
+                    "Arabic Description": ar_description,
                     "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": category,
                     "Arabic Brand": "",

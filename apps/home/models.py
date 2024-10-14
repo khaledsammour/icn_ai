@@ -45,6 +45,8 @@ class Websites(models.Model):
     features_key_attr = models.CharField(max_length=250, null=True, blank=True)
     features_value_selector = models.CharField(max_length=250, null=True, blank=True)
     features_value_attr = models.CharField(max_length=250, null=True, blank=True)
+    en_link = models.CharField(max_length=250, null=True, blank=True)
+    ar_link = models.CharField(max_length=250, null=True, blank=True)
     export_out_of_stuck = models.BooleanField(default=False, null=True, blank=True)
     start_index = models.IntegerField(default=1, null=True, blank=True)
     end_index = models.IntegerField(null=True, blank=True)
