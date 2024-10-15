@@ -24,7 +24,7 @@ import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from .utils import upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
-from .models import Websites
+from .models import Websites, Blogs
 from airtable import Airtable
 import os
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -4170,11 +4170,17 @@ class ChangeText(APIView):
 generate_blog_lock = threading.Lock()
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
+        blog = Blogs()
+        blog.name = request.data['headline']
+        blog.status = 'waiting'
+        blog.save()
         generate_blog_lock.acquire()
         try:
+            blog.status = 'in progress'
+            blog.save()
             options = Options()
             options.add_experimental_option('detach', True)
-            # options.add_argument("--headless") 
+            options.add_argument("--headless") 
             options.add_argument("--no-sandbox") 
             options.add_argument("--disable-dev-shm-usage") 
             # options.headless = True
@@ -4308,8 +4314,13 @@ class GenerateBlog(APIView):
             except requests.exceptions.RequestException as e:
                 print('An error occurred:', e)
             driver.quit()
+        except Exception as e:
+            blog.status = 'error: ' + str(e)
+            blog.save()
         finally:
             # Release the lock
+            blog.status = 'done'
+            blog.save()
             generate_blog_lock.release()
             return JsonResponse({})
 

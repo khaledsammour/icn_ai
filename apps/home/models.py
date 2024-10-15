@@ -58,3 +58,8 @@ class Websites(models.Model):
     start_index = models.IntegerField(default=1, null=True, blank=True)
     end_index = models.IntegerField(null=True, blank=True)
     number_of_products = models.IntegerField(null=True, blank=True)
+
+class Blogs(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=250, null=True, blank=True)
+    status = models.CharField(max_length=250, null=True, blank=True)
