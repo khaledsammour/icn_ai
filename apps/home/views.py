@@ -32,6 +32,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from webdriver_manager.chrome import ChromeDriverManager
+import threading
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -3782,7 +3783,7 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
-                    "Arabic Name": (title_prefix +' ' if title_prefix else '') + ar_title +  (' ' + title_suffix if title_suffix else ''),
+                    "Arabic Name": (translate(title_prefix) +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
                     "English Name": (title_prefix +' ' if title_prefix else '') + translate(title, dest="en") +  (' ' + title_suffix if title_suffix else ''),
                     "Arabic Description": ar_description.replace('الوصف','').strip(),
                     "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],
@@ -4162,145 +4163,151 @@ class ChangeText(APIView):
         driver.quit()
         return JsonResponse({})
 
+generate_blog_lock = threading.Lock()
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
-        options = Options()
-        options.add_experimental_option('detach', True)
-        options.add_argument("--headless") 
-        options.add_argument("--no-sandbox") 
-        options.add_argument("--disable-dev-shm-usage") 
-        # options.headless = True
-
-        # Create an instance of Chrome WebDriver
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-        # Open the webpage
-        driver.get('https://katteb.com/ar/sign-in/')
-        driver.maximize_window()
-
-        email_element = driver.find_element(By.ID, 'username')
-        email_element.send_keys("icnnobar@gmail.com")
-        password_element = driver.find_element(By.ID, 'password')
-        password_element.send_keys("Icn@nobar123")
-
-        # Find and click the login button
-        login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
-        login_button.click()
-
-        wait = WebDriverWait(driver, 15)
-        wait.until(EC.url_contains('/dashboard/'))
-
-        headline = request.data['headline']
-        driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
-        until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
-        until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
-        until_visible_click(driver, '.-step-excerpt')
-        sleep(2)
-        # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
-        # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
-        # until_visible_click(driver, '.-step-excerpt')
-        # sleep(2)
-        # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
-        # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
-        # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
-        # search.send_keys(Keys.ENTER)
-        # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
-        # until_visible_click(driver, '.-step-excerpt')
-        # sleep(2)
-        until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
-        # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
-        # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
-        until_visible_click(driver, '.-step-excerpt')
-        sleep(2)
-        until_visible_click(driver, 'multistep-form-next')
-        until_visible_click(driver, '.-step-excerpt')
-        sleep(2)
-        until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
-
-        show_article = WebDriverWait(driver, 600).until(
-            EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
-        )
-
-        show_article.click()
-
-        articles_holder = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            'div.fr-element.fr-view'))
-        )
-
-        ar_output = articles_holder.get_attribute('outerHTML')
-        soup = BeautifulSoup(ar_output, 'html.parser')
-        headers_components = soup.select('streaming-area')
-        res = []
-        en_res = []
-        for comp in headers_components:
-            title = comp.select_one('h2').get_text(strip=True)
-            comp.select_one('h2').extract()
-            content = comp.get_text(" ", strip=True)
-            res.append({
-                'title': title,
-                'description': content,
-            })
-            en_res.append({
-                'title': translate(title, dest='en'),
-                'description': translate(content, dest='en'),
-            })
-        keywords = extract_top_keywords(en_res[0]['description'])
-        ar_keywords = []
-        for keyW in keywords:
-            ar_keywords.append(translate(keyW))
-            
-        data = {'data': json.dumps({
-            "category_id": request.data['category'],
-            "image": request.data['image'],
-            "author": {
-            "en": "ICN",
-            "sa": "ICN"
-            },
-            "title": {
-                "en": translate(headline, dest='en'),
-                "sa": headline
-            },
-            "short_description": {
-                "en": en_res[0]['description'],
-                "sa": res[0]['description']
-            },
-            'description': {
-                "en": [e['description'] for e in en_res],
-                "sa": [e['description'] for e in res]
-            },
-            'bookmark': {
-                "en": [e['title'] for e in en_res],
-                "sa": [e['title'] for e in res]
-            },
-            "meta_description": {
-                "en": en_res[0]['description'],
-                "sa": res[0]['description']
-            },
-            "meta_keywords": {
-                "en": ','.join(keywords),
-                "sa": ','.join(ar_keywords)
-            },
-            "meta_title": {
-                "en": translate(headline, dest='en'),
-                "sa": headline
-            }
-        })}
+        generate_blog_lock.acquire()
         try:
-            # Send the POST request and wait for the response
-            response = requests.post('https://www.icn.com/api/v1/blog/store', data=data)
-            
-            # Check if the request was successful
-            if response.status_code == 200:
-                print('Request was successful!')
-                print('Response:', response.text)  # If the response contains JSON data
-            else:
-                print('Request failed with status code:', response.status_code)
-                print('Response:', response.text)
-        except requests.exceptions.RequestException as e:
-            print('An error occurred:', e)
-        driver.quit()
-        return JsonResponse({})
+            options = Options()
+            options.add_experimental_option('detach', True)
+            # options.add_argument("--headless") 
+            options.add_argument("--no-sandbox") 
+            options.add_argument("--disable-dev-shm-usage") 
+            # options.headless = True
+
+            # Create an instance of Chrome WebDriver
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+            # Open the webpage
+            driver.get('https://katteb.com/ar/sign-in/')
+            driver.maximize_window()
+
+            email_element = driver.find_element(By.ID, 'username')
+            email_element.send_keys("icnnobar@gmail.com")
+            password_element = driver.find_element(By.ID, 'password')
+            password_element.send_keys("Icn@nobar123")
+
+            # Find and click the login button
+            login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
+            login_button.click()
+
+            wait = WebDriverWait(driver, 15)
+            wait.until(EC.url_contains('/dashboard/'))
+
+            headline = request.data['headline']
+            driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
+            until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
+            until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
+            until_visible_click(driver, '.-step-excerpt')
+            sleep(2)
+            # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
+            # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
+            # until_visible_click(driver, '.-step-excerpt')
+            # sleep(2)
+            # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
+            # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
+            # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
+            # search.send_keys(Keys.ENTER)
+            # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
+            # until_visible_click(driver, '.-step-excerpt')
+            # sleep(2)
+            until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
+            # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
+            # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
+            until_visible_click(driver, '.-step-excerpt')
+            sleep(2)
+            until_visible_click(driver, 'multistep-form-next')
+            until_visible_click(driver, '.-step-excerpt')
+            sleep(2)
+            until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
+
+            show_article = WebDriverWait(driver, 600).until(
+                EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
+            )
+
+            show_article.click()
+
+            articles_holder = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                'div.fr-element.fr-view'))
+            )
+
+            ar_output = articles_holder.get_attribute('outerHTML')
+            soup = BeautifulSoup(ar_output, 'html.parser')
+            headers_components = soup.select('streaming-area')
+            res = []
+            en_res = []
+            for comp in headers_components:
+                title = comp.select_one('h2').get_text(strip=True)
+                comp.select_one('h2').extract()
+                content = comp.get_text(" ", strip=True)
+                res.append({
+                    'title': title,
+                    'description': content,
+                })
+                en_res.append({
+                    'title': translate(title, dest='en'),
+                    'description': translate(content, dest='en'),
+                })
+            keywords = extract_top_keywords(en_res[0]['description'])
+            ar_keywords = []
+            for keyW in keywords:
+                ar_keywords.append(translate(keyW))
+                
+            data = {'data': json.dumps({
+                "category_id": request.data['category'],
+                "image": request.data['image'],
+                "author": {
+                "en": "ICN",
+                "sa": "ICN"
+                },
+                "title": {
+                    "en": translate(headline, dest='en'),
+                    "sa": headline
+                },
+                "short_description": {
+                    "en": en_res[0]['description'],
+                    "sa": res[0]['description']
+                },
+                'description': {
+                    "en": [e['description'] for e in en_res],
+                    "sa": [e['description'] for e in res]
+                },
+                'bookmark': {
+                    "en": [e['title'] for e in en_res],
+                    "sa": [e['title'] for e in res]
+                },
+                "meta_description": {
+                    "en": en_res[0]['description'],
+                    "sa": res[0]['description']
+                },
+                "meta_keywords": {
+                    "en": ','.join(keywords),
+                    "sa": ','.join(ar_keywords)
+                },
+                "meta_title": {
+                    "en": translate(headline, dest='en'),
+                    "sa": headline
+                }
+            })}
+            try:
+                # Send the POST request and wait for the response
+                response = requests.post('https://www.icn.com/api/v1/blog/store', data=data)
+                
+                # Check if the request was successful
+                if response.status_code == 200:
+                    print('Request was successful!')
+                    print('Response:', response.text)  # If the response contains JSON data
+                else:
+                    print('Request failed with status code:', response.status_code)
+                    print('Response:', response.text)
+            except requests.exceptions.RequestException as e:
+                print('An error occurred:', e)
+            driver.quit()
+        finally:
+            # Release the lock
+            generate_blog_lock.release()
+            return JsonResponse({})
 
 class IntegrationTest(APIView):
     def post(self, request, *args, **kwargs):
