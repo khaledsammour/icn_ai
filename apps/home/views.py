@@ -3644,18 +3644,22 @@ class MainScrapView(APIView):
                     title_prefix = website.title_prefix
 
                 if website.title_prefix_attr:
-                    title_prefix = soup.select_one(website.title_prefix_selector)[website.title_prefix_attr].strip()
+                    if len(soup.select(website.title_prefix_selector))>0:
+                        title_prefix = soup.select_one(website.title_prefix_selector)[website.title_prefix_attr].strip()
                 elif website.title_prefix_selector:
-                    title_prefix = soup.select_one(website.title_prefix_selector).get_text(strip=True)
+                    if len(soup.select(website.title_prefix_selector))>0:
+                        title_prefix = soup.select_one(website.title_prefix_selector).get_text(strip=True)
 
                 title_suffix = ''
                 if website.title_suffix:
                     title_suffix = website.title_suffix
                     
                 if website.title_suffix_attr:
-                    title_suffix = soup.select_one(website.title_suffix_selector)[website.title_suffix_attr].strip()
+                    if len(soup.select(website.title_suffix_selector))>0:
+                        title_suffix = soup.select_one(website.title_suffix_selector)[website.title_suffix_attr].strip()
                 elif website.title_suffix_selector:
-                    title_suffix = soup.select_one(website.title_suffix_selector).get_text(strip=True)
+                    if len(soup.select(website.title_suffix_selector))>0:
+                        title_suffix = soup.select_one(website.title_suffix_selector).get_text(strip=True)
                 # Get the product price
                 if website.static_price:
                     price = website.static_price
