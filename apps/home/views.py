@@ -4183,12 +4183,13 @@ class GenerateBlog(APIView):
             options.add_argument("--headless") 
             options.add_argument("--no-sandbox") 
             options.add_argument("--disable-dev-shm-usage") 
-            options.add_argument("--remote-debugging-port=9222") 
-            options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
+            # options.add_argument("--remote-debugging-port=9222") 
+            # options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
             # options.headless = True
 
             # Create an instance of Chrome WebDriver
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            driver = webdriver.Chrome(options=options)
+            # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
             # Open the webpage
             driver.get('https://katteb.com/ar/sign-in/')
