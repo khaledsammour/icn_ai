@@ -3637,6 +3637,24 @@ class MainScrapView(APIView):
                     title = soup.select_one(website.title_selector)[website.title_attr].strip()
                 else:
                     title = soup.select_one(website.title_selector).get_text(strip=True)
+
+                title_prefix = ''
+                if website.title_prefix:
+                    title_prefix = website.title_prefix
+
+                if website.title_prefix_attr:
+                    title_prefix = soup.select_one(website.title_prefix_selector)[website.title_prefix_attr].strip()
+                elif website.title_prefix_selector:
+                    title_prefix = soup.select_one(website.title_prefix_selector).get_text(strip=True)
+
+                title_suffix = ''
+                if website.title_suffix:
+                    title_suffix = website.title_suffix
+                    
+                if website.title_suffix_attr:
+                    title_suffix = soup.select_one(website.title_suffix_selector)[website.title_suffix_attr].strip()
+                elif website.title_suffix_selector:
+                    title_suffix = soup.select_one(website.title_suffix_selector).get_text(strip=True)
                 # Get the product price
                 if website.static_price:
                     price = website.static_price
@@ -3702,7 +3720,7 @@ class MainScrapView(APIView):
                     for keyW in keywords:
                         ar_keywords.append(translate(keyW))
 
-                if website.en_link:
+                if website.en_link or website.ar_selector:
                     product_attributes_content_json = {}                
                     if website.is_feature:            
                         product_attributes = soup.select(website.features_selector)
@@ -3711,7 +3729,10 @@ class MainScrapView(APIView):
                                 key = attr.select_one(website.features_key_selector).get_text(strip=True)
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
-                    if website.ar_link:
+                    if website.ar_selector:
+                        ar_href =  soup.select_one(website.ar_selector)
+                        driver.get(ar_href['href'])
+                    elif website.ar_link:
                         driver.get(driver.current_url.replace(website.en_link, website.ar_link))
                     else:
                         driver.get(driver.current_url.replace(website.en_link, ''))
@@ -3748,7 +3769,7 @@ class MainScrapView(APIView):
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
-                    ar_title = (website.title_prefix+' ' if website.title_prefix else '') + translate(title)
+                    ar_title = translate(title)
                     ar_description = translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description']
                     product_attributes_content_json = {}                
                     ar_product_attributes_content_json = {}    
@@ -3761,10 +3782,10 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
-                    "Arabic Name": ar_title,
-                    "English Name": (website.title_prefix+' ' if website.title_prefix else '') + translate(title, dest="en"),
-                    "Arabic Description": ar_description,
-                    "English Description": translate(product_attributes_content, dest="en") if len(product_attributes_content) > 3 else request.data['description'],
+                    "Arabic Name": (title_prefix +' ' if title_prefix else '') + ar_title +  (' ' + title_suffix if title_suffix else ''),
+                    "English Name": (title_prefix +' ' if title_prefix else '') + translate(title, dest="en") +  (' ' + title_suffix if title_suffix else ''),
+                    "Arabic Description": ar_description.replace('الوصف','').strip(),
+                    "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": category,
                     "Arabic Brand": "",
                     "English Brand": "",

@@ -30,7 +30,8 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
         print(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
         if index != fitst_index:
             driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
-
+        if url not in driver.current_url:
+            break
         sleep(3)
         if should_not_exist:
             isExist = check_if_not_exist(driver, should_not_exist, "products")
@@ -496,6 +497,8 @@ def upload_file(file, base_id, table_id, record_id):
         print(image_name)
         print(image_dir)
         print('2')
+        if os.path.exists(image_path):
+            os.remove(image_path)
         with open(image_path, 'wb+') as destination:
             for chunk in image_data.chunks():
                 destination.write(chunk)
