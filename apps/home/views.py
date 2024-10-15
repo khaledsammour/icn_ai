@@ -3712,7 +3712,7 @@ class MainScrapView(APIView):
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                     
-                    driver.get(driver.current_url.replace(website.en_link, website.ar_link))
+                    driver.get(driver.current_url.replace(website.en_link, '' if not website.ar_link else website.ar_link))
                     try:
                         until_visible(driver, website.title_selector)
                     except: 
