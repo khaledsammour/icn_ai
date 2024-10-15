@@ -63,3 +63,4 @@ class Blogs(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=250, null=True, blank=True)
     status = models.CharField(max_length=250, null=True, blank=True)
+    api_status = models.CharField(max_length=250, null=True, blank=True)

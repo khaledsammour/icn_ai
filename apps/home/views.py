@@ -4308,19 +4308,25 @@ class GenerateBlog(APIView):
                 if response.status_code == 200:
                     print('Request was successful!')
                     print('Response:', response.text)  # If the response contains JSON data
+                    blog.api_status = 'Request was successful!'
+                    blog.save()
                 else:
                     print('Request failed with status code:', response.status_code)
                     print('Response:', response.text)
+                    blog.api_status = 'Request failed:' + str(response.text)
+                    blog.save()
             except requests.exceptions.RequestException as e:
+                blog.api_status = 'An error occurred:' + str(e)
+                blog.save()
                 print('An error occurred:', e)
+            blog.status = 'done'
+            blog.save()
             driver.quit()
         except Exception as e:
             blog.status = 'error: ' + str(e)
             blog.save()
         finally:
             # Release the lock
-            blog.status = 'done'
-            blog.save()
             generate_blog_lock.release()
             return JsonResponse({})
 
