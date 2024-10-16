@@ -4188,8 +4188,8 @@ class GenerateBlog(APIView):
             # options.headless = True
 
             # Create an instance of Chrome WebDriver
-            driver = webdriver.Chrome(options=options)
-            # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            # driver = webdriver.Chrome(options=options)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
             # Open the webpage
             driver.get('https://katteb.com/ar/sign-in/')
