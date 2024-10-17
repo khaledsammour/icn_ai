@@ -48,8 +48,13 @@ function passes to parameters:
         
 def prefixes(keyword,keywords):
     #we can add more suffixes tailored to the company or type of search we are looking. E.g: food delivery, delivery,etc
-    prefixes = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','y','x','y','z','how','which','why','where','who','when','are','what']    
-    
+    # prefixes = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','y','x','y','z','how','which','why','where','who','when','are','what']    
+    prefixes = [
+        'ا', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي', 
+        'ك', 'ل', 'م', 'ن', 'س', 'ع', 'ف', 'ق', 'ر', 'ص', 
+        'ت', 'ع', 'ق', 'ل', 'ي', 'ز',  
+        'أين', 'من', 'محل',  'مكان', 'بيع', 'شراء', 'وين'
+    ]
     for prefix in prefixes:
         url = "http://suggestqueries.google.com/complete/search?output=firefox&q=" + prefix + " " + keyword 
         response = requests.get(url, verify=False)
@@ -73,7 +78,14 @@ function passes to parameters:
             
 def suffixes(keyword,keywords):
     #we can add more suffixes tailored to the company or type of search we are looking. E.g: food delivery, delivery,etc
-    suffixes =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','y','x','y','z','like','for','without','with','versus','vs','to','near','except','has']
+    # suffixes =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','y','x','y','z','like','for','without','with','versus','vs','to','near','except','has']
+    suffixes = [
+        'ا', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي', 
+        'ك', 'ل', 'م', 'ن', 'س', 'ع', 'ف', 'ق', 'ر', 'ص', 
+        'ت', 'ع', 'ق', 'ل', 'ي', 'ز', 'مثل', 'لـ', 'بدون', 
+        'مع', 'مقابل', 'قريب', 'لديه',
+        'في',  'محل',  'مكان', 'بيع', 'شراء', 'الاردن', 'الأردن'
+    ]
        
     for suffix in suffixes:
         url = "http://suggestqueries.google.com/complete/search?output=firefox&q=" + keyword + " " + suffix 
@@ -150,5 +162,7 @@ def clean_df(keywords,keyword):
     new_list = [word for word in keywords if all(val in word for val in keyword.split(' '))]
     
     #tranforming list into dataframe for excell extraction
+    print(new_list)
     return new_list
    
+api_call('مستلزمات الحيوانات')
