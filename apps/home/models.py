@@ -54,6 +54,7 @@ class Websites(models.Model):
     en_link = models.CharField(max_length=250, null=True, blank=True)
     ar_link = models.CharField(max_length=250, null=True, blank=True)
     ar_selector = models.CharField(max_length=250, null=True, blank=True)
+    ar_attr = models.CharField(max_length=250, null=True, blank=True, default="href")
     export_out_of_stuck = models.BooleanField(default=False, null=True, blank=True)
     start_index = models.IntegerField(default=1, null=True, blank=True)
     end_index = models.IntegerField(null=True, blank=True)

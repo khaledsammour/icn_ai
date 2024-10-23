@@ -82,11 +82,18 @@ def suffixes(keyword,keywords):
     suffixes = [
         'ا', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي', 
         'ك', 'ل', 'م', 'ن', 'س', 'ع', 'ف', 'ق', 'ر', 'ص', 
-        'ت', 'ع', 'ق', 'ل', 'ي', 'ز', 'مثل', 'لـ', 'بدون', 
-        'مع', 'مقابل', 'قريب', 'لديه',
-        'في',  'محل',  'مكان', 'بيع', 'شراء', 'الاردن', 'الأردن'
+        'ت', 'ع', 'ق', 'ل', 'ي', 'ز', 'الاردن', 'الأردن', 'في الأردن', 'في الاردن' ,'عمان','الزرقاء','اربد','العقبة','المفرق','جرش','عجلون','مثل', 'لـ', 'بدون', 
+        'مع', 'مقابل', 'قريب', 'لديه',  'محل',  'مكان', 'بيع', 'شراء'
     ]
-       
+    keywords.append( keyword + " " + 'في الاردن' )
+    keywords.append( keyword + " " + 'في الأردن' )
+    keywords.append( keyword + " " + 'في عمان' )
+    keywords.append( keyword + " " + 'في الزرقاء' )
+    keywords.append( keyword + " " + 'في اربد' )
+    keywords.append( keyword + " " + 'في العقبة' )
+    keywords.append( keyword + " " + 'في المفرق' )
+    keywords.append( keyword + " " + 'في جرش' )
+    keywords.append( keyword + " " + 'في عجلون' )
     for suffix in suffixes:
         url = "http://suggestqueries.google.com/complete/search?output=firefox&q=" + keyword + " " + suffix 
         response = requests.get(url, verify=False)
@@ -142,7 +149,7 @@ def get_more(keyword,keywords):
                 keywords.append(keywords2[n])
             
                    
-            if len(keywords) >= 10: #we can increase this number if we want more keywords
+            if len(keywords) >= 1000: #we can increase this number if we want more keywords
                 break
 '''
 cleand df performs 2 important things:
@@ -165,4 +172,32 @@ def clean_df(keywords,keyword):
     print(new_list)
     return new_list
    
-api_call('مستلزمات الحيوانات')
+
+url = "https://www.icn.com/api/v1/categories/all-sub/485"
+
+headers = {
+  'Cookie': 'icn_session=PbfCnvioZcAD6JgtTCuvlAIQ5eoEClXnFvaz8hd7; locale=sa; icn_session=PbfCnvioZcAD6JgtTCuvlAIQ5eoEClXnFvaz8hd7; locale=sa'
+}
+
+response = requests.request("GET", url, headers=headers)
+
+for d in [response.json()['data'][0]]:
+    print(d['id'])
+    print(d['name_en'])
+    print(d['name_ar'])
+    tags = api_call(d['name_ar'])
+    print(tags)
+    url = "https://www.icn.com/api/v1/category/tags"
+
+    payload = json.dumps({
+        "tags": tags,
+        "category_id": d['id']
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Cookie': 'icn_session=PbfCnvioZcAD6JgtTCuvlAIQ5eoEClXnFvaz8hd7; locale=sa; icn_session=PbfCnvioZcAD6JgtTCuvlAIQ5eoEClXnFvaz8hd7; locale=sa'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)

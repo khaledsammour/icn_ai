@@ -18,28 +18,34 @@ from django.conf import settings  # Import project settings
 from airtable import Airtable
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False, pagination_click=False):
     isExist = True
     hrefs = []
     fitst_index = index
     if start_pagination:
         driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
     while(isExist):
-        print(index)
-        print(fitst_index)
-        print(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
         if index != fitst_index:
-            driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
+            if pagination_click:
+                if len(driver.find_elements(By.CSS_SELECTOR, pagination_click))==0:
+                    break
+                until_visible_click(driver, pagination_click)
+            else:
+                driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
+
         if url not in driver.current_url:
             break
+
         sleep(3)
         if should_not_exist:
             isExist = check_if_not_exist(driver, should_not_exist, "products")
         else:
             isExist = check_if_exist(driver, selector, "products")
+        
         if max_index:
             if index == max_index:
                 isExist=False
+        
         elements = driver.find_elements(By.CSS_SELECTOR, selector)
         for e in elements:
             if not_contains_class != '':
@@ -54,6 +60,7 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
                 else:
                     hrefs.append(e.get_attribute(attr))
         index = index + 1
+        
         if no_pagination:
             isExist = False
     return hrefs

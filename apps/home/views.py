@@ -3666,7 +3666,11 @@ class MainScrapView(APIView):
                 elif website.price_attr:
                     price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
-                    if website.price_selector:
+                    if website.price_selector and len(soup.select(website.price_selector))>0:
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                    elif website.second_price_attr:
+                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
+                    elif website.second_price_selector and len(soup.select(website.second_price_selector))>0:
                         price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     else:
                         price = ''
@@ -3736,7 +3740,7 @@ class MainScrapView(APIView):
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                     if website.ar_selector:
                         ar_href =  soup.select_one(website.ar_selector)
-                        driver.get(ar_href['href'])
+                        driver.get(ar_href[website.ar_attr])
                     elif website.ar_link:
                         driver.get(driver.current_url.replace(website.en_link, website.ar_link))
                     else:
@@ -3849,7 +3853,7 @@ class MainScrapView(APIView):
                     if website.no_pagination:
                         isExist = False
             else:
-                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination)
+                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination, pagination_click=website.pagination_click)
                 if website.inside_category_selector:
                     driver.get(url)
                     category_hrefs = get_hrefs(driver, url, '/', website.inside_category_selector, index=1, no_pagination=True)
