@@ -3667,13 +3667,15 @@ class MainScrapView(APIView):
                     price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     elif website.second_price_attr:
                         price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
                     elif website.second_price_selector and len(soup.select(website.second_price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','.').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     else:
                         price = ''
+                    if website.is_price_have_comma:
+                        price = price.replace(',','.')
                 # Get discount
                 discount = '0'
                 # Get the main image URL
@@ -3684,7 +3686,7 @@ class MainScrapView(APIView):
                 if website.img_click:
                     image_elems = driver.find_elements(By.CSS_SELECTOR, website.img_selector)
                     for indx, i in enumerate(image_elems):
-                        until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+2)+')')
+                        until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+1)+')')
                         sleep(1)
                         img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
                         if len(img.get_attribute(website.img_attr))>10:
@@ -3884,7 +3886,24 @@ class MainScrapView(APIView):
             else:
                 df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
                 df.to_excel('excel/'+r['id']+'_products.xlsx', index=False)
-                change_content(driver, [d for d in data if d['Current Stock'] != '0'], r['id'])
+                if website.change_content:
+                    change_content(driver, [d for d in data if d['Current Stock'] != '0'], r['id'])
+                else:
+                    try:
+                        url = "https://ai.icn.com/api/upload_image"
+                        files = {
+                            'file': (r['id']+'_products.xlsx', open(os.path.join('excel', r['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+                        }
+                        data = {
+                            'base_id': baseId,
+                            'table_id': tableId,
+                            'record_id': r['id'],
+                        }
+                        # Send the POST request
+                        response = requests.post(url, files=files, data=data)
+                        return response.json()  # Return the response as JSON
+                    except Exception as error:
+                        print(error)
                 if website.export_out_of_stuck:
                     df = pd.DataFrame([d for d in data if d['Current Stock'] == '0'])
                     df.to_excel('excel/'+r['id']+'out_products.xlsx', index=False)

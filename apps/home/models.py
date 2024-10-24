@@ -36,6 +36,7 @@ class Websites(models.Model):
     img_selector = models.CharField(max_length=250, null=True, blank=True)
     img_attr = models.CharField(max_length=250, null=True, blank=True, default="src")
     static_price = models.CharField(max_length=250, null=True, blank=True)
+    is_price_have_comma = models.BooleanField(default=False, null=True, blank=True)
     price_selector = models.CharField(max_length=250, null=True, blank=True)
     price_attr = models.CharField(max_length=250, null=True, blank=True)
     second_price_selector = models.CharField(max_length=250, null=True, blank=True)
@@ -59,6 +60,7 @@ class Websites(models.Model):
     start_index = models.IntegerField(default=1, null=True, blank=True)
     end_index = models.IntegerField(null=True, blank=True)
     number_of_products = models.IntegerField(null=True, blank=True)
+    change_content = models.BooleanField(default=True)
 
 class Blogs(models.Model):
     id = models.BigAutoField(primary_key=True)
