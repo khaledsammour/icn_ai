@@ -2727,6 +2727,7 @@ class DelfyScrapView(APIView):
                 href = d['LINK']
                 price = d['price']
                 category = d['category  ID']
+                stock = d['Stock'] if 'Stock' in d else '3'
                 if not error:
                     try:
                         driver.get(href)
@@ -2755,7 +2756,7 @@ class DelfyScrapView(APIView):
                         if request.data['not_in_stuck']:
                             stuck = '0' if len(soup.select(request.data['not_in_stuck']))>0 else '3'
                         else:
-                            stuck = '3'
+                            stuck = stock
                         # Get the main image URL
                         if main_image_selector:
                             main_image_elem = soup.select_one(main_image_selector)
@@ -2764,7 +2765,12 @@ class DelfyScrapView(APIView):
                         if store_id == '2959':
                             image = getImageBase64(driver, store_id, 'https://www.garnierarabia.com'+main_image_elem[image_attr].split('?')[0]) if main_image_elem else ''
                         else:
-                            image = getImageBase64(driver, store_id, main_image_elem[image_attr]) if main_image_elem else ''
+                            try:
+                                imageSrc = 'https:' + main_image_elem[image_attr].split(',')[-1].split(' ')[1] if ',' in main_image_elem[image_attr] else  main_image_elem[image_attr]
+                                image = getImageBase64(driver, store_id, imageSrc) if main_image_elem else ''
+                            except Exception as e:
+                                print(e)
+                                pass
                         # Get additional images
                         image_elems = soup.select(image_selector)
                         images = []
@@ -2772,7 +2778,12 @@ class DelfyScrapView(APIView):
                             if store_id == '2959':
                                 res = getImageBase64(driver, store_id, 'https://www.garnierarabia.com'+img[image_attr].split('?')[0])
                             else:
-                                res = getImageBase64(driver, store_id, img[image_attr])
+                                try:
+                                    imageSrc = img[image_attr].split(',')[-1].split(' ')[0] if ',' in img[image_attr] else  img[image_attr]
+                                    res = getImageBase64(driver, store_id, img[image_attr])
+                                except Exception as e:
+                                    print(e)
+                                    pass
                             if res:
                                 images.append(res)
                         description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
@@ -4484,4 +4495,3 @@ class ImageUploadView(APIView):
             return Response({'message': 'Image uploaded successfully', 'status': 200}, status=status.HTTP_201_CREATED) 
         else:
             return Response({'message': 'Image uploaded failed', 'status': 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            

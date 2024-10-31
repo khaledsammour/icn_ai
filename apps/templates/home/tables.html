@@ -1517,6 +1517,18 @@
             image_selector = '#gallery .square-image img'
             image_attr = 'src'
             brand = ""
+        } else if (brand == "Babaria") {
+            id = '3419'
+            title_selector= '.main-product__block-title > div > h1'
+            description_selector = 'div[data-block-type="description"] > div > div'
+            image_selector = '.sf-product-media__desktop .media-type-image > div > div > img'
+            image_attr = 'srcset'
+        } else if (brand == "Babaria 2") {
+            id = '3419'
+            title_selector= '.heading-title'
+            description_selector = '#tab-description'
+            image_selector = '.product-info .image > a > img'
+            image_attr = 'src'
         }
         
         formData.append('id', id);

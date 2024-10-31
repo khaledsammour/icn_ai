@@ -138,7 +138,7 @@ def getImageBase64(driver, id, image_url):
         image_url = image_url.split('?')[0]
         if 'https:' not in image_url:
             image_url = 'https:' + image_url
-            
+    print(image_url)
     array_buffer = driver.execute_script(js_code, image_url)
     
     # Convert the ArrayBuffer to bytes
