@@ -268,14 +268,14 @@ def replace_dimensions(url):
     pattern = r'\d+x\d+.webp'
     return re.sub(pattern, '1200x1200.webp', url)
 
-def translate(text, dest='ar'):
+def translate(text, dest='ar', source='auto'):
     try:
         # lang = detect(text)
         # detected_lang = 'en' if lang == 'en' else 'ar'
         # print(text, detected_lang)
         # if detected_lang == dest:
         #     return text
-        translation = GoogleTranslator(source='auto', target=dest).translate(text)
+        translation = GoogleTranslator(source=source, target=dest).translate(text)
         return translation
     except Exception as e:
         print(e)
