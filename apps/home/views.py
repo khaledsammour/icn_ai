@@ -3698,6 +3698,7 @@ class MainScrapView(APIView):
                     image_elems = driver.find_elements(By.CSS_SELECTOR, website.img_selector)
                     for indx, i in enumerate(image_elems):
                         until_visible_click(driver, website.img_selector + ':nth-child('+str(indx+1)+')')
+                        sleep(2)
                         until_visible(driver, website.main_img_selector)
                         img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
                         if len(img.get_attribute(website.img_attr))>10:
