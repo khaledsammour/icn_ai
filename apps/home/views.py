@@ -3633,6 +3633,8 @@ class MainScrapView(APIView):
             driver = create_browser(page_load_strategy='eager' if request.data['name'] == 'Indola stores' else 'normal')
             driver.get(url)
             sleep(1)
+            if len(driver.find_elements(By.CSS_SELECTOR,'.popup[style="display: block !important;visibility: visible !important;"] .close'))>0:
+                driver.find_element(By.CSS_SELECTOR,'.popup[style="display: block !important;visibility: visible !important;"] .close').click()
             data = []
             errors = []
             error = False
