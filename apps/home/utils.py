@@ -33,10 +33,10 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
             else:
                 driver.get(url+pagination+str(index)+('/' if 'page=' not in pagination and 'pageNumber=' not in pagination and pagination != 'p=' else ''))
 
-        if url not in driver.current_url:
-            break
+        # if url not in driver.current_url:
+        #     break
 
-        sleep(3)
+        sleep(5)
         if should_not_exist:
             isExist = check_if_not_exist(driver, should_not_exist, "products")
         else:
@@ -136,7 +136,7 @@ def getImageBase64(driver, id, image_url):
     # Execute the JavaScript code to get the ArrayBuffer
     if '?' in image_url:
         image_url = image_url.split('?')[0]
-        if 'https:' not in image_url:
+        if 'https:' not in image_url and 'http:' not in image_url:
             image_url = 'https:' + image_url
     print(image_url)
     array_buffer = driver.execute_script(js_code, image_url)

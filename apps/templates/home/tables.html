@@ -637,6 +637,23 @@
                             </tr>
                             <tr>
                                 <td>
+                                    <p>Image From Google</p>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                    <input class="form-control mt-3" type="file" id="googleFile" name="googleFile" />
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn" onclick="GetImagesFromGoogle()">
+                                        Scrap
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
                                     <p>Temu</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="temu_url"/>
                                 </td>
@@ -1503,6 +1520,25 @@
         formData.append('not_in_stuck', not_in_stuck);
         formData.append('main_image_selector', main_image_selector);
         fetch("/api/DelfyScrapView", {
+        method: "POST",
+        headers: {
+            'X-CSRFToken': csrftoken, // Ensure CSRF token is included
+        },
+        body: formData, // Use FormData as the body of the request
+        })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error("Error:", error));
+    }
+    
+    function GetImagesFromGoogle() {
+        const csrftoken = getCookie('csrftoken');
+        const formData = new FormData();
+        let id ='2769'
+        
+        formData.append('id', id);
+        formData.append('file', document.getElementById('googleFile').files[0]);
+        fetch("/api/GetImagesFromGoogle", {
         method: "POST",
         headers: {
             'X-CSRFToken': csrftoken, // Ensure CSRF token is included

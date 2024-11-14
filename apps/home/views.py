@@ -33,6 +33,7 @@ from rest_framework import status
 from django.conf import settings
 from webdriver_manager.chrome import ChromeDriverManager
 import threading
+from selenium.webdriver.common.keys import Keys
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -3521,7 +3522,11 @@ class MainScrapView(APIView):
             category = r['fields'][categoryKey]
             driver = create_browser(page_load_strategy='eager' if request.data['name'] == 'Indola stores' else 'normal')
             driver.get(url)
-            sleep(1)
+            sleep(3)
+
+            if len(driver.find_elements(By.CSS_SELECTOR,'.flatsome-cookies .button.primary'))>0:
+                until_visible_click(driver, '.flatsome-cookies .button.primary')
+                
             if len(driver.find_elements(By.CSS_SELECTOR,'.popup[style="display: block !important;visibility: visible !important;"] .close'))>0:
                 driver.find_element(By.CSS_SELECTOR,'.popup[style="display: block !important;visibility: visible !important;"] .close').click()
             data = []
@@ -3566,14 +3571,14 @@ class MainScrapView(APIView):
                 if website.static_price:
                     price = website.static_price
                 elif website.price_attr:
-                    price = soup.select_one(website.price_selector)[website.price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
+                    price = soup.select_one(website.price_selector)[website.price_attr].replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     elif website.second_price_attr:
-                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
                     elif website.second_price_selector and len(soup.select(website.second_price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     else:
                         price = ''
                     if website.is_price_have_comma:
@@ -3963,6 +3968,194 @@ class InimexShopScrapView(APIView):
         driver.quit()
         return JsonResponse({})  
  
+class GetImagesFromGoogle(APIView):
+    def post(self, request, *args, **kwargs):
+        file = request.FILES.get('file')
+        store_id = request.data['id']
+
+        if not file or not isinstance(file, InMemoryUploadedFile):
+            return JsonResponse({"error": "No file provided or invalid file"})
+        
+        # Read the file and load it into openpyxl
+        file_content = file.read()
+        file_name = file.name
+        print(file_name)
+        wb = load_workbook(filename=io.BytesIO(file_content))
+        sheet = wb.active
+        
+        # Process the Excel file (example: read cell values)
+        headers = [str(cell.value).strip() for cell in sheet[1]]
+        
+        # Process the Excel file and format data as an array of objects
+        excel_data = []
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            if all(cell is None for cell in row):
+                continue  # Skip empty rows
+            row_data = {headers[i]: row[i] for i in range(len(headers))}
+            excel_data.append(row_data)
+        
+        def getImage(d):
+            driver = create_browser()
+            try:
+                # Open Google Images in the browser
+                driver.get('https://images.google.com/')
+                
+                # Finding the search box
+                box = driver.find_element(By.XPATH,'//*[@action="https://www.google.com/search"]/div/div/div/div/div[2]/textarea')        
+                box.send_keys(d['وصف المادة'])        
+                box.send_keys(Keys.ENTER)
+                until_visible_with_xpath(driver, '//*[@id="search"]/div[1]/div/div/div/div[1]/div/div/div//h3/a')
+                hrefs = driver.find_elements(By.XPATH,
+                    '//*[@id="search"]/div[1]/div/div/div/div[1]/div/div/div//h3/a')
+                url = driver.current_url
+                for indx, h in enumerate(hrefs):
+                    driver.get(url)
+                    until_visible_xpath_click(driver, '//*[@id="search"]/div[1]/div/div/div/div[1]/div/div/div['+str(indx + 1)+']//h3/a')
+                    sleep(0.5)
+                    until_visible_with_xpath(driver, "//span[text()='انتقال']")
+                    driver.get(driver.find_element(By.XPATH, "//span[text()='انتقال']/parent::*/parent::*").get_attribute('href'))
+                    sleep(5)
+                    if len(driver.find_elements(By.CSS_SELECTOR, 'meta[property="og:image"]'))>0:
+                        imgSrc = driver.find_element(By.CSS_SELECTOR, 'meta[property="og:image"]').get_attribute('content')
+                        d['photo'] = getImageBase64(driver, store_id, imgSrc)
+                        break
+            except:
+                pass
+            finally:
+                driver.close()
+        # with ThreadPoolExecutor(max_workers=6) as executor:
+        #     list(executor.map(getImage, [d for d in excel_data if d['photo'] == None]))
+        driver = create_browser()
+        driver.get('https://images.google.com/')
+        data = []
+        for e in excel_data:
+            product = e
+            try:
+                if product['Main Image URL'] != None and product['Main Image URL'] != '' and 'icn.com' not in product['Main Image URL']:
+                    driver.get(product['Main Image URL'])
+                    image_link = getImageBase64(driver, store_id, product['Main Image URL'])
+                    product['Main Image URL'] = image_link
+                    product['Photos URLs'] = image_link
+            except:
+                product['Main Image URL'] = ''
+                product['Photos URLs'] = ''
+            # product = {
+            #         "Arabic Name": translate(e['وصف المادة']),
+            #         "English Name": e['وصف المادة'],
+            #         "Arabic Description": translate(e['وصف المادة']),
+            #         "English Description": e['وصف المادة'],
+            #         "Category Id": "",
+            #         "Arabic Brand": "",
+            #         "English Brand": "",
+            #         "Unit Price": e['price'],
+            #         "Discount Type": "",
+            #         "Discount": "",
+            #         "Unit": "PC",
+            #         "Current Stock": 3,
+            #         "Main Image URL": e['photo'],
+            #         "Photos URLs": str((",").join([e['photo']])) if e['photo'] else "",
+            #         "Video Youtube URL": "",
+            #         "English Meta Tags": "",
+            #         "Arabic Meta Tags": "",
+            #         "features": '',
+            #         "wholesale": "no",
+            #         "reference_link": "",
+            #     }
+            data.append(product)
+        df = pd.DataFrame(data)
+        df.to_excel('excel/'+file_name+'.xlsx', index=False)
+        
+        return JsonResponse({})
+
+class Test(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        driver = create_browser()
+        driver.get(url)
+        sleep(10)
+        data = []
+        products = []
+
+        href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+        soup = BeautifulSoup(href_res, 'html.parser')
+        for divs in soup.select('div'):
+            child_divs = divs.find_all(recursive=False)
+            if len(child_divs)>3:
+                try:
+                    first_div_height = child_divs[0]['class']
+                    def checkIfExist(calsses, newClass):
+                        res = False
+                        for c in calsses:
+                            for n in newClass:
+                                if str(c).strip() == str(n).strip():
+                                    res = True
+                        return res 
+                    
+                    if first_div_height:
+                        all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
+                        if all_same_size:
+                            
+                            hrefs = []
+                            for w in child_divs:
+                                hrefs.append(w.select_one('a[href]')['href']) 
+                            
+                            data.append({
+                                # 'class': ' '.join(divs['class']),
+                                'hrefs': hrefs
+                            })
+                except Exception as e:
+                    print(e)
+        
+        for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+            child_divs = divs.find_elements(By.XPATH, './div')
+            if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
+                # for size
+                # first_div_height = child_divs[0].size['height']
+                # first_div_width = child_divs[0].size['width']
+                # if first_div_height>0 and first_div_width>0:
+                #     all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
+                #     if all_same_size:
+                #         data.append({
+                #             'title': divs.get_attribute('class'),
+                #         })
+
+                # for class
+                first_div_height = child_divs[0].get_attribute('class').strip()
+                if ' ' in first_div_height:
+                    first_div_height = first_div_height.split(' ')
+                else:
+                    first_div_height = [first_div_height]
+
+                def checkIfExist(calsses, newClass):
+                    res = False
+                    if ' ' in newClass:
+                        newClass = newClass.split(' ')
+                    else:
+                        newClass = [newClass]
+
+                    for c in calsses:
+                        for n in newClass:
+                            if str(c).strip() == str(n).strip():
+                                res = True
+                                
+                    return res 
+                
+                if first_div_height:
+                    all_same_size = all(checkIfExist(first_div_height, div.get_attribute('class').strip()) for div in child_divs)
+                    if all_same_size:
+                        
+                        hrefs = []
+                        for w in child_divs:
+                            hrefs.append(w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')) 
+                        
+                        data.append({
+                            'class': divs.get_attribute('class'),
+                            'hrefs': hrefs
+                        })
+
+        driver.quit()
+        return JsonResponse({'data': data})
+      
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = uc.Chrome(use_subprocess=False)
