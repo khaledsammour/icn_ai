@@ -3568,6 +3568,7 @@ class MainScrapView(APIView):
                     if len(soup.select(website.title_suffix_selector))>0:
                         title_suffix = soup.select_one(website.title_suffix_selector).get_text(strip=True)
                 # Get the product price
+                price = ''
                 if website.static_price:
                     price = website.static_price
                 elif website.price_attr:
@@ -3575,12 +3576,13 @@ class MainScrapView(APIView):
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
                         price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
-                    elif website.second_price_attr:
+
+                    if website.second_price_attr and not price:
                         price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
-                    elif website.second_price_selector and len(soup.select(website.second_price_selector))>0:
+
+                    if  not price and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
                         price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
-                    else:
-                        price = ''
+                        
                     if website.is_price_have_comma:
                         price = price.replace(',','.')
                 # Get discount
@@ -4074,7 +4076,14 @@ class Test(APIView):
         driver.get(url)
         sleep(10)
         data = []
-        products = []
+        def checkIfExist(calsses, newClass):
+            res = False
+            for c in calsses:
+                for n in newClass:
+                    if str(c).strip() == str(n).strip():
+                        res = True
+            return res 
+        
 
         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
         soup = BeautifulSoup(href_res, 'html.parser')
@@ -4083,75 +4092,45 @@ class Test(APIView):
             if len(child_divs)>3:
                 try:
                     first_div_height = child_divs[0]['class']
-                    def checkIfExist(calsses, newClass):
-                        res = False
-                        for c in calsses:
-                            for n in newClass:
-                                if str(c).strip() == str(n).strip():
-                                    res = True
-                        return res 
-                    
                     if first_div_height:
                         all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
                         if all_same_size:
-                            
                             hrefs = []
                             for w in child_divs:
                                 hrefs.append(w.select_one('a[href]')['href']) 
-                            
                             data.append({
-                                # 'class': ' '.join(divs['class']),
+                                'class': ' '.join(divs['class']),
                                 'hrefs': hrefs
                             })
                 except Exception as e:
                     print(e)
+
+        for d in data:
+            products = []
+            for h in d['hrefs']:
+                driver.get('https://www.theprofpc.com'+h)
+                # sleep(5)
+                h_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+                h_soup = BeautifulSoup(h_res, 'html.parser')
+                products.append({
+                    "name": h_soup.select_one('meta[itemprop="name"]')['content'],
+                    "description": h_soup.select_one('meta[itemprop="description"]')['content'],
+                    "image": h_soup.select_one('meta[itemprop="image"]')['content'],
+                })
+            d['products'] = products
         
-        for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
-            child_divs = divs.find_elements(By.XPATH, './div')
-            if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
-                # for size
-                # first_div_height = child_divs[0].size['height']
-                # first_div_width = child_divs[0].size['width']
-                # if first_div_height>0 and first_div_width>0:
-                #     all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
-                #     if all_same_size:
-                #         data.append({
-                #             'title': divs.get_attribute('class'),
-                #         })
-
-                # for class
-                first_div_height = child_divs[0].get_attribute('class').strip()
-                if ' ' in first_div_height:
-                    first_div_height = first_div_height.split(' ')
-                else:
-                    first_div_height = [first_div_height]
-
-                def checkIfExist(calsses, newClass):
-                    res = False
-                    if ' ' in newClass:
-                        newClass = newClass.split(' ')
-                    else:
-                        newClass = [newClass]
-
-                    for c in calsses:
-                        for n in newClass:
-                            if str(c).strip() == str(n).strip():
-                                res = True
-                                
-                    return res 
-                
-                if first_div_height:
-                    all_same_size = all(checkIfExist(first_div_height, div.get_attribute('class').strip()) for div in child_divs)
-                    if all_same_size:
-                        
-                        hrefs = []
-                        for w in child_divs:
-                            hrefs.append(w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')) 
-                        
-                        data.append({
-                            'class': divs.get_attribute('class'),
-                            'hrefs': hrefs
-                        })
+        # for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+        #     child_divs = divs.find_elements(By.XPATH, './div')
+        #     if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
+        #         # for size
+        #         first_div_height = child_divs[0].size['height']
+        #         first_div_width = child_divs[0].size['width']
+        #         if first_div_height>0 and first_div_width>0:
+        #             all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
+        #             if all_same_size:
+        #                 data.append({
+        #                     'title': divs.get_attribute('class'),
+        #                 })
 
         driver.quit()
         return JsonResponse({'data': data})
