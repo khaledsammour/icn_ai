@@ -4025,44 +4025,41 @@ class GetImagesFromGoogle(APIView):
                 pass
             finally:
                 driver.close()
-        # with ThreadPoolExecutor(max_workers=6) as executor:
-        #     list(executor.map(getImage, [d for d in excel_data if d['photo'] == None]))
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            list(executor.map(getImage, [d for d in excel_data if d['photo'] == None]))
         driver = create_browser()
         driver.get('https://images.google.com/')
         data = []
         for e in excel_data:
-            product = e
             try:
-                if product['Main Image URL'] != None and product['Main Image URL'] != '' and 'icn.com' not in product['Main Image URL']:
-                    driver.get(product['Main Image URL'])
-                    image_link = getImageBase64(driver, store_id, product['Main Image URL'])
-                    product['Main Image URL'] = image_link
-                    product['Photos URLs'] = image_link
+                if e['photo'] != None and e['photo'] != '' and 'icn.com' not in e['photo']:
+                    driver.get(e['photo'])
+                    image_link = getImageBase64(driver, store_id, e['photo'])
+                    e['photo'] = image_link
             except:
-                product['Main Image URL'] = ''
-                product['Photos URLs'] = ''
-            # product = {
-            #         "Arabic Name": translate(e['وصف المادة']),
-            #         "English Name": e['وصف المادة'],
-            #         "Arabic Description": translate(e['وصف المادة']),
-            #         "English Description": e['وصف المادة'],
-            #         "Category Id": "",
-            #         "Arabic Brand": "",
-            #         "English Brand": "",
-            #         "Unit Price": e['price'],
-            #         "Discount Type": "",
-            #         "Discount": "",
-            #         "Unit": "PC",
-            #         "Current Stock": 3,
-            #         "Main Image URL": e['photo'],
-            #         "Photos URLs": str((",").join([e['photo']])) if e['photo'] else "",
-            #         "Video Youtube URL": "",
-            #         "English Meta Tags": "",
-            #         "Arabic Meta Tags": "",
-            #         "features": '',
-            #         "wholesale": "no",
-            #         "reference_link": "",
-            #     }
+                e['photo'] = ''
+            product = {
+                    "Arabic Name": translate(e['وصف المادة']),
+                    "English Name": e['وصف المادة'],
+                    "Arabic Description": translate(e['وصف المادة']),
+                    "English Description": e['وصف المادة'],
+                    "Category Id": "",
+                    "Arabic Brand": "",
+                    "English Brand": "",
+                    "Unit Price": e['price'],
+                    "Discount Type": "",
+                    "Discount": "",
+                    "Unit": "PC",
+                    "Current Stock": 3,
+                    "Main Image URL": e['photo'],
+                    "Photos URLs": str((",").join([e['photo']])) if e['photo'] else "",
+                    "Video Youtube URL": "",
+                    "English Meta Tags": "",
+                    "Arabic Meta Tags": "",
+                    "features": '',
+                    "wholesale": "no",
+                    "reference_link": "",
+                }
             data.append(product)
         df = pd.DataFrame(data)
         df.to_excel('excel/'+file_name+'.xlsx', index=False)
