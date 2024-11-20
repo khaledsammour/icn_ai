@@ -3686,68 +3686,91 @@ class Test(APIView):
                     if str(c).strip() == str(n).strip():
                         res = True
             return res 
+        index = 0
         
         # bs4
-        href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-        soup = BeautifulSoup(href_res, 'html.parser')
-        for divs in soup.select('div'):
-            child_divs = divs.find_all(recursive=False)
-            if len(child_divs)>3:
-                try:
-                    first_div_height = child_divs[0]['class']
-                    if first_div_height:
-                        all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
-                        if all_same_size:
-                            hrefs = []
-                            for w in child_divs:
-                                href = w.select_one('a[href]')['href']
-                                if 'http' in href:
-                                    hrefs.append(href) 
-                            data.append({
-                                'class': ' '.join(divs['class']),
-                                'hrefs': hrefs
-                            })
-                except Exception as e:
-                    print(e)
+        # href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
+        # soup = BeautifulSoup(href_res, 'html.parser')
+        # for divs in soup.select('div'):
+        #     child_divs = divs.find_all(recursive=False)
+        #     if len(child_divs)>3:
+        #         try:
+        #             first_div_height = child_divs[0]['class']
+        #             if first_div_height:
+        #                 all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
+        #                 if all_same_size:
+        #                     hrefs = []
+        #                     for w in child_divs:
+        #                         if len(w.select('a[href]'))>0:
+        #                             href = w.select_one('a[href]')['href']
+        #                             print(href)
+        #                             if 'http' not in href:
+        #                                 hrefs.append('https://www.imdb.com/'+href)
+        #                     data.append({
+        #                         # 'class': ' '.join(divs['class']),
+        #                         'name': 'Div: '+str(index),
+        #                         'hrefs': hrefs
+        #                     })
+        #                     index = index + 1
+        #         except Exception as e:
+        #             print(e)
         
-        if len(data)==0:
-            for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
-                child_divs = divs.find_elements(By.XPATH, './div')
-                if len(child_divs)>3:
+        for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+            child_divs = divs.find_elements(By.XPATH, './div')
+            all_same_size = False
+            if len(child_divs)>3:
+                # for class
+                first_div_height = child_divs[0].get_attribute('class')
+                if first_div_height:
+                    all_same_size = all(checkIfExist(first_div_height, div.get_attribute('class')) for div in child_divs)
+                    if all_same_size:
+                        hrefs = []
+                        for w in child_divs:
+                            if len(w.find_elements(By.CSS_SELECTOR,'a[href]'))>0:
+                                href = w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')
+                                hrefs.append(href)
+                        data.append({
+                            # 'class': ' '.join(divs['class']),
+                            'name': 'Div: '+str(index),
+                            'hrefs': hrefs
+                        })
+                        index = index + 1
+                if not all_same_size:
                     # for size
                     first_div_height = child_divs[0].size['height']
                     first_div_width = child_divs[0].size['width']
-                    if first_div_height>0 and first_div_width>0:
-                        all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
-                        if all_same_size:
-                            data.append({
-                                'title': divs.get_attribute('class'),
-                            })
-
-                # child_divs = divs.find_elements(By.XPATH, './div')
-                # if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
-                #     # for size
-                #     first_div_height = child_divs[0].size['height']
-                #     first_div_width = child_divs[0].size['width']
-                #     if first_div_height>0 and first_div_width>0:
-                #         all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
-                #         if all_same_size:
-                #             data.append({
-                #                 'title': divs.get_attribute('class'),
-                #             })
+                    all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
+                    if all_same_size:
+                        hrefs = []
+                        for w in child_divs:
+                            if len(w.find_elements(By.CSS_SELECTOR,'a[href]'))>0:
+                                href = w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')
+                                hrefs.append(href)
+                        data.append({
+                            # 'class': ' '.join(divs['class']),
+                            'name': 'Div: '+str(index),
+                            'hrefs': hrefs
+                        })
+                        index = index + 1
         for d in data:
             products = []
             for h in d['hrefs']:
+                print(h)
+                if 'http' not in h:
+                    continue
                 driver.get(h)
-                # sleep(5)
                 h_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 h_soup = BeautifulSoup(h_res, 'html.parser')
                 if len(h_soup.select('meta[property="og:title"]'))>0:
-                    products.append({
-                        "name": h_soup.select_one('meta[property="og:title"]')['content'],
-                        # "description": h_soup.select_one('meta[itemprop="description"]')['content'],
-                        # "image": h_soup.select_one('meta[itemprop="image"]')['content'],
-                    })
+                    try:
+                        products.append({
+                            "name": h_soup.select_one('meta[property="og:title"]')['content'],
+                            "link": driver.current_url,
+                            # "description": h_soup.select_one('meta[itemprop="description"]')['content'],
+                            # "image": h_soup.select_one('meta[itemprop="image"]')['content'],
+                        })
+                    except:
+                        pass
             d['products'] = products
 
         driver.quit()
