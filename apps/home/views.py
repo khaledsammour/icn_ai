@@ -3687,7 +3687,7 @@ class Test(APIView):
                         res = True
             return res 
         
-
+        # bs4
         href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
         soup = BeautifulSoup(href_res, 'html.parser')
         for divs in soup.select('div'):
@@ -3709,7 +3709,32 @@ class Test(APIView):
                             })
                 except Exception as e:
                     print(e)
-                    
+        
+        if len(data)==0:
+            for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+                child_divs = divs.find_elements(By.XPATH, './div')
+                if len(child_divs)>3:
+                    # for size
+                    first_div_height = child_divs[0].size['height']
+                    first_div_width = child_divs[0].size['width']
+                    if first_div_height>0 and first_div_width>0:
+                        all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
+                        if all_same_size:
+                            data.append({
+                                'title': divs.get_attribute('class'),
+                            })
+
+                # child_divs = divs.find_elements(By.XPATH, './div')
+                # if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
+                #     # for size
+                #     first_div_height = child_divs[0].size['height']
+                #     first_div_width = child_divs[0].size['width']
+                #     if first_div_height>0 and first_div_width>0:
+                #         all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
+                #         if all_same_size:
+                #             data.append({
+                #                 'title': divs.get_attribute('class'),
+                #             })
         for d in data:
             products = []
             for h in d['hrefs']:
@@ -3724,19 +3749,6 @@ class Test(APIView):
                         # "image": h_soup.select_one('meta[itemprop="image"]')['content'],
                     })
             d['products'] = products
-        
-        # for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
-        #     child_divs = divs.find_elements(By.XPATH, './div')
-        #     if len(child_divs)>10 and len(child_divs[0].find_elements(By.CSS_SELECTOR, 'img'))>0:
-        #         # for size
-        #         first_div_height = child_divs[0].size['height']
-        #         first_div_width = child_divs[0].size['width']
-        #         if first_div_height>0 and first_div_width>0:
-        #             all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
-        #             if all_same_size:
-        #                 data.append({
-        #                     'title': divs.get_attribute('class'),
-        #                 })
 
         driver.quit()
         return JsonResponse({'data': data})
