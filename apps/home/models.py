@@ -17,6 +17,8 @@ class Websites(models.Model):
     pagination_click = models.CharField(max_length=250, null=True, blank=True)
     pagination_path = models.CharField(max_length=250, null=True, blank=True)
     product_selector = models.CharField(max_length=250, null=True, blank=True)
+    not_contains_class = models.CharField(max_length=250, null=True, blank=True)
+    inner_selector = models.CharField(max_length=250, null=True, blank=True)
     inside_category_selector = models.CharField(max_length=250, null=True, blank=True)
     product_click = models.BooleanField(default=False, null=True, blank=True)
     title_prefix = models.CharField(max_length=250, null=True, blank=True)

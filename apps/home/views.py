@@ -1094,275 +1094,6 @@ class BCIScrapView(APIView):
         driver.quit()
         return JsonResponse({})
 
-class RokonBaghdadScrapView(APIView):
-    def post(self, request, *args, **kwargs):
-        chrome_options = Options()
-        # chrome_options.page_load_strategy = 'eager'
-        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-setuid-sandbox')
-        chrome_options.add_argument('--disable-features=NetworkService')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--disable-features=IsolateOrigins')
-        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
-        # chrome_options.add_argument('--headless')
-        driver = Chrome(options=chrome_options)
-        driver.maximize_window()
-        url = request.data['url']
-        driver.get(url)
-        sleep(1)
-        data = []
-        errors = []
-        hrefs = []
-        until_visible_click(driver, '.cookie-bar-wrap.show .btn-accept')
-        while (True):
-            until_visible(driver, '.search-result-middle:not(.loading)')
-            elements = driver.find_elements(By.CSS_SELECTOR, ".grid-view-products .product-card")
-            for e in elements:
-                if len(e.find_elements(By.CSS_SELECTOR, ".badge-danger"))==0:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, "a.product-image").get_attribute("href"))
-            if (len(driver.find_elements(By.CSS_SELECTOR,'.pagination >li:last-child > button:not(.disabled)'))>0):
-                until_visible_click(driver, '.pagination >li:last-child > button:not(.disabled)')
-            else:
-                break
-            
-        for href in hrefs:
-            try:
-                driver.get(href.replace('/en/', '/ar/'))
-                if len(driver.find_elements(By.CSS_SELECTOR, '.section-title'))>0 and 'Page Not Found.' in driver.find_element(By.CSS_SELECTOR, '.section-title').text:
-                    continue
-                title_selector = 'meta[name*="title"]'
-                description_selector = '#description'
-                key_words_selector = "meta[property*='og:title']"
-                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                soup = BeautifulSoup(href_res, 'html.parser')
-                title = soup.select_one(title_selector)['content'].strip()
-                # Get the main image URL
-                main_image_elem = soup.select_one('img[alt*="Product image"]')
-                image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
-                # Get additional images
-                image_elems = soup.select('img[alt*="Product image"]')
-                images = [getImageUrl(request.data['id'], img['src']) for img in image_elems if len(img['src'])>10]
-                images = [i for i in images if len(i)>10]
-                # Check stock status
-                in_stock = '3'
-                # Get product attributes content
-                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                product_attributes_content = description_elem if description_elem else ''
-                # Get keywords
-                key_words_elem = soup.select_one(key_words_selector)
-                keyWords = key_words_elem['content'].replace('| baghdad corner jordan','').strip() if key_words_elem else ''
-                driver.get(href.replace('/ar/','/en/'))
-                en_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                en_soup = BeautifulSoup(en_href_res, 'html.parser')
-                # Get the product price
-                price_elem = en_soup.select_one(".product-price .previous-price").get_text(strip=True) if en_soup.select_one(".product-price .previous-price") else en_soup.select_one("meta[property*='product:price:amount']")['content']
-                price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
-                # Get discount
-                discount_elem = en_soup.select_one("meta[property*='product:price:amount']")['content'] if en_soup.select_one(".product-price .previous-price") else None
-                discount = float(price) - float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) if discount_elem else '0'
-                
-                keywords = extract_top_keywords(translate(product_attributes_content, dest='en'))
-                ar_keywords = []
-                for k in keyWords.split('//'):
-                    keywords.append(k)
-
-                for keyW in keywords:
-                    ar_keywords.append(translate(keyW))
-                    
-                product = {
-                    "Arabic Name": title,
-                    "English Name": translate(title, dest='en'),
-                    "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                    "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
-                    "Category Id": request.data['db_category'],
-                    "Arabic Brand": "",
-                    "English Brand": "",
-                    "Unit Price": price,
-                    "Discount Type": "Flat" if discount != "0" else "",
-                    "Discount": discount if discount != "0" else "",
-                    "Unit": "PC",
-                    "Current Stock": in_stock,
-                    "Main Image URL": image,
-                    "Photos URLs": str((",").join(images)) if images else image,
-                    "Video Youtube URL": "",
-                    "English Meta Tags": ','.join(keywords),
-                    "Arabic Meta Tags": ','.join(ar_keywords),
-                    "features": '',
-                    "features_ar": '',
-                    "wholesale": "no",
-                    "reference_link": href,
-                }
-                data.append(product)
-            except Exception as e:
-                print(e)
-                errors.append({
-                    "url": href
-                })
-                break
-
-        if len(errors)>0:
-            err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-        else:
-            df = pd.DataFrame(data)
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            for d in data:
-                changed_product_attributes_content = change_text(driver, d['English Description']) if len(d['English Description'].split(' '))>5 else ''
-                description = changed_product_attributes_content if len(changed_product_attributes_content)>0 else product_attributes_content if len(product_attributes_content) > 3 else ''
-                d['English Description'] = description
-                d['Arabic Description'] = translate(description)
-            df = pd.DataFrame(data)
-            df.to_excel('excel/new_'+request.data['db_category']+'_products.xlsx', index=False)
-        driver.quit()
-        return JsonResponse({})
-
-class DadaGroupScrapView(APIView):
-    def post(self, request, *args, **kwargs):
-        chrome_options = Options()
-        # chrome_options.page_load_strategy = 'eager'
-        chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-web-security')
-        chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-setuid-sandbox')
-        chrome_options.add_argument('--disable-features=NetworkService')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--disable-features=IsolateOrigins')
-        chrome_options.add_argument('--disable-features=AutofillCreditCardSignin')
-        # chrome_options.add_argument('--headless')
-        driver = Chrome(options=chrome_options)
-        driver.maximize_window()
-        url = request.data['url']
-        driver.get(url)
-        sleep(1)
-        data = []
-        errors = []
-        hrefs = []
-        while (True):
-            try:
-                until_visible(driver, '.show-more')
-            except:
-                pass
-            if (len(driver.find_elements(By.CSS_SELECTOR,'.show-more'))>0):
-                until_visible_click(driver, '.show-more')
-            else:
-                break
-        until_visible(driver, '.container-products > .custom-product')
-        elements = driver.find_elements(By.CSS_SELECTOR, ".container-products > .custom-product")
-        for e in elements:
-            if len(e.find_elements(By.CSS_SELECTOR, ".out-of-stock"))==0:
-                hrefs.append(e.find_element(By.CSS_SELECTOR, "a").get_attribute("href"))
-            
-            
-        for href in hrefs:
-            try:
-                driver.get(href.replace('?lang=ar', '?lang=en'))
-                title_selector = 'meta[name*="title"]'
-                description_selector = '.div-description-span'
-                key_words_selector = "meta[property*='og:title']"
-                product_attributes_selector = ".container-2-single > div.row-specification.desktop-view  "
-                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                soup = BeautifulSoup(href_res, 'html.parser')
-                title = soup.select_one(title_selector)['content'].strip()
-                # Get the product price
-                price_elem = soup.select_one(".price-span").get_text(strip=True)
-                price = price_elem.strip().replace('JOD','').replace(',', '').strip() if price_elem else ''
-                # Get discount
-                discount_elem = soup.select_one(".discount-price-span").get_text(strip=True) if soup.select_one(".discount-price-span") else None
-                discount = float(discount_elem.strip().replace('JOD','').replace(',', '').strip()) - float(price.split(' ')[0]) if discount_elem else '0'
-                # Get the main image URL
-                main_image_elem = soup.select_one('.slider > li.slide img')
-                image = getImageUrl(request.data['id'], main_image_elem['src']) if main_image_elem else ''
-                # Get additional images
-                image_elems = soup.select('.slider > li.slide img')
-                images = [getImageUrl(request.data['id'], img['src']) for img in image_elems if len(img['src'])>10]
-                # Check stock status
-                in_stock = '3'
-                # Get product attributes content
-                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                product_attributes_content = description_elem if description_elem else ''
-                # Get keywords
-                key_words_elem = soup.select_one(key_words_selector)
-                keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-                keywords = keyWords.split('//')
-                if len(product_attributes_content)>0:
-                    keywords = extract_top_keywords(product_attributes_content)
-                    ar_keywords = []
-                    for k in keyWords.split('//'):
-                        keywords.append(k)
-
-                    for keyW in keywords:
-                        ar_keywords.append(translate(keyW))
-                else:
-                    ar_keywords = []
-                    for keyW in keywords:
-                        ar_keywords.append(translate(keyW))
-                product_attributes_content_json = {}                
-                product_attributes = soup.select(product_attributes_selector)
-                for attr in product_attributes:
-                    key = attr.select_one(".col-3-s").get_text(strip=True)
-                    val = attr.select_one(".col-4-s").get_text(strip=True)
-                    product_attributes_content_json[key] = val
-                driver.get(href.replace('?lang=en', '?lang=ar'))
-                ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
-                ar_title = ar_soup.select_one(title_selector)['content'].strip()
-                ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if ar_soup.select_one(description_selector) else ''
-                ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
-                ar_product_attributes_content_json = {}
-                ar_product_attributes = ar_soup.select(product_attributes_selector)
-                for ar_attr in ar_product_attributes:
-                    key = ar_attr.select_one(".col-3-s").get_text(strip=True)
-                    val = ar_attr.select_one(".col-4-s").get_text(strip=True)
-                    ar_product_attributes_content_json[key] = val
-                product = {
-                    "Arabic Name": ar_title,
-                    "English Name": title,
-                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content)>3 else request.data['arabic_description'],
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
-                    "Category Id": request.data['db_category'],
-                    "Arabic Brand": "",
-                    "English Brand": "",
-                    "Unit Price": price,
-                    "Discount Type": "Flat" if discount != "0" else "",
-                    "Discount": discount if discount != "0" else "",
-                    "Unit": "PC",
-                    "Current Stock": in_stock,
-                    "Main Image URL": image,
-                    "Photos URLs": str((",").join(images)) if images else image,
-                    "Video Youtube URL": "",
-                    "English Meta Tags": ','.join(keywords),
-                    "Arabic Meta Tags": ','.join(ar_keywords),
-                    "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
-                    "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
-                    "wholesale": "no",
-                    "reference_link": href,
-                }
-                data.append(product)
-            except Exception as e:
-                print(e)
-                errors.append({
-                    "url": href
-                })
-                break
-
-        if len(errors)>0:
-            err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-        else:
-            df = pd.DataFrame(data)
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            change_content(driver, data, request.data['db_category'])
-        driver.quit()
-        return JsonResponse({})
-
 class BashitiScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = create_browser()
@@ -1483,131 +1214,6 @@ class BashitiScrapView(APIView):
             if not error:
                 executor.submit(get_details, href)
         executor.shutdown(wait=True)
-        if len(errors)>0:
-            err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-        else:
-            df = pd.DataFrame(data)
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            change_content(driver, data, request.data['db_category'])
-        driver.quit()
-        return JsonResponse({})
-
-class DarwishScrapView(APIView):
-    def post(self, request, *args, **kwargs):
-        driver = create_browser()
-        url = request.data['url']
-        driver.get(url)
-        sleep(1)
-        data = []
-        errors = []
-        hrefs = get_hrefs(driver, url, '?p=', ".main .products.list > .product", not_contains_class='.stock.unavailable', inner_selector='a.product-item-link')
-        error = False
-        def get_details(driver, href):
-            try:
-                driver.get(href)
-                title_selector = '.page-title'
-                description_selector = '.product.attribute.overview'
-                key_words_selector = "meta[property*='og:title']"
-                product_attributes_selector = ".additional-attributes > tbody > tr"
-                try:
-                    until_visible(driver, 'div[data-gallery-role*="stage-shaft"] > div[href]')
-                except:
-                    pass
-                href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                soup = BeautifulSoup(href_res, 'html.parser')
-                title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
-                # Get the product price
-                price = soup.select_one(".old-price .price").get_text(strip=True).replace('JOD','').replace(',','').strip() if soup.select_one(".old-price .price") else soup.select_one('.price-final_price .price').get_text(strip=True).replace('JOD','').replace(',','').strip()
-                # Get discount
-                discount_elem = soup.select_one('.price-final_price .price').get_text(strip=True).replace('JOD','').replace(',','').strip() if soup.select_one(".old-price .price") else None
-                discount = float(price) - float(discount_elem) if discount_elem else '0'
-                # Get the main image URL
-                main_image_elem = soup.select_one('div[data-gallery-role*="stage-shaft"] > div[href]')
-                image = getImageUrl(request.data['id'], main_image_elem['href']) if main_image_elem else ''
-                # Get additional images
-                image_elems = soup.select('div[data-gallery-role*="stage-shaft"] > div[href]')
-                images = [getImageUrl(request.data['id'], img['href']) for img in image_elems if len(img['href'])>10]
-                # Check stock status
-                in_stock = '3'
-                # Get product attributes content
-                description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                product_attributes_content = description_elem if description_elem else ''
-                # Get keywords
-                key_words_elem = soup.select_one(key_words_selector)
-                keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-                keywords = keyWords.split('//')
-                if len(product_attributes_content)>0:
-                    keywords = extract_top_keywords(product_attributes_content)
-                    ar_keywords = []
-                    for k in keyWords.split('//'):
-                        keywords.append(k)
-
-                    for keyW in keywords:
-                        ar_keywords.append(translate(keyW))
-                else:
-                    ar_keywords = []
-                    for keyW in keywords:
-                        ar_keywords.append(translate(keyW))
-                
-                product_attributes_content_json = {}                
-                product_attributes = soup.select(product_attributes_selector)
-                for attr in product_attributes:
-                    key = attr.select_one("th").get_text(strip=True)
-                    val = attr.select_one("td").get_text(strip=True)
-                    product_attributes_content_json[key] = val
-
-                driver.get(href.replace('/en/', '/ar/'))
-                if len(driver.find_elements(By.CSS_SELECTOR,'.page-header h3.title'))>0:
-                    ar_title = translate(title)
-                    ar_product_attributes_content = translate(product_attributes_content)
-                else:
-                    until_visible(driver, title_selector)
-                    ar_href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                    ar_soup = BeautifulSoup(ar_href_res, 'html.parser')
-                    ar_title = ar_soup.select_one(title_selector).get_text(strip=True)
-                    ar_description_elem = ar_soup.select_one(description_selector).get_text(" ",strip=True) if ar_soup.select_one(description_selector) else ''
-                    ar_product_attributes_content = ar_description_elem if ar_description_elem else ''
-                    ar_product_attributes_content_json = {}
-                    ar_product_attributes = ar_soup.select(product_attributes_selector)
-                    for attr in ar_product_attributes:
-                        key = attr.select_one("th").get_text(strip=True)
-                        val = attr.select_one("td").get_text(strip=True)
-                        ar_product_attributes_content_json[key] = val
-                product = {
-                    "Arabic Name": ar_title,
-                    "English Name": title,
-                    "Arabic Description": ar_product_attributes_content if len(ar_product_attributes_content)>3 else request.data['arabic_description'],
-                    "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
-                    "Category Id": request.data['db_category'],
-                    "Arabic Brand": "",
-                    "English Brand": "",
-                    "Unit Price": price,
-                    "Discount Type": "Flat" if discount != "0" else "",
-                    "Discount": discount if discount != "0" else "",
-                    "Unit": "PC",
-                    "Current Stock": in_stock,
-                    "Main Image URL": image,
-                    "Photos URLs": str((",").join(images)) if images else image,
-                    "Video Youtube URL": "",
-                    "English Meta Tags": ','.join(keywords),
-                    "Arabic Meta Tags": ','.join(ar_keywords),
-                    "features": '' if not product_attributes_content_json else json.dumps(product_attributes_content_json),
-                    "features_ar": '' if not ar_product_attributes_content_json else json.dumps(ar_product_attributes_content_json),
-                    "wholesale": "no",
-                    "reference_link": href,
-                }
-                data.append(product)
-            except Exception as e:
-                error = True
-                print(e)
-                traceback.print_exc()
-                errors.append({
-                    "url": href
-                })     
-        for href in hrefs:
-            if not error:
-                get_details(driver, href)
         if len(errors)>0:
             err_df = pd.DataFrame(errors)
             err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
@@ -3572,16 +3178,16 @@ class MainScrapView(APIView):
                 if website.static_price:
                     price = website.static_price
                 elif website.price_attr:
-                    price = soup.select_one(website.price_selector)[website.price_attr].replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
+                    price = soup.select_one(website.price_selector)[website.price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
 
                     if website.second_price_attr and not price:
-                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
 
                     if  not price and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                         
                     if website.is_price_have_comma:
                         price = price.replace(',','.')
@@ -3733,8 +3339,8 @@ class MainScrapView(APIView):
                     until_visible_send_keys(driver, website.password_selector, website.password)
                     until_visible_click(driver, website.button_selector)
                     sleep(3)
-            if len(driver.find_elements(By.CSS_SELECTOR, website.main_img_selector))>0:
-                product_details(url)
+            # if len(driver.find_elements(By.CSS_SELECTOR, website.main_img_selector))>0:
+            #     product_details(url)
             elif website.product_click:
                 isExist = True
                 index = website.start_index
@@ -3765,7 +3371,7 @@ class MainScrapView(APIView):
                     if website.no_pagination:
                         isExist = False
             else:
-                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination, pagination_click=website.pagination_click)
+                hrefs = get_hrefs(driver, url, website.pagination_path, website.product_selector, index=website.start_index, no_pagination=website.no_pagination, pagination_click=website.pagination_click, not_contains_class=website.not_contains_class, inner_selector=website.inner_selector)
                 if website.inside_category_selector:
                     driver.get(url)
                     category_hrefs = get_hrefs(driver, url, '/', website.inside_category_selector, index=1, no_pagination=True)
@@ -4094,26 +3700,29 @@ class Test(APIView):
                         if all_same_size:
                             hrefs = []
                             for w in child_divs:
-                                hrefs.append(w.select_one('a[href]')['href']) 
+                                href = w.select_one('a[href]')['href']
+                                if 'http' in href:
+                                    hrefs.append(href) 
                             data.append({
                                 'class': ' '.join(divs['class']),
                                 'hrefs': hrefs
                             })
                 except Exception as e:
                     print(e)
-
+                    
         for d in data:
             products = []
             for h in d['hrefs']:
-                driver.get('https://www.theprofpc.com'+h)
+                driver.get(h)
                 # sleep(5)
                 h_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                 h_soup = BeautifulSoup(h_res, 'html.parser')
-                products.append({
-                    "name": h_soup.select_one('meta[itemprop="name"]')['content'],
-                    "description": h_soup.select_one('meta[itemprop="description"]')['content'],
-                    "image": h_soup.select_one('meta[itemprop="image"]')['content'],
-                })
+                if len(h_soup.select('meta[property="og:title"]'))>0:
+                    products.append({
+                        "name": h_soup.select_one('meta[property="og:title"]')['content'],
+                        # "description": h_soup.select_one('meta[itemprop="description"]')['content'],
+                        # "image": h_soup.select_one('meta[itemprop="image"]')['content'],
+                    })
             d['products'] = products
         
         # for divs in driver.find_elements(By.CSS_SELECTOR,'div'):

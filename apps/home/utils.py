@@ -18,7 +18,7 @@ from django.conf import settings  # Import project settings
 from airtable import Airtable
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
-def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class='', inner_selector='', should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False, pagination_click=False):
+def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class=None, inner_selector=None, should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False, pagination_click=False):
     isExist = True
     hrefs = []
     fitst_index = index
@@ -48,14 +48,14 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
         
         elements = driver.find_elements(By.CSS_SELECTOR, selector)
         for e in elements:
-            if not_contains_class != '':
+            if not_contains_class != None:
                 if len(e.find_elements(By.CSS_SELECTOR, not_contains_class)) == 0:
-                    if inner_selector != '':
+                    if inner_selector != None:
                         hrefs.append(e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr))
                     else:
                         hrefs.append(e.get_attribute(attr))
             else:
-                if inner_selector != '':
+                if inner_selector != None:
                     hrefs.append(e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr))
                 else:
                     hrefs.append(e.get_attribute(attr))

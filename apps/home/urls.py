@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import GetImagesFromGoogle, Test, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, RokonBaghdadScrapView, DadaGroupScrapView, BashitiScrapView, TemuScrapView, DarwishScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import GetImagesFromGoogle, Test, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -22,11 +22,8 @@ urlpatterns = [
     path('api/TXONScrapView', TXONScrapView.as_view()),
     path('api/CityCenterScrapView', CityCenterScrapView.as_view()),
     path('api/BCIScrapView', BCIScrapView.as_view()),
-    path('api/RokonBaghdadScrapView', RokonBaghdadScrapView.as_view()),
-    path('api/DadaGroupScrapView', DadaGroupScrapView.as_view()),
     path('api/BashitiScrapView', BashitiScrapView.as_view()),
     path('api/TemuScrapView', TemuScrapView.as_view()),
-    path('api/DarwishScrapView', DarwishScrapView.as_view()),
     path('api/SportEquipmentScrapView', SportEquipmentScrapView.as_view()),
     path('api/ACIScrapView', ACIScrapView.as_view()),
     path('api/DiamondStarScrapView', DiamondStarScrapView.as_view()),

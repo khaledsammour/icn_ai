@@ -1,0 +1,178 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+    .accordion>input[name="collapse"] {
+        display: none;
+    }
+
+    .accordion .content {
+        overflow: hidden;
+        height: 0;
+        transition: 0.5s;
+        box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .accordion label {
+        color: #fff;
+        cursor: pointer;
+        font-weight: normal;
+        padding: 10px;
+        background: #b0100c;
+
+    }
+
+    .accordion label:hover,
+    .accordion label:focus {
+        background: #252525;
+    }
+
+    .accordion .handle label:before {
+        font-family: FontAwesome;
+        content: "\f107";
+        display: inline-block;
+        margin-right: 10px;
+        font-size: 1em;
+        line-height: 1.556em;
+        vertical-align: middle;
+        transition: 0.4s;
+
+    }
+
+    .accordion>input[name="collapse"]:checked~.handle label:before {
+        transform: rotate(180deg);
+        transform-origin: center;
+        transition: 0.4s;
+    }
+
+    .accordion>input[name="collapse"]:checked~.content {
+        height: 380px;
+        transition: height 0.5s;
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card ">
+                <div class="card-header">
+                    <h4 class="card-title"> Simple Table</h4>
+                </div>
+                <input type="text" class="form-control mt-3" placeholder="URL" id="url" />
+                <button type="button" class="btn" onclick="mainScrapView()">
+                    Scrap
+                </button>
+                <div class="card-body">
+                    <div class="table-responsive" id="content">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function mainScrapView() {
+        fetch("/api/Test", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                url: document.getElementById('url').value
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+
+                var content = ""
+                for (let index = 0; index < data.data.length; index++) {
+                    const element = data.data[index];
+                    content += `
+        <section class="accordion">
+            <input type="checkbox" name="collapse" id="`+ element.class + `">
+            <h2 class="handle">
+                <label for="`+ element.class + `">` + element.class + `</label>
+            </h2>
+            <div class="content">
+                <table class="table tablesorter " id="">
+                    <thead class=" text-primary">
+                        <tr>
+                            <th>
+                                Name
+                            </th>
+                            <th>
+                                Products
+                            </th>
+                            <th>
+                                Last Scraped Date
+                            </th>
+                            <th class="text-center">
+                                Scrap
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        `
+                    for (let i = 0; i < element.products.length; i++) {
+                        const e = element.products[i];
+                        content += `
+                            <tr>
+                                <td>
+                                    <p>`+ e.name + `</p>
+                                </td>
+                                <td>
+                                    <p>3</p>
+                                </td>
+                                <td>
+                                    07-10-2024
+                                </td>
+                                <td class="text-center">
+                                </td>
+                            </tr>
+                            `
+                    }
+
+                    content += `
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        `
+                }
+                document.getElementById('content').innerHTML = content
+            })
+            .catch(error => console.error("Error:", error));
+
+    }
+</script>
+{% endblock javascripts %}

@@ -273,53 +273,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Rokon Baghdad</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL"
-                                           id="rokon_baghdad_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="rokon_baghdad_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="rokon_baghdad_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="rokon_baghdad_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="rokonBaghdadScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>Dada Group</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="baba_group_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="baba_group_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="baba_group_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="baba_group_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="dadaGroupScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>Bashiti</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="bashiti_url"/>
                                     <input type="text" class="form-control mt-3" placeholder="Description"
@@ -337,29 +290,6 @@
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="bashitiScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>Darwish</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="darwish_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="darwish_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="darwish_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="darwish_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="darwishScrapView()">
                                         Scrap
                                     </button>
                                 </td>
@@ -946,48 +876,6 @@
 
     }
 
-    function rokonBaghdadScrapView() {
-        fetch("/api/RokonBaghdadScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "2843",
-                url: document.getElementById('rokon_baghdad_url').value,
-                db_category: document.getElementById('rokon_baghdad_db_category').value,
-                description: document.getElementById('rokon_baghdad_description').value,
-                arabic_description: document.getElementById('rokon_baghdad_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
-    function dadaGroupScrapView() {
-        fetch("/api/DadaGroupScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "1617",
-                url: document.getElementById('baba_group_url').value,
-                db_category: document.getElementById('baba_group_db_category').value,
-                description: document.getElementById('baba_group_description').value,
-                arabic_description: document.getElementById('baba_group_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
     function bashitiScrapView() {
         fetch("/api/BashitiScrapView", {
             method: "POST",
@@ -1019,27 +907,6 @@
             body: JSON.stringify({
                 url: document.getElementById('temu_url').value,
                 db_category: document.getElementById('temu_db_category').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-    
-    function darwishScrapView() {
-        fetch("/api/DarwishScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "2912",
-                url: document.getElementById('darwish_url').value,
-                db_category: document.getElementById('darwish_db_category').value,
-                description: document.getElementById('darwish_description').value,
-                arabic_description: document.getElementById('darwish_arabic_description').value,
             })
         })
             .then(response => response.json())
