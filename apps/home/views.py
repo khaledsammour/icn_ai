@@ -3451,9 +3451,11 @@ class YaserMarket(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
         data = []
-        for i in range(1):
+        for i in range(5000):
             response = requests.get(url.replace('page=1', 'page='+str(i+1)))
             products = response.json()['products']
+            if len(products)==0:
+                break
             for p in products:
                 if p['stock_status']=='In Stock':
                     img = ''
