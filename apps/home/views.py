@@ -3459,14 +3459,14 @@ class YaserMarket(APIView):
             for p in products:
                 if p['stock_status']=='In Stock':
                     img = ''
-                    url = 'https://www.icn.com/api/v1/image/upload'
+                    image_url = 'https://www.icn.com/api/v1/image/upload'
                     data_to_upload = {
                         'user_id': request.data['user_id'],
                         'image_url': p['thumb']
                     }
 
                     try:
-                        response = requests.post(url, data=data_to_upload)
+                        response = requests.post(image_url, data=data_to_upload)
                         if response.status_code == 200:
                             img= response.text
                     except requests.exceptions.RequestException as e:
