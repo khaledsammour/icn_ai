@@ -3447,6 +3447,71 @@ class MainScrapView(APIView):
             list(executor.map(process_record, all_records))
         return JsonResponse({})  
  
+class YaserMarket(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        data = []
+        for i in range(1):
+            response = requests.get(url.replace('page=1', 'page='+str(i+1)))
+            products = response.json()['products']
+            for p in products:
+                if p['stock_status']=='In Stock':
+                    img = ''
+                    url = 'https://www.icn.com/api/v1/image/upload'
+                    data_to_upload = {
+                        'user_id': request.data['user_id'],
+                        'image_url': p['thumb']
+                    }
+
+                    try:
+                        response = requests.post(url, data=data_to_upload)
+                        if response.status_code == 200:
+                            img= response.text
+                    except requests.exceptions.RequestException as e:
+                        print('An error occurred:', e)
+
+                    data.append({
+                        "Arabic Name": translate(p['name']),
+                        "English Name": translate(p['name'], dest="en"),
+                        "Arabic Description": translate(p['description']),
+                        "English Description": translate(p['description'], dest="en"),
+                        "Category Id": request.data['category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": p['price'],
+                        "Discount Type": "",
+                        "Discount": "",
+                        "Unit": "PC",
+                        "Current Stock": "3",
+                        "Main Image URL": img,
+                        "Photos URLs": img,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "Arabic Meta Tags": translate(p['name']),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": 'https://www.yasermallonline.com/en/product/'+p['product_id'],
+                    })
+        df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
+        df.to_excel('excel/'+request.data['id']+'_products.xlsx', index=False)
+        if os.path.join('excel', request.data['id']+'_products.xlsx'):
+            try:
+                url = "https://ai.icn.com/api/upload_image"
+                files = {
+                    'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+                }
+                data = {
+                    'base_id': 'app4m95tHoPe9i69Y',
+                    'table_id': 'tblC9J5CWTfclSbTD',
+                    'record_id': request.data['id'],
+                }
+                # Send the POST request
+                response = requests.post(url, files=files, data=data)
+            except Exception as error:
+                print(error)
+        return JsonResponse({'data': []})
+    
 class StopProcess(APIView):
     def post(self, request, *args, **kwargs):
         global mainExecutor
@@ -3746,12 +3811,14 @@ class Test(APIView):
                             if len(w.find_elements(By.CSS_SELECTOR,'a[href]'))>0:
                                 href = w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')
                                 hrefs.append(href)
-                        data.append({
-                            # 'class': ' '.join(divs['class']),
-                            'name': 'Div: '+str(index),
-                            'hrefs': hrefs
-                        })
+                        if len(hrefs)>0:
+                            data.append({
+                                # 'class': ' '.join(divs['class']),
+                                'name': 'Div: '+str(index),
+                                'hrefs': hrefs
+                            })
                         index = index + 1
+        to_delete = []
         for d in data:
             products = []
             for h in d['hrefs']:
@@ -3772,10 +3839,126 @@ class Test(APIView):
                     except:
                         pass
             d['products'] = products
-
+            if len(products)==0:
+                to_delete.append(d)
+        for d in to_delete:
+            data.remove(d)
         driver.quit()
         return JsonResponse({'data': data})
-      
+    
+class TestInside(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        driver = create_browser()
+        driver.get(url)
+        sleep(10)
+        res = {}
+        biggest_img = None
+        for divs in driver.find_elements(By.CSS_SELECTOR,'img[src]'):
+            divs.size['height']
+            if biggest_img is None or divs.size['height'] > biggest_img.size['height']:
+                biggest_img = divs
+        
+        product_div = biggest_img
+        while True:
+            product_div = product_div.find_element(By.XPATH, "..")
+            if len(product_div.find_elements(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6'))>0:
+                break
+        
+        print(product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6').text)
+        res['title'] = product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6').text
+        description_div = product_div.find_element(By.CSS_SELECTOR,'div')
+        for divs in product_div.find_elements(By.CSS_SELECTOR,'div'):
+            if description_div is None or len(divs.find_elements(By.XPATH, './h1 | ./h2 | ./h3 | ./h4 | ./h5 | ./h6 | ./p | ./span')) > len(description_div.find_elements(By.XPATH, './h1 | ./h2 | ./h3 | ./h4 | ./h5 | ./h6 | ./p | ./span')):
+                description_div = divs
+        
+        # print(description_div.text)
+        try:
+            res['description'] = getSameFontSize(product_div).text
+        except Exception as e:
+            print(e)
+
+        if len(product_div.find_elements(By.CSS_SELECTOR, 'img[src]'))>0:
+            for img in product_div.find_elements(By.CSS_SELECTOR, 'img[src]'):
+                res['img'] = img.get_attribute('src')
+        
+        if len(product_div.find_elements(By.CSS_SELECTOR, 'p, span, bdi, del'))>0:
+            for price in product_div.find_elements(By.CSS_SELECTOR, 'p, span, bdi, del'):
+                if len(re.findall(r"\d{1,3}\.\d{1,3}", price.text))>0:
+                    res['price'] = price.text
+            
+        driver.quit()
+        print(res)
+        return JsonResponse({'data': res})
+
+def checkIfItClose(value, values):
+    res = []
+    for n in values:
+        if str(value).strip() == str(n).strip():
+            res.append(True)
+        else:
+            res.append(False)
+    return res 
+
+def getSameFontSize(driver):
+    res = None
+    for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+        # child_divs = divs.find_elements(By.XPATH, './div')
+        elements = divs.find_elements(By.XPATH, "./*[text()]")
+        font_weights = []
+        for element in elements:
+            font_weight = element.value_of_css_property('font-weight')        
+            if font_weight == 'normal':
+                font_weight_value = 400
+            elif font_weight == 'bold':
+                font_weight_value = 700
+            else:
+                font_weight_value = int(font_weight)
+            font_weights.append(font_weight_value)
+
+        # all_same_size = all(checkIfItClose(font_weights[0], font_weights))
+        if len(font_weights)>0:
+            for font_weight in font_weights:
+                sizes = checkIfItClose(font_weight, font_weights)
+                true_count = sizes.count(True)
+                percentage_true = (true_count / len(sizes)) * 100
+                if percentage_true > 70 and len(font_weights)>3:
+                    res = divs
+                    break
+
+    return res
+        
+def getBiggestFont(driver):
+    # Find all elements with text on the page (You can refine this to specific tags or classes)
+    elements = driver.find_elements(By.XPATH, "//*[text()]")
+
+    # Initialize variables to store the element with the maximum font-weight
+    max_font_weight = 0
+    max_font_weight_element = None
+
+    # Loop through elements and check their font-weight
+    for element in elements:
+        font_weight = element.value_of_css_property('font-weight')
+        
+        # Convert font-weight to a numeric value for comparison (it could be 'normal', 'bold', or numeric)
+        if font_weight == 'normal':
+            font_weight_value = 400
+        elif font_weight == 'bold':
+            font_weight_value = 700
+        else:
+            font_weight_value = int(font_weight)
+        
+        # Check if this element has the largest font weight
+        if font_weight_value > max_font_weight:
+            max_font_weight = font_weight_value
+            max_font_weight_element = element
+
+    # Output the text of the element with the largest font weight
+    if max_font_weight_element:
+        print(f"Element with the largest font weight: {max_font_weight_element.text}")
+    else:
+        print("No element found with a defined font weight.")
+        
 class TemuScrapView(APIView):
     def post(self, request, *args, **kwargs):
         driver = uc.Chrome(use_subprocess=False)
