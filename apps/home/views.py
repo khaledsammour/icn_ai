@@ -3739,6 +3739,179 @@ class GetImagesFromGoogle(APIView):
         
         return JsonResponse({})
 
+class CommonWebsites(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        print(url)
+        website = Websites.objects.all()
+        driver = create_browser()
+        driver.get(url)
+        sleep(3)
+        for web in website:
+            if web.inner_selector and len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
+                print('1')
+                if len(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_elements(By.CSS_SELECTOR, web.inner_selector))>0:
+                    print('2')
+                    driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_element(By.CSS_SELECTOR, web.inner_selector).get_attribute('href'))
+                    sleep(3)
+                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                        print('3')
+                        print(web.product_selector)
+                        newWebsite = Websites()
+                        newWebsite.require_login = web.require_login
+                        newWebsite.email_selector = web.email_selector
+                        newWebsite.email = web.email
+                        newWebsite.password_selector = web.password_selector
+                        newWebsite.password = web.password
+                        newWebsite.button_selector = web.button_selector
+                        newWebsite.no_pagination = web.no_pagination
+                        newWebsite.pagination_click = web.pagination_click
+                        newWebsite.pagination_path = web.pagination_path
+                        newWebsite.product_selector = web.product_selector
+                        newWebsite.not_contains_class = web.not_contains_class
+                        newWebsite.inner_selector = web.inner_selector
+                        newWebsite.inside_category_selector = web.inside_category_selector
+                        newWebsite.product_click = web.product_click
+                        newWebsite.title_prefix = web.title_prefix
+                        newWebsite.title_prefix_selector = web.title_prefix_selector
+                        newWebsite.title_prefix_attr = web.title_prefix_attr
+                        newWebsite.title_selector = web.title_selector
+                        newWebsite.title_attr = web.title_attr
+                        newWebsite.title_suffix = web.title_suffix
+                        newWebsite.title_suffix_selector = web.title_suffix_selector
+                        newWebsite.title_suffix_attr = web.title_suffix_attr
+                        newWebsite.description_selector = web.description_selector
+                        newWebsite.description_attr = web.description_attr
+                        newWebsite.key_words_selector = web.key_words_selector
+                        newWebsite.main_img_selector = web.main_img_selector
+                        newWebsite.main_img_attr = web.main_img_attr
+                        newWebsite.img_click = web.img_click
+                        newWebsite.img_selector = web.img_selector
+                        newWebsite.img_attr = web.img_attr
+                        newWebsite.static_price = web.static_price
+                        newWebsite.is_price_have_comma = web.is_price_have_comma
+                        newWebsite.price_selector = web.price_selector
+                        newWebsite.price_attr = web.price_attr
+                        newWebsite.second_price_selector = web.second_price_selector
+                        newWebsite.second_price_attr = web.second_price_attr
+                        newWebsite.is_discount = web.is_discount
+                        newWebsite.discount_selector = web.discount_selector
+                        newWebsite.discount_attr = web.discount_attr
+                        newWebsite.is_stuck = web.is_stuck
+                        newWebsite.stuck_selector = web.stuck_selector
+                        newWebsite.is_feature = web.is_feature
+                        newWebsite.features_selector = web.features_selector
+                        newWebsite.features_key_selector = web.features_key_selector
+                        newWebsite.features_key_attr = web.features_key_attr
+                        newWebsite.features_value_selector = web.features_value_selector
+                        newWebsite.features_value_attr = web.features_value_attr
+                        newWebsite.en_link = web.en_link
+                        newWebsite.ar_link = web.ar_link
+                        newWebsite.ar_selector = web.ar_selector
+                        newWebsite.ar_attr = web.ar_attr
+                        newWebsite.export_out_of_stuck = web.export_out_of_stuck
+                        newWebsite.start_index = web.start_index
+                        newWebsite.end_index = web.end_index
+                        newWebsite.number_of_products = web.number_of_products
+                        newWebsite.change_content = web.change_content
+                        newWebsite.save()
+                        return JsonResponse({
+                            'product_selector': web.product_selector,
+                            'title_selector': web.title_selector,
+                            'img_selector': web.img_selector,
+                            'price_selector': web.price_selector
+                        })
+                    else:
+                        driver.get(url)
+                        sleep(3)
+                else:
+                    driver.get(url)
+                    sleep(3)
+            elif len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
+                print( web.name)
+                print( web.product_selector)
+                print( web.inner_selector)
+                print( web.inside_category_selector)
+                try:
+                    driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).get_attribute('href'))
+                    sleep(3)
+                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                        print('2')
+                        print(web.product_selector)
+                        newWebsite = Websites()
+                        newWebsite.require_login = web.require_login
+                        newWebsite.email_selector = web.email_selector
+                        newWebsite.email = web.email
+                        newWebsite.password_selector = web.password_selector
+                        newWebsite.password = web.password
+                        newWebsite.button_selector = web.button_selector
+                        newWebsite.no_pagination = web.no_pagination
+                        newWebsite.pagination_click = web.pagination_click
+                        newWebsite.pagination_path = web.pagination_path
+                        newWebsite.product_selector = web.product_selector
+                        newWebsite.not_contains_class = web.not_contains_class
+                        newWebsite.inner_selector = web.inner_selector
+                        newWebsite.inside_category_selector = web.inside_category_selector
+                        newWebsite.product_click = web.product_click
+                        newWebsite.title_prefix = web.title_prefix
+                        newWebsite.title_prefix_selector = web.title_prefix_selector
+                        newWebsite.title_prefix_attr = web.title_prefix_attr
+                        newWebsite.title_selector = web.title_selector
+                        newWebsite.title_attr = web.title_attr
+                        newWebsite.title_suffix = web.title_suffix
+                        newWebsite.title_suffix_selector = web.title_suffix_selector
+                        newWebsite.title_suffix_attr = web.title_suffix_attr
+                        newWebsite.description_selector = web.description_selector
+                        newWebsite.description_attr = web.description_attr
+                        newWebsite.key_words_selector = web.key_words_selector
+                        newWebsite.main_img_selector = web.main_img_selector
+                        newWebsite.main_img_attr = web.main_img_attr
+                        newWebsite.img_click = web.img_click
+                        newWebsite.img_selector = web.img_selector
+                        newWebsite.img_attr = web.img_attr
+                        newWebsite.static_price = web.static_price
+                        newWebsite.is_price_have_comma = web.is_price_have_comma
+                        newWebsite.price_selector = web.price_selector
+                        newWebsite.price_attr = web.price_attr
+                        newWebsite.second_price_selector = web.second_price_selector
+                        newWebsite.second_price_attr = web.second_price_attr
+                        newWebsite.is_discount = web.is_discount
+                        newWebsite.discount_selector = web.discount_selector
+                        newWebsite.discount_attr = web.discount_attr
+                        newWebsite.is_stuck = web.is_stuck
+                        newWebsite.stuck_selector = web.stuck_selector
+                        newWebsite.is_feature = web.is_feature
+                        newWebsite.features_selector = web.features_selector
+                        newWebsite.features_key_selector = web.features_key_selector
+                        newWebsite.features_key_attr = web.features_key_attr
+                        newWebsite.features_value_selector = web.features_value_selector
+                        newWebsite.features_value_attr = web.features_value_attr
+                        newWebsite.en_link = web.en_link
+                        newWebsite.ar_link = web.ar_link
+                        newWebsite.ar_selector = web.ar_selector
+                        newWebsite.ar_attr = web.ar_attr
+                        newWebsite.export_out_of_stuck = web.export_out_of_stuck
+                        newWebsite.start_index = web.start_index
+                        newWebsite.end_index = web.end_index
+                        newWebsite.number_of_products = web.number_of_products
+                        newWebsite.change_content = web.change_content
+                        newWebsite.save()
+                        return JsonResponse({
+                            'product_selector': web.product_selector,
+                            'title_selector': web.title_selector,
+                            'img_selector': web.img_selector,
+                            'price_selector': web.price_selector
+                        })
+                    else:
+                        driver.get(url)
+                        sleep(3)
+                except:
+                    pass
+        # sleep(10)
+        
+        driver.quit()
+        return JsonResponse({})
+    
 class Test(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
