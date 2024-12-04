@@ -3452,7 +3452,8 @@ class YaserMarket(APIView):
         url = request.data['url']
         data = []
         for i in range(5000):
-            response = requests.get(url.replace('page=1', 'page='+str(i+1)))
+            newUrl = re.sub(r'page=\d+&','page='+str(i+1)+'&',url)
+            response = requests.get(newUrl)
             products = response.json()['products']
             if len(products)==0:
                 break
