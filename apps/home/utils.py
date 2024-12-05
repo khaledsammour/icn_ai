@@ -445,11 +445,17 @@ def until_visible_click(driver, selector):
     except:
         pass
     try:
+        driver.execute_script("""
+            arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+        """, element)
         ActionChains(driver).move_to_element(element).pause(1).click().perform()
     except Exception as e:
         try:
             element = driver.find_element(By.CSS_SELECTOR, selector)
-            driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
+            driver.execute_script("""
+            arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+        """, element)
+            # driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
             ActionChains(driver).move_to_element(element).pause(1).click().perform()
         except:
             driver.find_element(By.CSS_SELECTOR, selector).click()
