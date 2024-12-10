@@ -3185,10 +3185,15 @@ class MainScrapView(APIView):
 
                     if website.second_price_attr and not price:
                         price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
-
-                    if  not price and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
+                    print(price)
+                    print(len(price))
+                    print(len(price)==0)
+                    print(website.second_price_selector)
+                    print(len(soup.select(website.second_price_selector)))
+                    if len(price)==0 and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
+                        print('in if')
                         price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
-                        
+                        print(price)    
                     if website.is_price_have_comma:
                         price = price.replace(',','.')
                 # Get discount
@@ -3205,8 +3210,8 @@ class MainScrapView(APIView):
                         sleep(2)
                         until_visible(driver, website.main_img_selector)
                         img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
-                        if len(img.get_attribute(website.img_attr))>10:
-                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
+                        if len(img.get_attribute(website.main_img_attr))>10:
+                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.main_img_attr))
                             if res:
                                 images.append(res)
                 else:
@@ -3744,7 +3749,7 @@ class CommonWebsites(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
         print(url)
-        website = Websites.objects.all()
+        website = Websites.objects.all().order_by('-id')
         driver = create_browser()
         driver.get(url)
         sleep(3)
@@ -3755,7 +3760,7 @@ class CommonWebsites(APIView):
                     print('2')
                     driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_element(By.CSS_SELECTOR, web.inner_selector).get_attribute('href'))
                     sleep(3)
-                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
                         print('3')
                         print(web.product_selector)
                         newWebsite = Websites()
@@ -3836,7 +3841,7 @@ class CommonWebsites(APIView):
                 try:
                     driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).get_attribute('href'))
                     sleep(3)
-                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
                         print('2')
                         print(web.product_selector)
                         newWebsite = Websites()
