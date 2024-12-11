@@ -3185,15 +3185,8 @@ class MainScrapView(APIView):
 
                     if website.second_price_attr and not price:
                         price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
-                    print(price)
-                    print(len(price))
-                    print(len(price)==0)
-                    print(website.second_price_selector)
-                    print(len(soup.select(website.second_price_selector)))
                     if len(price)==0 and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
-                        print('in if')
                         price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
-                        print(price)    
                     if website.is_price_have_comma:
                         price = price.replace(',','.')
                 # Get discount
@@ -3233,7 +3226,7 @@ class MainScrapView(APIView):
                     else:
                         description_elem = soup.select_one(website.description_selector).get_text(" ",strip=True) if soup.select_one(website.description_selector) else ''
                 else:
-                    description_elem = None
+                    description_elem = ''
                 product_attributes_content = description_elem if description_elem else ''
                 # Get keywords
                 key_words_elem = soup.select_one(website.key_words_selector)
