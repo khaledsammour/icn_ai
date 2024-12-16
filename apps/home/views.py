@@ -3163,6 +3163,10 @@ class MainScrapView(APIView):
                     if len(soup.select(website.title_prefix_selector))>0:
                         title_prefix = soup.select_one(website.title_prefix_selector).get_text(strip=True)
 
+                ar_title_prefix = ''
+                if website.ar_title_prefix:
+                    ar_title_prefix = website.ar_title_prefix
+                    
                 title_suffix = ''
                 if website.title_suffix:
                     title_suffix = website.title_suffix
@@ -3307,7 +3311,7 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
-                    "Arabic Name": (translate(title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
+                    "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(ar_title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
                     "English Name": (title_prefix +' ' if title_prefix else '') + translate(title, dest="en") +  (' ' + title_suffix if title_suffix else ''),
                     "Arabic Description": ar_description.replace('الوصف','').strip(),
                     "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],

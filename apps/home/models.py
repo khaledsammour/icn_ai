@@ -22,6 +22,7 @@ class Websites(models.Model):
     inside_category_selector = models.CharField(max_length=250, null=True, blank=True)
     product_click = models.BooleanField(default=False, null=True, blank=True)
     title_prefix = models.CharField(max_length=250, null=True, blank=True)
+    ar_title_prefix = models.CharField(max_length=250, null=True, blank=True)
     title_prefix_selector = models.CharField(max_length=250, null=True, blank=True)
     title_prefix_attr = models.CharField(max_length=250, null=True, blank=True)
     title_selector = models.CharField(max_length=250, null=True, blank=True)
