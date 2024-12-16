@@ -3216,20 +3216,21 @@ class MainScrapView(APIView):
                         sleep(2)
                         until_visible(driver, website.main_img_selector)
                         img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
-                        if website.img_attr == 'style':
-                            style = img.get('style', '')
+                        if website.main_img_attr == 'style':
+                            print(img)
+                            style = img.get_attribute('style')
                             url_match = re.search(r'background-image:\s*url\(["\']?(.*?)["\']?\)', style)
                             image_url = url_match.group(1) if url_match else ''
                             image = getImageBase64(driver, website.seller_id, image_url) if image_url else ''
-                        elif len(img.get_attribute(website.img_attr))>10:
-                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
+                        elif len(img.get_attribute(website.main_img_attr))>10:
+                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.main_img_attr))
                             if res:
                                 images.append(res)
                 else:
                     image_elems = soup.select(website.img_selector)
                     for img in image_elems:
                         if website.img_attr == 'style':
-                            style = img.get('style', '')
+                            style = img.get_attribute('style')
                             url_match = re.search(r'background-image:\s*url\(["\']?(.*?)["\']?\)', style)
                             image_url = url_match.group(1) if url_match else ''
                             image = getImageBase64(driver, website.seller_id, image_url) if image_url else ''
@@ -4300,6 +4301,8 @@ class GenerateBlog(APIView):
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
         options.add_argument("--disable-notifications")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-gpu")
         # options.add_argument("--remote-debugging-port=9222") 
         # options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
         # options.headless = True
