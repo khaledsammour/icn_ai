@@ -4271,22 +4271,23 @@ class GenerateBlog(APIView):
         blog.status = 'waiting'
         blog.save()
         generate_blog_lock.acquire()
+        options = Options()
+        options.add_experimental_option('detach', True)
+        options.add_argument("--headless") 
+        options.add_argument("--no-sandbox") 
+        options.add_argument("--disable-dev-shm-usage") 
+        options.add_argument("--disable-notifications")
+        # options.add_argument("--remote-debugging-port=9222") 
+        # options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
+        # options.headless = True
+
+        # Create an instance of Chrome WebDriver
+        # driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         try:
             blog.status = 'in progress'
             blog.save()
-            options = Options()
-            options.add_experimental_option('detach', True)
-            options.add_argument("--headless") 
-            options.add_argument("--no-sandbox") 
-            options.add_argument("--disable-dev-shm-usage") 
-            # options.add_argument("--remote-debugging-port=9222") 
-            # options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
-            # options.headless = True
-
-            # Create an instance of Chrome WebDriver
-            # driver = webdriver.Chrome(options=options)
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
+            
             # Open the webpage
             driver.get('https://katteb.com/ar/sign-in/')
             driver.maximize_window()
@@ -4320,12 +4321,14 @@ class GenerateBlog(APIView):
             # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
             # until_visible_click(driver, '.-step-excerpt')
             # sleep(2)
-            until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
+            # until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
             # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
             # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
-            until_visible_click(driver, '.-step-excerpt')
-            sleep(2)
-            until_visible_click(driver, 'multistep-form-next')
+            # until_visible_click(driver, '.-step-excerpt')
+            # sleep(2)
+            driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
+            driver.find_element(By.CSS_SELECTOR, 'multistep-form-next').click()
+            # until_visible_click(driver, 'multistep-form-next')
             until_visible_click(driver, '.-step-excerpt')
             sleep(2)
             until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
@@ -4420,11 +4423,11 @@ class GenerateBlog(APIView):
                 print('An error occurred:', e)
             blog.status = 'done'
             blog.save()
-            driver.quit()
         except Exception as e:
             blog.status = 'error: ' + str(e)
             blog.save()
         finally:
+            driver.quit()
             # Release the lock
             generate_blog_lock.release()
             return JsonResponse({})
