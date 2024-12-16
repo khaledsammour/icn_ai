@@ -4277,7 +4277,7 @@ class GenerateBlog(APIView):
         generate_blog_lock.acquire()
         options = Options()
         options.add_experimental_option('detach', True)
-        options.add_argument("--headless") 
+        # options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
         options.add_argument("--disable-notifications")
@@ -4331,8 +4331,24 @@ class GenerateBlog(APIView):
             # until_visible_click(driver, '.-step-excerpt')
             # sleep(2)
             driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
-            driver.find_element(By.CSS_SELECTOR, 'multistep-form-next').click()
-            # until_visible_click(driver, 'multistep-form-next')
+            driver.execute_script("""
+                var button = document.createElement('multistep-form-next');
+                button.className = 'next';
+                button.textContent = 'test';
+                var documentToAdd = document.querySelector("multistep-form-section[data-step='1'] multistep-form-body-footer");
+                if (documentToAdd) {
+                    documentToAdd.appendChild(button);
+                    console.log('Button added successfully');
+                } else {
+                    console.log('Target element not found');
+                    document.body.appendChild(button);
+                }
+            """)
+            try:
+                driver.find_element(By.CSS_SELECTOR, 'multistep-form-next.next').click()
+            except:
+                print("Fallback to original button click")
+                until_visible_click(driver, 'multistep-form-next')
             until_visible_click(driver, '.-step-excerpt')
             sleep(2)
             until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
