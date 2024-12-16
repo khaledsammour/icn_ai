@@ -3197,7 +3197,16 @@ class MainScrapView(APIView):
                 discount = '0'
                 # Get the main image URL
                 main_image_elem = soup.select_one(website.main_img_selector)
-                image = getImageBase64(driver, website.seller_id, main_image_elem[website.main_img_attr]) if main_image_elem else ''
+                if main_image_elem:
+                    if website.main_img_attr == 'style':
+                        style = main_image_elem.get('style', '')
+                        url_match = re.search(r'background-image:\s*url\(["\']?(.*?)["\']?\)', style)
+                        image_url = url_match.group(1) if url_match else ''
+                        image = getImageBase64(driver, website.seller_id, image_url) if image_url else ''
+                    else:
+                        image = getImageBase64(driver, website.seller_id, main_image_elem[website.main_img_attr])
+                else:
+                    image = ''
                 # Get additional images
                 images = []
                 if website.img_click:
@@ -3207,14 +3216,24 @@ class MainScrapView(APIView):
                         sleep(2)
                         until_visible(driver, website.main_img_selector)
                         img = driver.find_element(By.CSS_SELECTOR, website.main_img_selector)
-                        if len(img.get_attribute(website.main_img_attr))>10:
-                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.main_img_attr))
+                        if website.img_attr == 'style':
+                            style = img.get('style', '')
+                            url_match = re.search(r'background-image:\s*url\(["\']?(.*?)["\']?\)', style)
+                            image_url = url_match.group(1) if url_match else ''
+                            image = getImageBase64(driver, website.seller_id, image_url) if image_url else ''
+                        elif len(img.get_attribute(website.img_attr))>10:
+                            res = getImageBase64(driver, website.seller_id, img.get_attribute(website.img_attr))
                             if res:
                                 images.append(res)
                 else:
                     image_elems = soup.select(website.img_selector)
                     for img in image_elems:
-                        if len(img[website.img_attr])>10:
+                        if website.img_attr == 'style':
+                            style = img.get('style', '')
+                            url_match = re.search(r'background-image:\s*url\(["\']?(.*?)["\']?\)', style)
+                            image_url = url_match.group(1) if url_match else ''
+                            image = getImageBase64(driver, website.seller_id, image_url) if image_url else ''
+                        elif len(img[website.img_attr])>10:
                             res = getImageBase64(driver, website.seller_id, img[website.img_attr])
                             if res:
                                 images.append(res)
@@ -4277,7 +4296,7 @@ class GenerateBlog(APIView):
         generate_blog_lock.acquire()
         options = Options()
         options.add_experimental_option('detach', True)
-        # options.add_argument("--headless") 
+        options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
         options.add_argument("--disable-notifications")
