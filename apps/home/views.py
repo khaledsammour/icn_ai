@@ -3318,8 +3318,8 @@ class MainScrapView(APIView):
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
-                    # ar_title = translate(title)
-                    ar_title = title
+                    ar_title = translate(title)
+                    # ar_title = title
                     ar_description = translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description']
                     product_attributes_content_json = {}                
                     ar_product_attributes_content_json = {}    
