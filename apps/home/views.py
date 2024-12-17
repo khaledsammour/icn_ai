@@ -4427,7 +4427,7 @@ class GenerateBlog(APIView):
         blog.status = 'waiting'
         blog.save()
         generate_blog_lock.acquire()
-        options = FirefoxOptions()
+        options = options()
         # options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
@@ -4440,8 +4440,8 @@ class GenerateBlog(APIView):
         # options.headless = True
 
         # Create an instance of Chrome WebDriver
-        driver = webdriver.Firefox(options=options)
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # driver = webdriver.Firefox(options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         try:
             blog.status = 'in progress'
             blog.save()
