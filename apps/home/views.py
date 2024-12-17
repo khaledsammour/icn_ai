@@ -4089,6 +4089,7 @@ class Test(APIView):
                         all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
                         if all_same_size:
                             hrefs = []
+                            
                             for w in child_divs:
                                 print(w)
                                 if len(w.select('a[href]'))>0:
@@ -4439,7 +4440,8 @@ class GenerateBlog(APIView):
 
         # Create an instance of Chrome WebDriver
         # driver = webdriver.Chrome(options=options)
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = create_browser()
+        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         try:
             blog.status = 'in progress'
             blog.save()
