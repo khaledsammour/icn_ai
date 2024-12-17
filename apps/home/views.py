@@ -3240,9 +3240,9 @@ class MainScrapView(APIView):
                                 images.append(res)
                 # Check stock status
                 if website.is_stuck:
-                    in_stock = '3' if len(soup.select(website.stuck_selector))==0 else '0'
+                    in_stock = '100' if len(soup.select(website.stuck_selector))==0 else '0'
                 else:
-                    in_stock = '3'
+                    in_stock = '100'
                 # Get product attributes content
                 if website.description_selector:
                     if website.description_attr:
