@@ -11,7 +11,7 @@ import requests
 import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.Firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver import Chrome
 from rest_framework.views import APIView
