@@ -4427,7 +4427,7 @@ class GenerateBlog(APIView):
         blog.status = 'waiting'
         blog.save()
         generate_blog_lock.acquire()
-        options = options()
+        options = Options()
         # options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
