@@ -4428,7 +4428,7 @@ class GenerateBlog(APIView):
         generate_blog_lock.acquire()
         options = Options()
         options.add_experimental_option('detach', True)
-        # options.add_argument("--headless") 
+        options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
         options.add_argument("--disable-notifications")
@@ -4440,8 +4440,7 @@ class GenerateBlog(APIView):
 
         # Create an instance of Chrome WebDriver
         # driver = webdriver.Chrome(options=options)
-        driver = webdriver.Chrome()
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         try:
             blog.status = 'in progress'
             blog.save()
