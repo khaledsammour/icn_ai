@@ -3318,7 +3318,8 @@ class MainScrapView(APIView):
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
-                    ar_title = translate(title)
+                    # ar_title = translate(title)
+                    ar_title = title
                     ar_description = translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description']
                     product_attributes_content_json = {}                
                     ar_product_attributes_content_json = {}    
@@ -3535,6 +3536,131 @@ class YaserMarket(APIView):
                 response = requests.post(url, files=files, data=data)
             except Exception as error:
                 print(error)
+        return JsonResponse({'data': []})
+
+class SecoundYaserMarket(APIView):
+    def post(self, request, *args, **kwargs):
+        url = request.data['url']
+        data = []
+        for i in range(1):
+            newUrl = re.sub(r'page=\d+&','page='+str(i+1)+'&',url)
+            response = requests.get(newUrl, headers={
+                'Lang': 'en-gb',
+                # 'Lang': 'ar'
+            })
+            products = response.json()['products']
+            print(products[0])
+            if len(products)==0:
+                break
+            for i,p in enumerate(products):
+                if i > 2:
+                    break
+                if p['stock_status']=='In Stock':
+                    img = p['thumb']
+                    # img = ''
+                    # image_url = 'https://www.icn.com/api/v1/image/upload'
+                    # data_to_upload = {
+                    #     'user_id': request.data['user_id'],
+                    #     'image_url': p['thumb']
+                    # }
+
+                    # try:
+                    #     response = requests.post(image_url, data=data_to_upload)
+                    #     if response.status_code == 200:
+                    #         img= response.text
+                    # except requests.exceptions.RequestException as e:
+                    #     print('An error occurred:', e)
+
+                    data.append({
+                        'ID': p['product_id'],
+                        'Type': 'simple',
+                        'SKU': '',
+                        'Name': p['name'],
+                        'Published': '-1',
+                        'Is featured?': '0',
+                        'Visibility in catalog': 'visible',
+                        'Short description': '',
+                        'Description': p['description'],
+                        'Date sale price starts': '',
+                        'Date sale price ends': '',
+                        'Tax status': 'taxable',
+                        'Tax class': '',
+                        'In stock?': '1' if p['stock'] else '0',
+                        'Stock': '',
+                        'Low stock amount': '',
+                        'Backorders allowed?': '0',
+                        'Sold individually?': '0',
+                        'Weight (kg)': '',
+                        'Length (cm)': '',
+                        'Width (cm)': '',
+                        'Height (cm)': '',
+                        'Allow customer reviews?': '1',
+                        'Purchase note': '',
+                        'Sale price': '',
+                        'Regular price': p['price'],
+                        'Categories': '',
+                        'Tags': '',
+                        'Shipping class': '',
+                        'Images': p['thumb'],
+                        'Download limit': '',
+                        'Download expiry days': '',
+                        'Parent': '',
+                        'Grouped products': '',
+                        'Upsells': '',
+                        'Cross-sells': '',
+                        'External URL': '',
+                        'Button text': '',
+                        'Position': '0',
+                        'Language': 'ar',
+                        'Translation group': '',
+                        'Bundled Items (JSON-encoded)': '',
+                        'Min Bundle Size': '',
+                        'Max Bundle Size': '',
+                        'Bundle Contents Virtual': '',
+                        'Bundle Aggregate Weight': '',
+                        'Bundle Layout': '',
+                        'Bundle Group Mode': '',
+                        'Bundle Cart Editing': '',
+                        'Bundle Sold Individually': '',
+                        'Bundle Form Location': '',
+                        'Bundle Sells': '',
+                        'Bundle Sells Title': '',
+                        'Bundle Sells Discount': '',
+                        'Meta: klb_product_badge_type': 'type1',
+                        'Meta: _app_builder_shopping_video_addons_video_url': '',
+                        'Meta: _app_builder_shopping_video_addons_video_name': '',
+                        'Meta: _app_builder_shopping_video_addons_video_description': '',
+                        'Meta: _klb_single_video_input': '',
+                        'Meta: _klb_product_percentage_type': 'style-1',
+                        'Meta: _klb_product_percentage_bg_color': '',
+                        'Meta: _klb_product_percentage_text_color': '',
+                        'Meta: _klb_product_badge_text': '',
+                        'Meta: _klb_product_badge_type': 'style-1',
+                        'Meta: _klb_product_badge_bg_color': '',
+                        'Meta: _klb_product_badge_text_color': '',
+                        'Meta: _secondary_title': '',
+
+                        # "Arabic Name": translate(p['name']),
+                        # "English Name": translate(p['name'], dest="en"),
+                        # "reference_link": 'https://www.yasermallonline.com/en/product/'+p['product_id'],
+                    })
+        df = pd.DataFrame([d for d in data])
+        df.to_excel('excel/'+request.data['id']+'_products.xlsx', index=False)
+        # if os.path.join('excel', request.data['id']+'_products.xlsx'):
+        #     try:
+        #         url = "https://ai.icn.com/api/upload_image"
+        #         files = {
+        #             'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+        #         }
+        #         data = {
+        #             'base_id': 'app4m95tHoPe9i69Y',
+        #             'table_id': 'tblC9J5CWTfclSbTD',
+        #             'record_id': request.data['id'],
+        #         }
+        #         # Send the POST request
+        #         response = requests.post(url, files=files, data=data)
+        #     except Exception as error:
+        #         print(error)
         return JsonResponse({'data': []})
     
 class StopProcess(APIView):
