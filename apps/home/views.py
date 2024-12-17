@@ -11,6 +11,7 @@ import requests
 import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.Firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver import Chrome
 from rest_framework.views import APIView
@@ -4426,8 +4427,8 @@ class GenerateBlog(APIView):
         blog.status = 'waiting'
         blog.save()
         generate_blog_lock.acquire()
-        options = Options()
-        options.add_experimental_option('detach', True)
+        options = FirefoxOptions()
+        # options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
@@ -4439,7 +4440,7 @@ class GenerateBlog(APIView):
         # options.headless = True
 
         # Create an instance of Chrome WebDriver
-        driver = create_browser()
+        driver = webdriver.Firefox(options=options)
         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         try:
             blog.status = 'in progress'
