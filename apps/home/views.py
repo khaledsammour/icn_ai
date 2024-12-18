@@ -35,6 +35,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import threading
 from selenium.webdriver.common.keys import Keys
 import pyautogui
+from random import *
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -4440,8 +4441,8 @@ class GenerateBlog(APIView):
 
         # Create an instance of Chrome WebDriver
         # driver = webdriver.Firefox(options=options)
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        # driver = create_browser()
+        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = create_browser()
         try:
             blog.status = 'in progress'
             blog.save()
@@ -4456,17 +4457,7 @@ class GenerateBlog(APIView):
             password_element = driver.find_element(By.ID, 'password')
             password_element.send_keys("Icn@nobar123")
             driver.save_screenshot('test.png')
-            # Find and click the login button
             login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
-            location = login_button.location
-            window_position = driver.get_window_position()
-            window_x = window_position['x']
-            window_y = window_position['y']
-
-            pyautogui.moveTo(window_x + location['x'], window_y + location['y'])
-            pyautogui.click()
-            sleep(10)
-            return
             login_button.click()
             driver.save_screenshot('test.png')
             wait = WebDriverWait(driver, 15)
@@ -4505,43 +4496,54 @@ class GenerateBlog(APIView):
             until_visible(driver, "multistep-form-section[data-step='1'] multistep-form-next > span")
             element = driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next > span")
             location = element.location
-            print('location')
-            print(location)
-            # script = """
-            # var x = arguments[0];
-            # var y = arguments[1];
+            # Find and click the login button
+            elementToClick = driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next > span")
 
-            # // Create a marker element at the center position
-            # var marker = document.createElement('div');
-            # marker.style.position = 'absolute';
-            # marker.style.left = x + 'px';
-            # marker.style.top = y + 'px';
-            # marker.style.width = '10px';
-            # marker.style.height = '10px';
-            # marker.style.backgroundColor = 'red';
-            # marker.style.zIndex = 9999;  // Ensure it's on top
+            # Get the element's location (top-left corner) and size (width and height)
+            element_location = elementToClick.location
+            element_size = elementToClick.size
 
-            # // Append the marker to the body for visual verification
-            # document.body.appendChild(marker);
-            # """
+            # Calculate the center coordinates
+            center_x = element_location['x'] + element_size['width'] / 2 + 5
+            center_y = element_location['y'] + element_size['height'] / 2 + 5
 
-            # # Execute the JavaScript to add a marker and click
-            # driver.execute_script(script, location['x'], location['y'])
-            window_position = driver.get_window_position()
-            window_x = window_position['x']
-            window_y = window_position['y']
+            panel_height = driver.execute_script('return window.outerHeight - window.innerHeight;')
+            abs_x = center_x
+            y = center_y
+            abs_y = y + panel_height
 
-            pyautogui.moveTo(window_x + location['x'], window_y + location['y'])
-            pyautogui.click()
+            pyautogui.moveTo(abs_x, abs_y, uniform(0.6, 1.7), pyautogui.easeOutQuad)
+            pyautogui.click(abs_x, abs_y)
             # until_visible_xpath_click(driver, "//span[contains(text(),'حفظ الإعدادات')]")
             # until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             sleep(2)
             # driver.save_screenshot('test.png')
-            until_visible_click(driver, '.-step-excerpt')
             driver.save_screenshot('test.png')
-            sleep(2)
-            driver.save_screenshot('test.png')
-            until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
+            try:
+                until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
+            except:
+                print('except')
+                until_visible(driver, "div.-start-generating-button.hoverable.activable")
+                element = driver.find_element(By.CSS_SELECTOR, "div.-start-generating-button.hoverable.activable")
+                location = element.location
+                # Find and click the login button
+                elementToClick = driver.find_element(By.CSS_SELECTOR, "div.-start-generating-button.hoverable.activable")
+
+                # Get the element's location (top-left corner) and size (width and height)
+                element_location = elementToClick.location
+                element_size = elementToClick.size
+
+                # Calculate the center coordinates
+                center_x = element_location['x'] + element_size['width'] / 2 + 5
+                center_y = element_location['y'] + element_size['height'] / 2 + 5
+
+                panel_height = driver.execute_script('return window.outerHeight - window.innerHeight;')
+                abs_x = center_x
+                y = center_y
+                abs_y = y + panel_height
+
+                pyautogui.moveTo(abs_x, abs_y, uniform(0.6, 1.7), pyautogui.easeOutQuad)
+                pyautogui.click(abs_x, abs_y)
             driver.save_screenshot('test.png')
             show_article = WebDriverWait(driver, 600).until(
                 EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
