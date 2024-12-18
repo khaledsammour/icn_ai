@@ -4499,20 +4499,15 @@ class GenerateBlog(APIView):
                 if (documentToAdd) {
                     documentToAdd.appendChild(button);
                     console.log('Button added successfully');
+                    button.click()
                 } else {
                     console.log('Target element not found');
                     document.body.appendChild(button);
                 }
             """)
             driver.save_screenshot('test.png')
-            try:
-                until_visible_click(driver, 'multistep-form-next.next')
-                # driver.find_element(By.CSS_SELECTOR, 'multistep-form-next.next').click()
-                driver.save_screenshot('test.png')
-            except:
-                print("Fallback to original button click")
-                until_visible_click(driver, 'multistep-form-next')
-                driver.save_screenshot('test.png')
+            # until_visible_click(driver, 'multistep-form-next')
+            # driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
             driver.save_screenshot('test.png')
             sleep(2)
