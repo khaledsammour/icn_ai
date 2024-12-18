@@ -11,7 +11,6 @@ import requests
 import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver import Chrome
 from rest_framework.views import APIView
@@ -4428,7 +4427,7 @@ class GenerateBlog(APIView):
         blog.save()
         generate_blog_lock.acquire()
         options = Options()
-        # options.add_experimental_option('detach', True)
+        options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
