@@ -12,7 +12,7 @@ import json
 from time import sleep
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver import Chrome
+from selenium.webdriver import ActionChains, Chrome
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from bs4 import BeautifulSoup
@@ -34,6 +34,7 @@ from django.conf import settings
 from webdriver_manager.chrome import ChromeDriverManager
 import threading
 from selenium.webdriver.common.keys import Keys
+import pyautogui
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -4457,6 +4458,15 @@ class GenerateBlog(APIView):
             driver.save_screenshot('test.png')
             # Find and click the login button
             login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
+            location = login_button.location
+            window_position = driver.get_window_position()
+            window_x = window_position['x']
+            window_y = window_position['y']
+
+            pyautogui.moveTo(window_x + location['x'], window_y + location['y'])
+            pyautogui.click()
+            sleep(10)
+            return
             login_button.click()
             driver.save_screenshot('test.png')
             wait = WebDriverWait(driver, 15)
@@ -4490,9 +4500,41 @@ class GenerateBlog(APIView):
             # """)
             # driver.save_screenshot('test.png')
             sleep(2)
-            until_visible_click(driver, 'div[data-tooltip="مصدر المحتوى"]')
-            sleep(2)
-            until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
+            # until_visible_click(driver, 'div[data-tooltip="مصدر المحتوى"]')
+            # sleep(2)
+            until_visible(driver, "multistep-form-section[data-step='1'] multistep-form-next > span")
+            element = driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next > span")
+            location = element.location
+            print('location')
+            print(location)
+            # script = """
+            # var x = arguments[0];
+            # var y = arguments[1];
+
+            # // Create a marker element at the center position
+            # var marker = document.createElement('div');
+            # marker.style.position = 'absolute';
+            # marker.style.left = x + 'px';
+            # marker.style.top = y + 'px';
+            # marker.style.width = '10px';
+            # marker.style.height = '10px';
+            # marker.style.backgroundColor = 'red';
+            # marker.style.zIndex = 9999;  // Ensure it's on top
+
+            # // Append the marker to the body for visual verification
+            # document.body.appendChild(marker);
+            # """
+
+            # # Execute the JavaScript to add a marker and click
+            # driver.execute_script(script, location['x'], location['y'])
+            window_position = driver.get_window_position()
+            window_x = window_position['x']
+            window_y = window_position['y']
+
+            pyautogui.moveTo(window_x + location['x'], window_y + location['y'])
+            pyautogui.click()
+            # until_visible_xpath_click(driver, "//span[contains(text(),'حفظ الإعدادات')]")
+            # until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             sleep(2)
             # driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
@@ -4592,6 +4634,7 @@ class GenerateBlog(APIView):
             blog.status = 'done'
             blog.save()
         except Exception as e:
+            print(e)
             blog.status = 'error: ' + str(e)
             blog.save()
         finally:
