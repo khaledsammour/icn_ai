@@ -4506,7 +4506,8 @@ class GenerateBlog(APIView):
             """)
             driver.save_screenshot('test.png')
             try:
-                driver.find_element(By.CSS_SELECTOR, 'multistep-form-next.next').click()
+                until_visible_click(driver, 'multistep-form-next.next')
+                # driver.find_element(By.CSS_SELECTOR, 'multistep-form-next.next').click()
                 driver.save_screenshot('test.png')
             except:
                 print("Fallback to original button click")
