@@ -4476,21 +4476,21 @@ class GenerateBlog(APIView):
             driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
             sleep(2)
             driver.save_screenshot('test.png')
-            # driver.execute_script("""
-            #     var button = document.createElement('multistep-form-next');
-            #     button.className = 'next';
-            #     button.textContent = 'test';
-            #     var documentToAdd = document.querySelector("multistep-form-section[data-step='1'] multistep-form-body-footer");
-            #     if (documentToAdd) {
-            #         documentToAdd.appendChild(button);
-            #         console.log('Button added successfully');
-            #     } else {
-            #         console.log('Target element not found');
-            #         document.body.appendChild(button);
-            #     }
-            # """)
+            driver.execute_script("""
+                var button = document.createElement('multistep-form-next');
+                button.className = 'next';
+                button.textContent = 'test';
+                var documentToAdd = document.querySelector("multistep-form-section[data-step='1']");
+                if (documentToAdd) {
+                    documentToAdd.appendChild(button);
+                    console.log('Button added successfully');
+                } else {
+                    console.log('Target element not found');
+                    document.body.appendChild(button);
+                }
+            """)
             # driver.save_screenshot('test.png')
-            until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
+            until_visible_click(driver, ".test")
             # driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
             driver.save_screenshot('test.png')

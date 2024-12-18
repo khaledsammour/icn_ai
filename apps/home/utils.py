@@ -440,29 +440,26 @@ def until_visible_click(driver, selector):
             driver.execute_script("arguments[0].style.display = 'none';", overlay[0])
     element = driver.find_element(By.CSS_SELECTOR, selector)
     try:
+        WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+        )
+    except:
+        pass
+    try:
         driver.execute_script("""
             arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
         """, element)
-        button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-        )
-        button.click()
-    except:
+        ActionChains(driver).move_to_element(element).pause(1).click().perform()
+    except Exception as e:
         try:
+            element = driver.find_element(By.CSS_SELECTOR, selector)
             driver.execute_script("""
-                arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
-            """, element)
+            arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+        """, element)
+            # driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
             ActionChains(driver).move_to_element(element).pause(1).click().perform()
-        except Exception as e:
-            try:
-                element = driver.find_element(By.CSS_SELECTOR, selector)
-                driver.execute_script("""
-                arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
-            """, element)
-                # driver.execute_script("arguments[0].scrollIntoView({ block: 'end' });", element)
-                ActionChains(driver).move_to_element(element).pause(1).click().perform()
-            except:
-                driver.find_element(By.CSS_SELECTOR, selector).click()
+        except:
+            driver.find_element(By.CSS_SELECTOR, selector).click()
     
 def until_visible_send_keys(driver, selector, key):
     until_visible(driver, selector)
