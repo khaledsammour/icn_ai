@@ -4427,14 +4427,13 @@ class GenerateBlog(APIView):
         blog.save()
         generate_blog_lock.acquire()
         options = Options()
-        options.add_experimental_option('detach', True)
+        # options.add_experimental_option('detach', True)
         options.add_argument("--headless") 
         options.add_argument("--no-sandbox") 
         options.add_argument("--disable-dev-shm-usage") 
         options.add_argument("--disable-notifications")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--remote-debugging-port=9222") 
+        # options.add_argument("--disable-gpu")
+        # options.add_argument("--remote-debugging-port=9222") 
         # options.add_argument(f"crash-dumps-dir={os.path.expanduser('~/tmp/Crashpad')}")
         # options.headless = True
 
