@@ -4445,29 +4445,34 @@ class GenerateBlog(APIView):
         try:
             blog.status = 'in progress'
             blog.save()
+            driver.save_screenshot('test.png')
             
             # Open the webpage
             driver.get('https://katteb.com/ar/sign-in/')
             driver.maximize_window()
-
+            driver.save_screenshot('test.png')
             email_element = driver.find_element(By.ID, 'username')
             email_element.send_keys("icnnobar@gmail.com")
             password_element = driver.find_element(By.ID, 'password')
             password_element.send_keys("Icn@nobar123")
-
+            driver.save_screenshot('test.png')
             # Find and click the login button
             login_button = driver.find_element(By.CSS_SELECTOR, 'button.validation-submit-btn')
             login_button.click()
-
+            driver.save_screenshot('test.png')
             wait = WebDriverWait(driver, 15)
             wait.until(EC.url_contains('/dashboard/'))
-
+            driver.save_screenshot('test.png')
             headline = request.data['headline']
             driver.get('https://katteb.com/ar/dashboard/generate-full-article/')
+            driver.save_screenshot('test.png')
             until_visible_click(driver, 'multistep-form-body-field:nth-child(1)')
+            driver.save_screenshot('test.png')
             until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(1) input', headline)
+            driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
             sleep(2)
+            driver.save_screenshot('test.png')
             # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
             # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
             # until_visible_click(driver, '.-step-excerpt')
@@ -4484,7 +4489,9 @@ class GenerateBlog(APIView):
             # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
             # until_visible_click(driver, '.-step-excerpt')
             # sleep(2)
+            driver.save_screenshot('test.png')
             driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
+            driver.save_screenshot('test.png')
             driver.execute_script("""
                 var button = document.createElement('multistep-form-next');
                 button.className = 'next';
@@ -4498,26 +4505,31 @@ class GenerateBlog(APIView):
                     document.body.appendChild(button);
                 }
             """)
+            driver.save_screenshot('test.png')
             try:
                 driver.find_element(By.CSS_SELECTOR, 'multistep-form-next.next').click()
+                driver.save_screenshot('test.png')
             except:
                 print("Fallback to original button click")
                 until_visible_click(driver, 'multistep-form-next')
+                driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
+            driver.save_screenshot('test.png')
             sleep(2)
+            driver.save_screenshot('test.png')
             until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
-
+            driver.save_screenshot('test.png')
             show_article = WebDriverWait(driver, 600).until(
                 EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
             )
-
+            driver.save_screenshot('test.png')
             show_article.click()
-
+            driver.save_screenshot('test.png')
             articles_holder = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR,
                                                 'div.fr-element.fr-view'))
             )
-
+            driver.save_screenshot('test.png')
             ar_output = articles_holder.get_attribute('outerHTML')
             soup = BeautifulSoup(ar_output, 'html.parser')
             headers_components = soup.select('streaming-area')
