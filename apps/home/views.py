@@ -4474,6 +4474,7 @@ class GenerateBlog(APIView):
             sleep(2)
             driver.save_screenshot('test.png')
             driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
+            sleep(2)
             driver.save_screenshot('test.png')
             # driver.execute_script("""
             #     var button = document.createElement('multistep-form-next');
