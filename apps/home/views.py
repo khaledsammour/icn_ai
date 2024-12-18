@@ -4440,7 +4440,8 @@ class GenerateBlog(APIView):
 
         # Create an instance of Chrome WebDriver
         # driver = webdriver.Firefox(options=options)
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = create_browser()
         try:
             blog.status = 'in progress'
             blog.save()
@@ -4472,41 +4473,23 @@ class GenerateBlog(APIView):
             until_visible_click(driver, '.-step-excerpt')
             sleep(2)
             driver.save_screenshot('test.png')
-            # until_visible_click(driver, 'multistep-form-body-field:nth-child(2)')
-            # until_visible_click(driver, f'multistep-form-body-field:nth-child(2) multistep-form-body-field-fill-selectbox-item[data-value="{configs["language_code"]}"]')
-            # until_visible_click(driver, '.-step-excerpt')
-            # sleep(2)
-            # until_visible_click(driver, 'multistep-form-body-field:nth-child(3)')
-            # until_visible_send_keys(driver, 'multistep-form-body-field:nth-child(3) input.-multistep-selectbox-search', configs['audience_full_country_name'])
-            # search = driver.find_elements(By.CSS_SELECTOR, 'input.-multistep-selectbox-search')[-1]
-            # search.send_keys(Keys.ENTER)
-            # until_visible_click(driver, f'multistep-form-body-field-fill-selectbox-item[data-value="{configs["audience_country_code"]}"')
-            # until_visible_click(driver, '.-step-excerpt')
-            # sleep(2)
-            # until_visible_click(driver, 'multistep-form-body-field:nth-child(4)')
-            # numbers_of_lines = driver.find_element(By.ID, 'topic_numberofwords')
-            # driver.execute_script(f"arguments[0].value = {configs['length_of_article']}", numbers_of_lines)
-            # until_visible_click(driver, '.-step-excerpt')
-            # sleep(2)
-            driver.save_screenshot('test.png')
             driver.execute_script("document.querySelectorAll('.-sendmessage-qactions').forEach(e => e.remove());")
             driver.save_screenshot('test.png')
-            driver.execute_script("""
-                var button = document.createElement('multistep-form-next');
-                button.className = 'next';
-                button.textContent = 'test';
-                var documentToAdd = document.querySelector("multistep-form-section[data-step='1'] multistep-form-body-footer");
-                if (documentToAdd) {
-                    documentToAdd.appendChild(button);
-                    console.log('Button added successfully');
-                    button.click()
-                } else {
-                    console.log('Target element not found');
-                    document.body.appendChild(button);
-                }
-            """)
-            driver.save_screenshot('test.png')
-            # until_visible_click(driver, 'multistep-form-next')
+            # driver.execute_script("""
+            #     var button = document.createElement('multistep-form-next');
+            #     button.className = 'next';
+            #     button.textContent = 'test';
+            #     var documentToAdd = document.querySelector("multistep-form-section[data-step='1'] multistep-form-body-footer");
+            #     if (documentToAdd) {
+            #         documentToAdd.appendChild(button);
+            #         console.log('Button added successfully');
+            #     } else {
+            #         console.log('Target element not found');
+            #         document.body.appendChild(button);
+            #     }
+            # """)
+            # driver.save_screenshot('test.png')
+            until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             # driver.save_screenshot('test.png')
             until_visible_click(driver, '.-step-excerpt')
             driver.save_screenshot('test.png')
