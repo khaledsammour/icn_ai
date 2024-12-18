@@ -4440,8 +4440,8 @@ class GenerateBlog(APIView):
 
         # Create an instance of Chrome WebDriver
         # driver = webdriver.Firefox(options=options)
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        driver = create_browser()
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # driver = create_browser()
         try:
             blog.status = 'in progress'
             blog.save()
