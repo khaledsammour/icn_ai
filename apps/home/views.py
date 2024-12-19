@@ -4418,7 +4418,7 @@ class ChangeText(APIView):
         driver.quit()
         return JsonResponse({})
 
-def remove_classes():
+def remove_classes(driver):
     driver.execute_script("document.querySelectorAll('multistep-form-section > *').forEach((e)=>{e.classList.remove(...e.classList)});")
     driver.execute_script("document.querySelectorAll('multistep-form-section > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
     driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
