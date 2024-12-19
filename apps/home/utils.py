@@ -16,6 +16,7 @@ from langdetect import detect
 import os 
 from django.conf import settings  # Import project settings
 from airtable import Airtable
+from random import *
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class=None, inner_selector=None, should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False, pagination_click=False):
@@ -498,6 +499,21 @@ def click_on_overlay(driver, name):
                 element.click()
             break
 
+def click_with_mouse(driver, selector):
+    import pyautogui
+    
+    until_visible(driver, selector)
+    elementToClick = driver.find_element(By.CSS_SELECTOR, selector)
+    element_location = elementToClick.location
+    element_size = elementToClick.size
+    center_x = element_location['x'] + element_size['width'] / 2 + 5
+    center_y = element_location['y'] + element_size['height'] / 2 + 5
+    panel_height = driver.execute_script('return window.outerHeight - window.innerHeight;')
+    abs_x = center_x
+    y = center_y
+    abs_y = y + panel_height
+    pyautogui.moveTo(abs_x, abs_y, uniform(0.6, 1.7), pyautogui.easeOutQuad)
+    pyautogui.click(abs_x, abs_y)
 
 def upload_file(file, base_id, table_id, record_id):
     try:

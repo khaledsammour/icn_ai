@@ -34,8 +34,6 @@ from django.conf import settings
 from webdriver_manager.chrome import ChromeDriverManager
 import threading
 from selenium.webdriver.common.keys import Keys
-import pyautogui
-from random import *
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -4493,57 +4491,11 @@ class GenerateBlog(APIView):
             sleep(2)
             # until_visible_click(driver, 'div[data-tooltip="مصدر المحتوى"]')
             # sleep(2)
-            until_visible(driver, "multistep-form-section[data-step='1'] multistep-form-next > span")
-            element = driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next > span")
-            location = element.location
-            # Find and click the login button
-            elementToClick = driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next > span")
-
-            # Get the element's location (top-left corner) and size (width and height)
-            element_location = elementToClick.location
-            element_size = elementToClick.size
-
-            # Calculate the center coordinates
-            center_x = element_location['x'] + element_size['width'] / 2 + 5
-            center_y = element_location['y'] + element_size['height'] / 2 + 5
-
-            panel_height = driver.execute_script('return window.outerHeight - window.innerHeight;')
-            abs_x = center_x
-            y = center_y
-            abs_y = y + panel_height
-
-            pyautogui.moveTo(abs_x, abs_y, uniform(0.6, 1.7), pyautogui.easeOutQuad)
-            pyautogui.click(abs_x, abs_y)
-            # until_visible_xpath_click(driver, "//span[contains(text(),'حفظ الإعدادات')]")
-            # until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
+            until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             sleep(2)
             # driver.save_screenshot('test.png')
             driver.save_screenshot('test.png')
-            try:
-                until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
-            except:
-                print('except')
-                until_visible(driver, "div.-start-generating-button.hoverable.activable")
-                element = driver.find_element(By.CSS_SELECTOR, "div.-start-generating-button.hoverable.activable")
-                location = element.location
-                # Find and click the login button
-                elementToClick = driver.find_element(By.CSS_SELECTOR, "div.-start-generating-button.hoverable.activable")
-
-                # Get the element's location (top-left corner) and size (width and height)
-                element_location = elementToClick.location
-                element_size = elementToClick.size
-
-                # Calculate the center coordinates
-                center_x = element_location['x'] + element_size['width'] / 2 + 5
-                center_y = element_location['y'] + element_size['height'] / 2 + 5
-
-                panel_height = driver.execute_script('return window.outerHeight - window.innerHeight;')
-                abs_x = center_x
-                y = center_y
-                abs_y = y + panel_height
-
-                pyautogui.moveTo(abs_x, abs_y, uniform(0.6, 1.7), pyautogui.easeOutQuad)
-                pyautogui.click(abs_x, abs_y)
+            until_visible_click(driver, 'div.-start-generating-button.hoverable.activable')
             driver.save_screenshot('test.png')
             show_article = WebDriverWait(driver, 600).until(
                 EC.presence_of_element_located((By.LINK_TEXT, 'عرض المقال'))
