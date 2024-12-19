@@ -4418,6 +4418,17 @@ class ChangeText(APIView):
         driver.quit()
         return JsonResponse({})
 
+def remove_classes():
+    driver.execute_script("document.querySelectorAll('multistep-form-section > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
+    sleep(2)
+
 generate_blog_lock = threading.Lock()
 class GenerateBlog(APIView):
     def post(self, request, *args, **kwargs):
@@ -4491,18 +4502,11 @@ class GenerateBlog(APIView):
             sleep(2)
             # until_visible_click(driver, 'div[data-tooltip="مصدر المحتوى"]')
             # sleep(2)
-            driver.execute_script("document.querySelectorAll('multistep-form-section > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            driver.execute_script("document.querySelectorAll('multistep-form-section > * > * > * > * > * > * > * > *').forEach((e)=>{e.classList.remove(...e.classList)});")
-            sleep(2)
+            # remove_classes()
             driver.save_screenshot('test.png')
             until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             sleep(2)
+            remove_classes()
             driver.save_screenshot('test.png')
             until_visible_click(driver, "multistep-form-section[data-step='2'] multistep-form-body-inner > div:last-child > div:last-child")
             sleep(2)
