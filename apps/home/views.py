@@ -3538,6 +3538,107 @@ class YaserMarket(APIView):
                 print(error)
         return JsonResponse({'data': []})
 
+class Jubran(APIView):
+    def post(self, request, *args, **kwargs):
+        data = []
+        for i in range(5000):
+            print({
+                "limit":24,
+                "sort":"",
+                "categoryId": request.data['categoryId'],
+                "isOffer":False,
+                "nextPageNumber":i,
+                "pageSize":24,
+                "isWholeSale":False
+            })
+            headers = {
+                'Accept': 'application/json',
+                'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/json',
+                'Origin': 'https://jubranjo.com',
+                'Referer': 'https://jubranjo.com/',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                'deviceType': 'desktopWeb',
+                'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"macOS"'
+            }
+
+            response = requests.post('https://jubran.jubran-api.com/api/products/searchProducts',data=json.dumps({
+                "limit":24,
+                "sort":"",
+                "categoryId": request.data['categoryId'],
+                "isOffer":False,
+                "nextPageNumber":i,
+                "pageSize":24,
+                "isWholeSale":False
+            }), headers=headers)
+            print(response.text)
+            products = response.json()['products']
+            if len(products)==0:
+                break
+            for p in products:
+                if p['isStockAvailable']== True:
+                    img = ''
+                    image_url = 'https://www.icn.com/api/v1/image/upload'
+                    data_to_upload = {
+                        'user_id': request.data['user_id'],
+                        'image_url': p['imageUrl']
+                    }
+
+                    try:
+                        response = requests.post(image_url, data=data_to_upload)
+                        if response.status_code == 200:
+                            img= response.text
+                    except requests.exceptions.RequestException as e:
+                        print('An error occurred:', e)
+
+                    data.append({
+                        "Arabic Name": translate(p['name']),
+                        "English Name": translate(p['name'], dest="en"),
+                        "Arabic Description": request.data['ar_description'],
+                        "English Description": request.data['en_description'],
+                        "Category Id": request.data['category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": p['price'],
+                        "Discount Type": "",
+                        "Discount": "",
+                        "Unit": "PC",
+                        "Current Stock": "100",
+                        "Main Image URL": img,
+                        "Photos URLs": img,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "Arabic Meta Tags": translate(p['name']),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": 'https://jubran.jubran-api.com/api/products/searchProducts/'+str(p['id']),
+                    })
+        df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
+        df.to_excel('excel/'+request.data['id']+'_products.xlsx', index=False)
+        if os.path.join('excel', request.data['id']+'_products.xlsx'):
+            try:
+                url = "https://ai.icn.com/api/upload_image"
+                files = {
+                    'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+                }
+                data = {
+                    'base_id': 'appiRnmkCqRxRVp1D',
+                    'table_id': 'tblxoNzr4fst5S7BH',
+                    'record_id': request.data['id'],
+                }
+                # Send the POST request
+                response = requests.post(url, files=files, data=data)
+            except Exception as error:
+                print(error)
+        return JsonResponse({'data': []})
+
 class SecoundYaserMarket(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
@@ -4096,7 +4197,7 @@ class Test(APIView):
                                     href = w.select_one('a[href]')['href']
                                     print(w)
                                     if 'http' not in href:
-                                        hrefs.append('https://www.imdb.com/'+href)
+                                        hrefs.append('https://alaryanmobile.com/'+href)
                                     else:
                                         hrefs.append(href)
                             data.append({

@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/ChangeText', ChangeText.as_view()),
     path('api/Test', Test.as_view()),
     path('api/YaserMarket', YaserMarket.as_view()),
+    path('api/Jubran', Jubran.as_view()),
     path('api/SecoundYaserMarket', SecoundYaserMarket.as_view()),
     path('api/TestInside', TestInside.as_view()),
     path('api/GetImagesFromGoogle', GetImagesFromGoogle.as_view()),
