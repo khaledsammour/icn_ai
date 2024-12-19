@@ -4512,8 +4512,7 @@ class GenerateBlog(APIView):
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next"))
             ).click()
             # until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
-            sleep(2)
-            until_visible(driver, 'multistep-form-body-inner > div:last-child > div:last-child')
+            sleep(10)
             # remove_classes(driver)
             driver.execute_script("""
                 arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
