@@ -4503,10 +4503,17 @@ class GenerateBlog(APIView):
             # until_visible_click(driver, 'div[data-tooltip="مصدر المحتوى"]')
             # sleep(2)
             # remove_classes()
+            remove_classes(driver)
+            driver.execute_script("""
+                arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+            """, driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='1'] multistep-form-next"))
             driver.save_screenshot('test.png')
             until_visible_click(driver, "multistep-form-section[data-step='1'] multistep-form-next")
             sleep(2)
-            remove_classes()
+            remove_classes(driver)
+            driver.execute_script("""
+                arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+            """, driver.find_element(By.CSS_SELECTOR, "multistep-form-section[data-step='2'] multistep-form-body-inner > div:last-child > div:last-child"))
             driver.save_screenshot('test.png')
             until_visible_click(driver, "multistep-form-section[data-step='2'] multistep-form-body-inner > div:last-child > div:last-child")
             sleep(2)
