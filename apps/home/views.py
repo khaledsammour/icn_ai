@@ -3598,8 +3598,8 @@ class Jubran(APIView):
                         print('An error occurred:', e)
 
                     data.append({
-                        "Arabic Name": translate(p['name']),
-                        "English Name": translate(p['name'], dest="en"),
+                        "Arabic Name": 'جبران ' + translate(p['name']),
+                        "English Name": 'Jubran ' + translate(p['name'], dest="en"),
                         "Arabic Description": request.data['ar_description'],
                         "English Description": request.data['en_description'],
                         "Category Id": request.data['category'],
