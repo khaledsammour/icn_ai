@@ -52,14 +52,22 @@ def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class
             if not_contains_class != None:
                 if len(e.find_elements(By.CSS_SELECTOR, not_contains_class)) == 0:
                     if inner_selector != None:
-                        hrefs.append(e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr))
+                        href = e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr)
+                        if href not in hrefs:
+                            hrefs.append(href)
                     else:
-                        hrefs.append(e.get_attribute(attr))
+                        href = e.get_attribute(attr)
+                        if href not in hrefs:
+                            hrefs.append(href)
             else:
                 if inner_selector != None:
-                    hrefs.append(e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr))
+                    href = e.find_element(By.CSS_SELECTOR, inner_selector).get_attribute(attr)
+                    if href not in hrefs:
+                        hrefs.append(href)
                 else:
-                    hrefs.append(e.get_attribute(attr))
+                    href = e.get_attribute(attr)
+                    if href not in hrefs:
+                        hrefs.append(href)
         index = index + 1
         
         if no_pagination:

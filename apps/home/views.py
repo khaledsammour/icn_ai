@@ -3155,6 +3155,7 @@ class MainScrapView(APIView):
                 title_prefix = ''
                 if website.title_prefix:
                     title_prefix = website.title_prefix
+                    title = title.replace(title_prefix,'').strip()
 
                 if website.title_prefix_attr:
                     if len(soup.select(website.title_prefix_selector))>0:
@@ -3319,6 +3320,8 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
                     ar_title = translate(title)
+                    if ar_title_prefix:
+                        ar_title = ar_title.replace(ar_title_prefix,'').strip()
                     # ar_title = title
                     ar_description = translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description']
                     product_attributes_content_json = {}                
@@ -3332,7 +3335,7 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
-                    "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(ar_title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
+                    "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
                     "English Name": (title_prefix +' ' if title_prefix else '') + translate(title, dest="en") +  (' ' + title_suffix if title_suffix else ''),
                     "Arabic Description": ar_description.replace('الوصف','').strip(),
                     "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],
