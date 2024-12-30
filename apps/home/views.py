@@ -3183,19 +3183,30 @@ class MainScrapView(APIView):
                 if website.static_price:
                     price = website.static_price
                 elif website.price_attr:
-                    price = soup.select_one(website.price_selector)[website.price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
+                    price = soup.select_one(website.price_selector)[website.price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').replace(',','').strip() if len(soup.select(website.price_selector))>0 else ''
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
-                        price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() != '0.000' else ''
+                        for prices in soup.select(website.price_selector):
+                            if '.' in prices.get_text(strip=True):
+                                price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() != '0.000' else ''
 
                     if website.second_price_attr and not price:
-                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
                     if len(price)==0 and website.second_price_selector and len(soup.select(website.second_price_selector))>0:
-                        price = soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
+                        price = soup.select_one(website.second_price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if website.second_price_selector and len(soup.select(website.second_price_selector))>0 else ''
                     if website.is_price_have_comma:
                         price = price.replace(',','.')
-                # Get discount
+
                 discount = '0'
+                discount_elem = None
+                if website.discount_attr:
+                    discount = soup.select_one(website.discount_selector)[website.discount_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').replace(',','').strip() if len(soup.select(website.discount_selector))>0 else ''
+                else:
+                    if website.discount_selector and len(soup.select(website.discount_selector))>0:
+                        discount_elem = soup.select_one(website.discount_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if len(soup.select(website.discount_selector))>0 and soup.select_one(website.discount_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() != '0.000' else ''
+                        discount = price
+                        price = discount_elem
+                        discount = float(price) - float(discount) if discount else '0'
                 # Get the main image URL
                 main_image_elem = soup.select_one(website.main_img_selector)
                 if main_image_elem:

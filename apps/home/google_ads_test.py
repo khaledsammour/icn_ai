@@ -12,7 +12,7 @@ import requests
 SCOPES = ["https://www.googleapis.com/auth/content"]
 
 def getProducts(page, lang):
-    url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-9?page={page}'
+    url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-24?page={page}'
     response = requests.request("GET", url, headers={
         'App-Language': lang
     })
@@ -86,7 +86,7 @@ def main():
   
     # Retrieve the documents contents from the Docs service.
     # document = service.products().list(merchantId='5455777362', maxResults=50).execute()
-  url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-9?page=1'
+  url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-24?page=1'
   response = requests.request("GET", url, headers={
     'App-Language': 'sa'
   })
@@ -100,7 +100,7 @@ def main():
         addToGoogle(service, 'ar', product)
   print('-'*50)
 
-  url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-9?page=1'
+  url = f'https://www.icn.com/api/v1/products/updated-after/2024-12-24?page=1'
   response = requests.request("GET", url, headers={
     'App-Language': 'en'
   })
