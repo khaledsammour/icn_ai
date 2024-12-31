@@ -64,6 +64,8 @@ class Websites(models.Model):
     end_index = models.IntegerField(null=True, blank=True)
     number_of_products = models.IntegerField(null=True, blank=True)
     change_content = models.BooleanField(default=True)
+    translate_english = models.BooleanField(default=True)
+    translate_arabic = models.BooleanField(default=True)
 
 class Blogs(models.Model):
     id = models.BigAutoField(primary_key=True)

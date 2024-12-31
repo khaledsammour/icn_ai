@@ -3187,7 +3187,7 @@ class MainScrapView(APIView):
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
                         for prices in soup.select(website.price_selector):
-                            if '.' in prices.get_text(strip=True):
+                            if '.' in prices.get_text(strip=True) or float(prices.get_text(strip=True)):
                                 price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() != '0.000' else ''
 
                     if website.second_price_attr and not price:
@@ -3330,7 +3330,10 @@ class MainScrapView(APIView):
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
-                    ar_title = translate(title)
+                    if website.translate_arabic:
+                        ar_title = translate(title, source='en')
+                    else:
+                        ar_title = title
                     if ar_title_prefix:
                         ar_title = ar_title.replace(ar_title_prefix,'').strip()
                     # ar_title = title
@@ -3347,7 +3350,7 @@ class MainScrapView(APIView):
                                 product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
                 product = {
                     "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
-                    "English Name": (title_prefix +' ' if title_prefix else '') + translate(title, dest="en") +  (' ' + title_suffix if title_suffix else ''),
+                    "English Name": (title_prefix +' ' if title_prefix else '') + (translate(title, dest="en") if website.translate_english else title) +  (' ' + title_suffix if title_suffix else ''),
                     "Arabic Description": ar_description.replace('الوصف','').strip(),
                     "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": category,
