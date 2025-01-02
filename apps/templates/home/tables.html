@@ -153,25 +153,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Gameak</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="gameak_url"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="gameak_db_category"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="gameakScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>alrefai</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL"
                                            id="alrefai_url"/>
@@ -251,30 +232,6 @@
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="txonScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>City Center</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL"
-                                           id="city_center_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="city_center_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="city_center_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="city_center_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="cityCenterScrapView()">
                                         Scrap
                                     </button>
                                 </td>
@@ -764,25 +721,6 @@
 
     }
 
-    function gameakScrapView() {
-        fetch("/api/GameakScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "1",
-                url: document.getElementById('gameak_url').value,
-                db_category: document.getElementById('gameak_db_category').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
     function alrefaiScrapView() {
         fetch("/api/AlrefaiScrapView", {
             method: "POST",
@@ -857,27 +795,6 @@
                 db_category: document.getElementById('txon_db_category').value,
                 description: document.getElementById('txon_description').value,
                 arabic_description: document.getElementById('txon_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
-    function cityCenterScrapView() {
-        fetch("/api/CityCenterScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "2830",
-                url: document.getElementById('city_center_url').value,
-                db_category: document.getElementById('city_center_db_category').value,
-                description: document.getElementById('city_center_description').value,
-                arabic_description: document.getElementById('city_center_arabic_description').value,
             })
         })
             .then(response => response.json())
