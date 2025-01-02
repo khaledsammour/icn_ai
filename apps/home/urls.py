@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, GameakScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, CityCenterScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -16,11 +16,9 @@ urlpatterns = [
     re_path(r'^(?!api/).*$', views.pages, name='pages'),
     path('api/scrap', ScrapView.as_view()),
     path('api/SecScrapView', SecScrapView.as_view()),
-    path('api/GameakScrapView', GameakScrapView.as_view()),
     path('api/VikushaScrapView', VikushaScrapView.as_view()),
     path('api/GTSScrapView', GTSScrapView.as_view()),
     path('api/TXONScrapView', TXONScrapView.as_view()),
-    path('api/CityCenterScrapView', CityCenterScrapView.as_view()),
     path('api/BCIScrapView', BCIScrapView.as_view()),
     path('api/BashitiScrapView', BashitiScrapView.as_view()),
     path('api/TemuScrapView', TemuScrapView.as_view()),
