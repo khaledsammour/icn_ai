@@ -120,6 +120,39 @@ def save_image(image_data, file_path):
     with open(file_path, 'wb') as file:
         file.write(image_data)
 
+def sendRequest(driver, url, body):
+    js_code = """
+    function getResponse(url, body) {
+    return new Promise((resolve, reject) => {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+            resolve(xhr.response);  // resolve the promise when the response is loaded
+        };
+        xhr.onerror = function() {
+            reject('Error occurred while fetching the data');  // reject the promise on error
+        };
+        
+        xhr.open('POST', url, true);  // Make sure the request is asynchronous
+        xhr.setRequestHeader('Content-Type', 'application/json');  // Set the content type for JSON body
+        xhr.responseType = 'json';  // Set the response type to JSON
+        
+        // Send the body as a JSON string
+        xhr.send(JSON.stringify(body));
+    });
+}
+
+// Example of usage:
+function fetchSynonym(url, body) {
+    return getResponse(url, body);
+}
+
+// Call the function to fetch synonyms and handle the response
+return fetchSynonym(arguments[0], arguments[1]);
+    """
+    array_buffer = driver.execute_script(js_code, url, body)
+    return array_buffer
+    
+
 def getImageBase64(driver, id, image_url):
     if 'youtube.com' in image_url:
         return ''

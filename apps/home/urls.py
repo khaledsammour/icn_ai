@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -51,4 +51,6 @@ urlpatterns = [
     path('api/GetImagesFromGoogle', GetImagesFromGoogle.as_view()),
     path('api/upload_image', ImageUploadView.as_view(), name='upload_image'),
     path('api/CommonWebsites', CommonWebsites.as_view(), name='CommonWebsites'),
+    path('api/Search', Search.as_view(), name='Search'),
+    path('api/SimilarNames', SimilarNames.as_view(), name='SimilarNames'),
 ]

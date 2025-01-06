@@ -22,9 +22,9 @@ import traceback
 from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from .utils import upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
+from .utils import sendRequest, upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
-from .models import Websites, Blogs
+from .models import Websites, Blogs, Words, Products
 from airtable import Airtable
 import os
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -34,6 +34,11 @@ from django.conf import settings
 from webdriver_manager.chrome import ChromeDriverManager
 import threading
 from selenium.webdriver.common.keys import Keys
+from urllib.request import Request, urlopen
+from sentence_transformers import SentenceTransformer, models
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import faiss
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -3958,7 +3963,212 @@ class CommonWebsites(APIView):
         
         driver.quit()
         return JsonResponse({})
+
+def getTexts(driver, tex):
+  print('1')
+  res = []
+  try:
+    # data = {"synset":tex,"level":2,"useALMA":True}
+    # data = json.dumps(data).encode('utf8')
+          
+    # req = Request(
+    #   url="https://ontology.birzeit.edu/sina/v2/api/SynonymGenerator/?apikey=sinaMapping",
+    #   data=data,
+    #   headers={'User-Agent': 'Mozilla/5.0', 'Content-Type': 'application/json'},
+    #   method='POST'
+    # )
+    # webpage = urlopen(req).read()
+    webpage = sendRequest(driver, "https://ontology.birzeit.edu/sina/v2/api/SynonymGenerator/?apikey=sinaMapping", {"synset":tex,"level":2,"useALMA":True})
+    print(webpage['resp'])
+    diacritics_pattern = re.compile(r"[\u064B-\u065F]")
+    for d in webpage['resp']:
+      cleaned_word = re.sub(diacritics_pattern, '', d[0])
+      res.append(cleaned_word)
+  except Exception as e:
+    print(e)
+    pass
+  res.append(tex)
+  return res
+
+def is_arabic_word(value):
+    if isinstance(value, str):
+        # Check if it contains Arabic characters and is not purely numeric
+        return bool(re.search(r'[\u0600-\u06FF]', value)) and not value.isdigit()
+    return False
     
+class SimilarNames(APIView):
+    def post(self, request, *args, **kwargs):
+        driver = create_browser()
+        driver.get('https://sina.birzeit.edu/synonyms/')
+        texts = []
+        i=1
+        while(True):
+            print('getting data')
+            res = requests.get('https://www.icn.com/api/v1/products/get?id='+request.data['id']+'&page='+str(i))
+            products = res.json()['data']['products']
+            for p in products:
+                texts.append({'id': p['id'], 'name': p['name']})
+            if len(res.json()['data']['products'])==0:
+                break
+            i=i+1
+        print('finished')
+        for t in texts:
+            try:
+                existProduct = Products.objects.filter(name=t['name']).get()
+            except:
+                existProduct = None
+            if existProduct:
+                continue
+            print('getting words')
+            result = []
+            result.append(t['name'])
+            for i, char in enumerate(t['name'].split(' ')):
+                try:
+                    existWord = Words.objects.filter(name=char).get()
+                except:
+                    existWord = None
+                if existWord:
+                    spilated = existWord.similarWords.split(',')
+                    for s in spilated:
+                        test= t['name'].split(' ')
+                        test[i] = s
+                        result.append(' '.join(test))
+                else:
+                    print(char)
+                    print(is_arabic_word(char))
+                    if is_arabic_word(char):
+                        spilated = getTexts(driver, char)
+                        for s in spilated:
+                            test= t['name'].split(' ')
+                            test[i] = s
+                            result.append(' '.join(test))
+                        newWords = Words()
+                        newWords.name = char
+                        newWords.similarWords = ','.join(spilated)
+                        newWords.save()
+            newProduct = Products()
+            newProduct.id = t['id']
+            newProduct.name = t['name']
+            newProduct.similarNames = ','.join(result)
+            newProduct.save()
+        print('finished')
+        driver.quit()
+        return JsonResponse({})
+import numpy as np
+from numpy import dot
+from numpy.linalg import norm
+
+def preprocess_text(text):
+    text = re.sub(r'[إأآا]', 'ا', text)  # Normalize Alef
+    text = re.sub(r'ة', 'ه', text)  # Normalize Ta Marbuta
+    text = re.sub(r'[يى]', 'ي', text)  # Normalize Ya
+    text = re.sub(r'\d+', '', text)  # Remove digits
+    text = re.sub(r'\b(ظرف|جرام|كيلو|مل)\b', '', text)  # Remove units
+    text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+    return text.strip()
+# model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
+pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
+
+# Combine the transformer and pooling into a SentenceTransformer model
+model = SentenceTransformer(modules=[arabert_model, pooling_layer])
+# Prepare product names
+productNames = []
+for p in Products.objects.all():
+    for name in p.similarNames.split(','):
+        productNames.append({'id': p.id, 'name': name})
+
+# Encode corpus
+corpus = [preprocess_text(r['name']) for r in productNames]
+# corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
+
+corpus_embeddings = []
+for i in range(0, len(corpus), 2048):
+    batch = corpus[i:i+2048]
+    print(i+2048)
+    embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
+    corpus_embeddings.append(embeddings)
+corpus_embeddings = np.vstack(corpus_embeddings)
+
+# Create FAISS index
+dimension = corpus_embeddings.shape[1]
+wordIndex = faiss.IndexFlatL2(dimension)
+# wordIndex = faiss.IndexIVFPQ(faiss.IndexFlatL2(dimension), dimension, 100, 8)
+wordIndex.train(corpus_embeddings) 
+wordIndex.add(corpus_embeddings)
+faiss.write_index(wordIndex, 'faiss_index.bin')
+# wordIndex = faiss.read_index('faiss_index.bin')
+
+
+# Compute cosine similarity
+def compute_cosine_similarity(embedding1, embedding2):
+    return dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2))
+
+# Token overlap score
+def compute_jaccard_similarity(query, text):
+    query_set = set(query.split())
+    text_set = set(text.split())
+    intersection = len(query_set & text_set)
+    union = len(query_set | text_set)
+    return intersection / union if union != 0 else 0
+def normalize_distance(distance):
+    return 1 / (1 + distance)
+class Search(APIView):
+    def post(self, request, *args, **kwargs):
+        res = []
+        query = request.data['query']
+        query_processed = preprocess_text(query)
+        query_embedding = model.encode(query_processed)
+        query_embedding = np.array(query_embedding).astype('float32').reshape(1, -1)
+        k = 10
+        distances, indices = wordIndex.search(query_embedding, k)
+        print(f"Query: {query_processed}")
+        # for i in range(k):
+        #     if productNames[indices[0][i]]['id'] not in [p['id'] for p in res]:
+        #         res.append({
+        #             'id': productNames[indices[0][i]]['id'],
+        #             'name': productNames[indices[0][i]]['name'],
+        #         })
+        #         print(f"Text: {corpus[indices[0][i]]}, Similarity (Distance): {distances[0][i]:.4f}")
+        for i in range(k):
+            product = productNames[indices[0][i]]
+            product_name = product['name']
+            product_name_processed = preprocess_text(product_name)
+
+            # Calculate cosine similarity
+            # Calculate Jaccard similarity for token overlap
+            product_embedding = corpus_embeddings[indices[0][i]]
+            cosine_similarity = compute_cosine_similarity(query_embedding[0], product_embedding)
+
+            jaccard_similarity = compute_jaccard_similarity(query_processed, product_name_processed)
+
+            # Normalize FAISS distance to similarity
+            distance_similarity = normalize_distance(distances[0][i])
+
+            # Final combined score
+            final_score = (
+                0.7 * distance_similarity +
+                0.2 * cosine_similarity +
+                0.1 * jaccard_similarity
+            )
+            # Add to results if not already included
+            if product['id'] not in [p['id'] for p in res]:
+                res.append({
+                    'id': product['id'],
+                    'name': product_name,
+                    'score': float(final_score),  # Convert to Python float
+                    'cosine_similarity': float(cosine_similarity),  # Convert to Python float
+                    'jaccard_similarity': float(jaccard_similarity),  # Convert to Python float
+                    'distance': float(distances[0][i])  # Convert to Python float
+                })
+        MIN_SCORE_THRESHOLD = 0.2
+
+        res = sorted(res, key=lambda x: x['score'], reverse=True)
+        filtered_results = [result for result in res if result['score'] >= MIN_SCORE_THRESHOLD]
+
+        print(res)
+        return JsonResponse({'data': filtered_results})
+     
 class Test(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']

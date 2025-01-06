@@ -72,3 +72,15 @@ class Blogs(models.Model):
     name = models.CharField(max_length=250, null=True, blank=True)
     status = models.CharField(max_length=250, null=True, blank=True)
     api_status = models.CharField(max_length=250, null=True, blank=True)
+
+
+
+class Words(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=250, null=True, blank=True)
+    similarWords = models.CharField(max_length=250, null=True, blank=True)
+
+class Products(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=250, null=True, blank=True)
+    similarNames = models.CharField(max_length=250, null=True, blank=True)
