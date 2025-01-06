@@ -4066,6 +4066,20 @@ def preprocess_text(text):
     text = re.sub(r'\b(ظرف|جرام|كيلو|مل)\b', '', text)  # Remove units
     text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
     return text.strip()
+
+# productNames = []
+# for p in Products.objects.all():
+#     newNames = []
+#     for name in p.similarNames.split(','):
+#         if name != p.name:
+#             newNames.append(name)
+#     if len(newNames)==0:
+#         p.similarNames = name
+#     else:
+#         p.similarNames = ','.join(newNames)
+#     p.save()
+
+
 # model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
 pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
@@ -4113,6 +4127,7 @@ def compute_jaccard_similarity(query, text):
     return intersection / union if union != 0 else 0
 def normalize_distance(distance):
     return 1 / (1 + distance)
+
 class Search(APIView):
     def post(self, request, *args, **kwargs):
         res = []
