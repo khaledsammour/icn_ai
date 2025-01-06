@@ -84,3 +84,4 @@ class Products(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=250, null=True, blank=True)
     similarNames = models.CharField(max_length=250, null=True, blank=True)
+    splittedNames = models.CharField(max_length=250, null=True, blank=True)

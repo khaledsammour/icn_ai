@@ -4070,63 +4070,88 @@ def preprocess_text(text):
 # productNames = []
 # for p in Products.objects.all():
 #     newNames = []
+#     newNames.append(p.name)
 #     for name in p.similarNames.split(','):
 #         if name != p.name:
 #             newNames.append(name)
-#     if len(newNames)==0:
-#         p.similarNames = name
-#     else:
-#         p.similarNames = ','.join(newNames)
+#     p.similarNames = ','.join(newNames)
+#     splittedNames = []
+#     for name in newNames:
+#         for i, n in enumerate(name.split(' ')):
+#             if n not in splittedNames:
+#                 if i > 0:
+#                     splittedNames.append(' '.join(name.split(' ')[:i])+' '+n)
+#                 else:
+#                     splittedNames.append(n)
+#     p.splittedNames = ','.join(splittedNames)
+#     print(p.id)
 #     p.save()
 
 
-# # model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-# arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
-# pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
+# Train
+arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
+pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
 
-# # Combine the transformer and pooling into a SentenceTransformer model
-# model = SentenceTransformer(modules=[arabert_model, pooling_layer])
-# # Prepare product names
+# Combine the transformer and pooling into a SentenceTransformer model
+model = SentenceTransformer(modules=[arabert_model, pooling_layer])
+# Prepare product names
 # productNames = []
-# for p in Products.objects.all():
-#     for name in p.similarNames.split(','):
-#         productNames.append({'id': p.id, 'name': name})
+# for p in Products.objects.all()[:50]:
+#     for name in p.splittedNames.split(','):
+#         productNames.append({'id': p.id, 'name': name, 'originalName': p.name})
+#     print(p.name)
 
-# # Encode corpus
-# corpus = [preprocess_text(r['name']) for r in productNames]
-# # corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
+# Encode corpus
+corpus = [preprocess_text(r['name']) for r in productNames]
+# corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
 
-# corpus_embeddings = []
-# for i in range(0, len(corpus), 2048):
-#     batch = corpus[i:i+2048]
-#     print(i+2048)
-#     embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
-#     corpus_embeddings.append(embeddings)
-# corpus_embeddings = np.vstack(corpus_embeddings)
+corpus_embeddings = []
+for i in range(0, len(corpus), 2048):
+    batch = corpus[i:i+2048]
+    print(i+2048)
+    embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
+    corpus_embeddings.append(embeddings)
+corpus_embeddings = np.vstack(corpus_embeddings)
 
-# # Create FAISS index
-# dimension = corpus_embeddings.shape[1]
-# wordIndex = faiss.IndexFlatL2(dimension)
-# # wordIndex = faiss.IndexIVFPQ(faiss.IndexFlatL2(dimension), dimension, 100, 8)
-# wordIndex.train(corpus_embeddings) 
-# wordIndex.add(corpus_embeddings)
-# faiss.write_index(wordIndex, 'faiss_index.bin')
-# # wordIndex = faiss.read_index('faiss_index.bin')
+# Create FAISS index
+dimension = corpus_embeddings.shape[1]
+wordIndex = faiss.IndexFlatL2(dimension)
+wordIndex.train(corpus_embeddings) 
+wordIndex.add(corpus_embeddings)
 
+## save
+# Save FAISS index
+faiss.write_index(wordIndex, 'faiss_index.index')
 
-# # Compute cosine similarity
-# def compute_cosine_similarity(embedding1, embedding2):
-#     return dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2))
+# Save corpus embeddings to a file
+np.save('corpus_embeddings.npy', corpus_embeddings)
 
-# # Token overlap score
-# def compute_jaccard_similarity(query, text):
-#     query_set = set(query.split())
-#     text_set = set(text.split())
-#     intersection = len(query_set & text_set)
-#     union = len(query_set | text_set)
-#     return intersection / union if union != 0 else 0
-# def normalize_distance(distance):
-#     return 1 / (1 + distance)
+# Save the SentenceTransformer model
+model.save('sentence_transformer_model')
+
+## load
+# Load the SentenceTransformer model
+model = SentenceTransformer('sentence_transformer_model')
+
+# Load the FAISS index
+wordIndex = faiss.read_index('faiss_index.index')
+
+# Load the corpus embeddings
+corpus_embeddings = np.load('corpus_embeddings.npy')
+
+# Compute cosine similarity
+def compute_cosine_similarity(embedding1, embedding2):
+    return dot(embedding1, embedding2) / (norm(embedding1) * norm(embedding2))
+
+# Token overlap score
+def compute_jaccard_similarity(query, text):
+    query_set = set(query.split())
+    text_set = set(text.split())
+    intersection = len(query_set & text_set)
+    union = len(query_set | text_set)
+    return intersection / union if union != 0 else 0
+def normalize_distance(distance):
+    return 1 / (1 + distance)
 
 class Search(APIView):
     def post(self, request, *args, **kwargs):
@@ -4170,6 +4195,7 @@ class Search(APIView):
             if product['id'] not in [p['id'] for p in res]:
                 res.append({
                     'id': product['id'],
+                    'originalName': product['originalName'],
                     'name': product_name,
                     'score': float(final_score),  # Convert to Python float
                     'cosine_similarity': float(cosine_similarity),  # Convert to Python float
