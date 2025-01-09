@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
+from .views import HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
 
 urlpatterns = [
 
@@ -53,4 +53,5 @@ urlpatterns = [
     path('api/CommonWebsites', CommonWebsites.as_view(), name='CommonWebsites'),
     path('api/Search', Search.as_view(), name='Search'),
     path('api/SimilarNames', SimilarNames.as_view(), name='SimilarNames'),
+    path('api/HyperMax', HyperMax.as_view(), name='HyperMax'),
 ]

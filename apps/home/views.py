@@ -3964,6 +3964,105 @@ class CommonWebsites(APIView):
         driver.quit()
         return JsonResponse({})
 
+class HyperMax(APIView):
+    def post(self, request, *args, **kwargs):
+        url = 'https://api-prod.retailsso.com/v3/categories/mafjor/ar/categories/'+request.data['url']+'?deviceId=B8E1E7BF-068F-4026-8B30-4228D40CCF0D&disableSpellCheck=true&nextOffset=0&needVariantsData=false&maxPrice=&sortBy=relevance&minPrice=&lang=ar&filter=&pageSize=40&currentPage=0&longitude=35.8354861&latitude=31.9804777'
+        data = []
+        driver = create_browser()
+        driver.get('https://api-prod.retailsso.com/')
+        for i in range(5000):
+            newUrl = re.sub(r'currentPage=\d+&','currentPage='+str(i)+'&',url)
+            response = requests.get(newUrl, headers={
+                'userid': 'B8E1E7BF-068F-4026-8B30-4228D40CCF0D',
+                'appid': 'IOS',
+                'storeid': 'mafjor',
+                'user-agent': 'MAFCarrefour/Prod-24.11.15(1)(iOS 16.7.10)',
+                'nbinfo': 'false',
+                'currency': 'JOD',
+                'appversion': '241115',
+                'appflavour': 'hypermax',
+                'newrelic': 'ewoiZCI6IHsKImFjIjogIjMzNTU3MjAiLAoiYXAiOiAiMTEzMzkwODg3MyIsCiJpZCI6ICJjMmI3NGIzMTU1YWUyNTYwIiwKInRpIjogMTczNjE1MzE1NjQ2MiwKInRyIjogIjdjMDFhYzI5YWY0MGFlMTA5ZjVjN2ZhZDgyNTc2OWI4IiwKInR5IjogIk1vYmlsZSIKfSwKInYiOiBbCjAsCjIKXQp9',
+                'deviceid': 'B8E1E7BF-068F-4026-8B30-4228D40CCF0D',
+                'producttype': 'ANY',
+                'token': '',
+                'env': 'PROD',
+                'tracestate': '@nr=0-2-3355720-1133908873-c2b74b3155ae2560--0--1736153156462',
+                'accept-language': 'ar',
+                'osversion': '16.7.10',
+                'posinfo': 'food=040_Zone01,nonfood=040_Zone01,express=040_Zone01',
+                'intent': 'STANDARD',
+                'content-type': 'application/json',
+                'traceparent': '00-7c01ac29af40ae109f5c7fad825769b8-c2b74b3155ae2560-00',
+                'x-newrelic-id': 'VwUCVFFRCBABVVJRDgEPXlMC',
+                'langcode': 'ar'
+            })
+            print(newUrl)
+            print(response.json())
+            products = response.json()['data']['products']
+            if len(products)==0:
+                break
+            for p in products:
+                if p['stock']['stockLevelStatus']=='inStock':
+                    img = ''
+                    img = getImageBase64(driver, request.data['user_id'],  p['links']['images'][0]['href'])
+                    # image_url = 'https://www.icn.com/api/v1/image/upload'
+                    # data_to_upload = {
+                    #     'user_id': request.data['user_id'],
+                    #     'image_url': p['links']['images'][0]['href']
+                    # }
+                    print(p['links']['images'][0]['href'])
+                    print(img)
+
+                    # try:
+                    #     response = requests.post(image_url, data=data_to_upload)
+                    #     print(response)
+                    #     if response.status_code == 200:
+                    #         img= response.text
+                    # except requests.exceptions.RequestException as e:
+                    #     print('An error occurred:', e)
+
+                    data.append({
+                        "Arabic Name": translate(p['name']),
+                        "English Name": translate(p['name'], dest="en"),
+                        "Arabic Description": '',
+                        "English Description": '',
+                        "Category Id": request.data['category'],
+                        "Arabic Brand": "",
+                        "English Brand": "",
+                        "Unit Price": p['price']['price'],
+                        "Discount Type": "",
+                        "Discount": "",
+                        "Unit": "PC",
+                        "Current Stock": "99",
+                        "Main Image URL": img,
+                        "Photos URLs": img,
+                        "Video Youtube URL": "",
+                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "Arabic Meta Tags": translate(p['name']),
+                        "features": '',
+                        "features_ar": '',
+                        "wholesale": "no",
+                        "reference_link": p['links']['productUrl']['href'],
+                    })
+        df = pd.DataFrame([d for d in data if d['Current Stock'] != '0'])
+        df.to_excel('excel/'+request.data['id']+'_products.xlsx', index=False)
+        if os.path.join('excel', request.data['id']+'_products.xlsx'):
+            try:
+                url = "https://ai.icn.com/api/upload_image"
+                files = {
+                    'file': (request.data['id']+'_products.xlsx', open(os.path.join('excel', request.data['id']+'_products.xlsx'), 'rb'))  # Open the image in binary mode
+                }
+                data = {
+                    'base_id': 'appiRnmkCqRxRVp1D',
+                    'table_id': 'tblhSLXdzuMlAp0lq',
+                    'record_id': request.data['id'],
+                }
+                # Send the POST request
+                # response = requests.post(url, files=files, data=data)
+            except Exception as error:
+                print(error)
+        return JsonResponse({'data': []})
+
 def getTexts(driver, tex):
   print('1')
   res = []
@@ -4054,6 +4153,29 @@ class SimilarNames(APIView):
         print('finished')
         driver.quit()
         return JsonResponse({})
+
+# change category id
+# electronic: 1
+# fashion: 176
+# pets: 485
+# i=1
+# while(True):
+#     print('getting data')
+#     res = requests.get('https://www.icn.com/api/v1/products/get?id='+'487'+'&page='+str(i))
+#     products = res.json()['data']['products']
+#     print(str(i)+'/'+str(res.json()['data']['links']['total_pages']))
+#     for p in products:
+#         try:
+#             prod = Products.objects.get(id=p['id'])
+#             prod.categoryId = 1588
+#             prod.save()
+#             print(prod.name)
+#         except:
+#             pass
+#     if len(res.json()['data']['products'])==0:
+#         break
+#     i=i+1
+
 import numpy as np
 from numpy import dot
 from numpy.linalg import norm
@@ -4068,76 +4190,114 @@ def preprocess_text(text):
     return text.strip()
 
 # productNames = []
-# for p in Products.objects.all():
-#     newNames = []
-#     newNames.append(p.name)
-#     for name in p.similarNames.split(','):
-#         if name != p.name:
-#             newNames.append(name)
-#     p.similarNames = ','.join(newNames)
-#     splittedNames = []
-#     for name in newNames:
-#         for i, n in enumerate(name.split(' ')):
-#             if n not in splittedNames:
-#                 if i > 0:
-#                     splittedNames.append(' '.join(name.split(' ')[:i])+' '+n)
-#                 else:
-#                     splittedNames.append(n)
-#     p.splittedNames = ','.join(splittedNames)
-#     print(p.id)
-#     p.save()
+# for p in Products.objects.filter(categoryId__isnull=False).order_by('-categoryId')[:50]:
+    newNames = []
+    newNames.append(p.name)
+    for name in p.similarNames.split(','):
+        if name != p.name:
+            newNames.append(name)
+    p.similarNames = ','.join(newNames)
+    splittedNames = []
+    for name in newNames:
+        for i, n in enumerate(name.split(' ')):
+            collectedName = []
+            if n not in splittedNames:
+                if i > 0:
+                    # splittedNames.append(' '.join(name.split(' ')[:i])+' '+n)
+                    for j in range(len(n)):
+                        collectedName.append(n[j])
+                        print(' '.join(name.split(' ')[:i])+' '+''.join(collectedName))
+                        splittedNames.append(' '.join(name.split(' ')[:i])+' '+''.join(collectedName))
+                else:
+                    for j in range(len(n)):
+                        collectedName.append(n[j])
+                        print(collectedName)
+                        splittedNames.append(''.join(collectedName))
+                    # splittedNames.append(n)
+    p.splittedNames = ','.join(splittedNames)
+    print(p.id)
+    p.save()
 
 
 # Train
-arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
-pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
+# arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
+# pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
 
-# Combine the transformer and pooling into a SentenceTransformer model
-model = SentenceTransformer(modules=[arabert_model, pooling_layer])
+# # Combine the transformer and pooling into a SentenceTransformer model
+# model = SentenceTransformer(modules=[arabert_model, pooling_layer])
 # Prepare product names
 # productNames = []
-# for p in Products.objects.all()[:50]:
+# for p in Products.objects.filter(categoryId__isnull=False).order_by('-categoryId')[:50]:
 #     for name in p.splittedNames.split(','):
 #         productNames.append({'id': p.id, 'name': name, 'originalName': p.name})
 #     print(p.name)
 
 # Encode corpus
-corpus = [preprocess_text(r['name']) for r in productNames]
-# corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
+# corpus = [preprocess_text(r['name']) for r in productNames]
+# print(len(corpus))
+# # corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
 
-corpus_embeddings = []
-for i in range(0, len(corpus), 2048):
-    batch = corpus[i:i+2048]
-    print(i+2048)
-    embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
-    corpus_embeddings.append(embeddings)
-corpus_embeddings = np.vstack(corpus_embeddings)
+# corpus_embeddings = []
+# for i in range(0, len(corpus), 2048):
+#     batch = corpus[i:i+2048]
+#     print(str(i+2048)+'/'+str(len(corpus)))
+#     embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
+#     corpus_embeddings.append(embeddings)
+# corpus_embeddings = np.vstack(corpus_embeddings)
 
-# Create FAISS index
-dimension = corpus_embeddings.shape[1]
-wordIndex = faiss.IndexFlatL2(dimension)
-wordIndex.train(corpus_embeddings) 
-wordIndex.add(corpus_embeddings)
+# # Create FAISS index
+# dimension = corpus_embeddings.shape[1]
+# wordIndex = faiss.IndexFlatL2(dimension)
+# wordIndex.train(corpus_embeddings) 
+# wordIndex.add(corpus_embeddings)
 
-## save
-# Save FAISS index
-faiss.write_index(wordIndex, 'faiss_index.index')
+# ## save
+# # Save FAISS index
+# faiss.write_index(wordIndex, 'faiss_index.index')
 
-# Save corpus embeddings to a file
-np.save('corpus_embeddings.npy', corpus_embeddings)
+# # Save corpus embeddings to a file
+# np.save('corpus_embeddings.npy', corpus_embeddings)
 
-# Save the SentenceTransformer model
-model.save('sentence_transformer_model')
+# # Save the SentenceTransformer model
+# model.save('sentence_transformer_model')
 
-## load
-# Load the SentenceTransformer model
-model = SentenceTransformer('sentence_transformer_model')
+# ## load
+# # Load the SentenceTransformer model
+# model = SentenceTransformer('sentence_transformer_model')
 
-# Load the FAISS index
-wordIndex = faiss.read_index('faiss_index.index')
+# # Load the FAISS index
+# wordIndex = faiss.read_index('faiss_index.index')
 
-# Load the corpus embeddings
-corpus_embeddings = np.load('corpus_embeddings.npy')
+# # Load the corpus embeddings
+# corpus_embeddings = np.load('corpus_embeddings.npy')
+
+# # train new
+# new_embeddings = []
+# for i in range(0, len(corpus), 2048):
+#     batch = corpus[i:i+2048]
+#     print(str(i+2048)+'/'+str(len(corpus)))
+#     embeddings = model.encode(batch, convert_to_tensor=True).detach().cpu().numpy()
+#     new_embeddings.append(embeddings)
+
+# new_embeddings = np.vstack(new_embeddings)
+
+# # Step 3: Update the FAISS index with the new embeddings
+# # Ensure that the dimensionality matches
+# assert new_embeddings.shape[1] == corpus_embeddings.shape[1], "Dimensionality of embeddings must match."
+
+# # Add the new embeddings to the existing FAISS index
+# wordIndex.add(new_embeddings)
+
+# # Step 4: Optionally save the updated FAISS index
+# faiss.write_index(wordIndex, 'faiss_index.index')
+
+# # Step 5: Save the new corpus embeddings if needed
+# np.save('corpus_embeddings.npy', new_embeddings)
+
+# # If you need to append the new embeddings to the old ones
+# updated_corpus_embeddings = np.vstack([corpus_embeddings, new_embeddings])
+# np.save('corpus_embeddings.npy', updated_corpus_embeddings)
+# model.save('sentence_transformer_model')
 
 # Compute cosine similarity
 def compute_cosine_similarity(embedding1, embedding2):
@@ -4163,14 +4323,8 @@ class Search(APIView):
         k = 10
         distances, indices = wordIndex.search(query_embedding, k)
         print(f"Query: {query_processed}")
-        # for i in range(k):
-        #     if productNames[indices[0][i]]['id'] not in [p['id'] for p in res]:
-        #         res.append({
-        #             'id': productNames[indices[0][i]]['id'],
-        #             'name': productNames[indices[0][i]]['name'],
-        #         })
-        #         print(f"Text: {corpus[indices[0][i]]}, Similarity (Distance): {distances[0][i]:.4f}")
         for i in range(k):
+            # print(f"i: {i}, indices: {indices[0][0]}, productNames: {productNames}")
             product = productNames[indices[0][i]]
             product_name = product['name']
             product_name_processed = preprocess_text(product_name)
@@ -4187,9 +4341,9 @@ class Search(APIView):
 
             # Final combined score
             final_score = (
-                0.7 * distance_similarity +
+                0.6 * distance_similarity +
                 0.2 * cosine_similarity +
-                0.1 * jaccard_similarity
+                0.2 * jaccard_similarity
             )
             # Add to results if not already included
             if product['id'] not in [p['id'] for p in res]:

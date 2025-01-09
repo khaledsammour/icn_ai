@@ -9,7 +9,7 @@ class BlogsAdmin(admin.ModelAdmin):
     list_display = ('name', 'status')
 
 class ProductsAdmin(admin.ModelAdmin):
-    list_display = ('name', 'name')
+    list_display = ('name', 'categoryId')
 
 class WordsAdmin(admin.ModelAdmin):
     list_display = ('name', 'name')
