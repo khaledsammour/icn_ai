@@ -86,10 +86,10 @@ if os.environ.get('DB_ENGINE') and os.environ.get('DB_ENGINE') == "mysql":
     DATABASES = { 
       'default': {
         'ENGINE'  : 'django.db.backends.mysql', 
-        'NAME'    : os.getenv('DB_NAME'     , 'appseed_db'),
-        'USER'    : os.getenv('DB_USERNAME' , 'appseed_db_usr'),
-        'PASSWORD': os.getenv('DB_PASS'     , 'pass'),
-        'HOST'    : os.getenv('DB_HOST'     , 'localhost'),
+        'NAME'    : os.getenv('DB_NAME'     , 'ai_icn'),
+        'USER'    : os.getenv('DB_USERNAME' , 'icn-user'),
+        'PASSWORD': os.getenv('DB_PASS'     , 'icnDB#123'),
+        'HOST'    : os.getenv('DB_HOST'     , '84.247.191.152'),
         'PORT'    : os.getenv('DB_PORT'     , 3306),
         }, 
     }

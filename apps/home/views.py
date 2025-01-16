@@ -22,7 +22,7 @@ import traceback
 from openpyxl import load_workbook
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from .utils import sendRequest, upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
+from .utils import getAbsoluteXPath, sendRequest, upload_file, get_hrefs, until_not_visible, until_visible, until_visible_click, until_visible_send_keys, until_visible_with_xpath, until_visible_xpath_click, create_browser, change_content, change_text, check_if_exist, checkImageUrl, checkProduct, click_on_overlay, correct_spelling, getImageBase64, getImageUrl, save_image, extract_top_keywords, remove_emoji, replace_dimensions, translate, unwrap_divs
 import re 
 from .models import Websites, Blogs, Words, Products
 from airtable import Airtable
@@ -39,6 +39,22 @@ from sentence_transformers import SentenceTransformer, models
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import faiss
+# import mysql.connector
+
+# for w in Websites.objects.all():
+#     mydb = mysql.connector.connect(
+#         host="84.247.191.152",
+#         user="icn-user",
+#         password="icnDB#123",
+#         database="ai_icn"
+#     )
+#     mycursor = mydb.cursor()
+
+#     sql = "INSERT INTO home_websites (seller_id, name, base_id, table_id, require_login, email_selector, email, password_selector, password, button_selector, no_pagination, pagination_click, pagination_path, product_selector, not_contains_class, inner_selector, inside_category_selector, product_click, title_prefix, ar_title_prefix, title_prefix_selector, title_prefix_attr, title_selector, title_attr, title_suffix, title_suffix_selector, title_suffix_attr, description_selector, description_attr, key_words_selector, main_img_selector, main_img_attr, img_click, img_selector, img_attr, static_price, is_price_have_comma, price_selector, price_attr, second_price_selector, second_price_attr, is_discount, discount_selector, discount_attr, is_stuck, stuck_selector, is_feature, features_selector, features_key_selector, features_key_attr, features_value_selector, features_value_attr, en_link, ar_link, ar_selector, ar_attr, export_out_of_stuck, start_index, end_index, number_of_products, change_content, translate_english, translate_arabic) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+#     val = (w.seller_id, w.name, w.base_id, w.table_id, w.require_login, w.email_selector, w.email, w.password_selector, w.password, w.button_selector, w.no_pagination, w.pagination_click, w.pagination_path, w.product_selector, w.not_contains_class, w.inner_selector, w.inside_category_selector, w.product_click, w.title_prefix, w.ar_title_prefix, w.title_prefix_selector, w.title_prefix_attr, w.title_selector, w.title_attr, w.title_suffix, w.title_suffix_selector, w.title_suffix_attr, w.description_selector, w.description_attr, w.key_words_selector, w.main_img_selector, w.main_img_attr, w.img_click, w.img_selector, w.img_attr, w.static_price, w.is_price_have_comma, w.price_selector, w.price_attr, w.second_price_selector, w.second_price_attr, w.is_discount, w.discount_selector, w.discount_attr, w.is_stuck, w.stuck_selector, w.is_feature, w.features_selector, w.features_key_selector, w.features_key_attr, w.features_value_selector, w.features_value_attr, w.en_link, w.ar_link, w.ar_selector, w.ar_attr, w.export_out_of_stuck, w.start_index, w.end_index, w.number_of_products, w.change_content, w.translate_english, w.translate_arabic)
+#     mycursor.execute(sql, val)
+
+#     mydb.commit()
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def index(request):
@@ -2911,6 +2927,8 @@ class MainScrapView(APIView):
         def process_record(r):
             url = r['fields'][urlKey]
             category = r['fields'][categoryKey]
+            prefix_arabic = r['fields'].get('Arabic Name', '')
+            prefix_english= r['fields'].get('English Name', '')
             driver = create_browser(page_load_strategy='eager' if request.data['name'] == 'Indola stores' else 'normal')
             driver.get(url)
             sleep(3)
@@ -2942,6 +2960,10 @@ class MainScrapView(APIView):
                     title_prefix = website.title_prefix
                     title = title.replace(title_prefix,'').strip()
 
+                if prefix_english:
+                    title_prefix = prefix_english
+                    title = title.replace(prefix_english,'').strip()
+
                 if website.title_prefix_attr:
                     if len(soup.select(website.title_prefix_selector))>0:
                         title_prefix = soup.select_one(website.title_prefix_selector)[website.title_prefix_attr].strip()
@@ -2952,6 +2974,9 @@ class MainScrapView(APIView):
                 ar_title_prefix = ''
                 if website.ar_title_prefix:
                     ar_title_prefix = website.ar_title_prefix
+
+                if prefix_arabic:
+                    ar_title_prefix = prefix_arabic
                     
                 title_suffix = ''
                 if website.title_suffix:
@@ -2972,8 +2997,11 @@ class MainScrapView(APIView):
                 else:
                     if website.price_selector and len(soup.select(website.price_selector))>0:
                         for prices in soup.select(website.price_selector):
-                            if '.' in prices.get_text(strip=True) or float(prices.get_text(strip=True)):
-                                price = soup.select_one(website.price_selector).get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if len(soup.select(website.price_selector))>0 and soup.select_one(website.price_selector).get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() != '0.000' else ''
+                            try:
+                                if float(prices.get_text(strip=True)):
+                                    price = prices.get_text(strip=True).replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() if prices.get_text(strip=True).replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').strip() != '0.000' else ''
+                            except:
+                                pass
 
                     if website.second_price_attr and not price:
                         price = soup.select_one(website.second_price_selector)[website.second_price_attr].replace('Regular price','').replace('.أ.د','').replace('د.ا', '').replace('JD','').replace('JOD','').replace('د.أ', '').replace('السعر/قطعة', '').replace(',','').strip() if len(soup.select(website.second_price_selector))>0 else ''
@@ -4024,8 +4052,8 @@ class HyperMax(APIView):
                     data.append({
                         "Arabic Name": translate(p['name']),
                         "English Name": translate(p['name'], dest="en"),
-                        "Arabic Description": '',
-                        "English Description": '',
+                        "Arabic Description": p['name'],
+                        "English Description": p['name'],
                         "Category Id": request.data['category'],
                         "Arabic Brand": "",
                         "English Brand": "",
@@ -4058,7 +4086,7 @@ class HyperMax(APIView):
                     'record_id': request.data['id'],
                 }
                 # Send the POST request
-                # response = requests.post(url, files=files, data=data)
+                response = requests.post(url, files=files, data=data)
             except Exception as error:
                 print(error)
         return JsonResponse({'data': []})
@@ -4218,21 +4246,23 @@ def preprocess_text(text):
     print(p.id)
     p.save()
 
-
+productNames = []
+for p in Words.objects.all():
+    p.delete()
 # Train
 # arabert_model = models.Transformer('aubmindlab/bert-base-arabert')
 # pooling_layer = models.Pooling(arabert_model.get_word_embedding_dimension(), pooling_mode_mean_tokens=True)
 
 # # Combine the transformer and pooling into a SentenceTransformer model
 # model = SentenceTransformer(modules=[arabert_model, pooling_layer])
-# Prepare product names
+# # Prepare product names
 # productNames = []
 # for p in Products.objects.filter(categoryId__isnull=False).order_by('-categoryId')[:50]:
 #     for name in p.splittedNames.split(','):
 #         productNames.append({'id': p.id, 'name': name, 'originalName': p.name})
 #     print(p.name)
 
-# Encode corpus
+# # Encode corpus
 # corpus = [preprocess_text(r['name']) for r in productNames]
 # print(len(corpus))
 # # corpus_embeddings = model.encode(corpus, convert_to_tensor=True).detach().cpu().numpy()
@@ -4261,7 +4291,7 @@ def preprocess_text(text):
 # # Save the SentenceTransformer model
 # model.save('sentence_transformer_model')
 
-# ## load
+# # ## load
 # # Load the SentenceTransformer model
 # model = SentenceTransformer('sentence_transformer_model')
 
@@ -4364,9 +4394,55 @@ class Search(APIView):
         print(res)
         return JsonResponse({'data': filtered_results})
      
+def get_bsf4_xpath(element, multi=False):
+    path_parts = []
+    
+    # Traverse upwards from the element to the root
+    while element:
+        siblings = element.find_previous_siblings(element.name)
+        index = len(siblings) + 1
+        path_parts.insert(0, f"{element.name}[{index}]")
+        element = element.find_parent()
+        if element.name == 'html':
+            break
+
+    if multi:
+        last_bracket_index = '/'.join(path_parts).rfind('[')
+        fixed_path = '/'.join(path_parts)[:last_bracket_index]
+    else:
+        fixed_path = '/'.join(path_parts)
+
+    return '//' + fixed_path
+
+def get_class_css_selector(element):
+    path_parts = []
+
+    while element:
+        class_attr = element.get('class')
+        
+        if class_attr:
+            # If the element has a class, build the CSS selector
+            class_value = " ".join(class_attr)  # Combine multiple class names if necessary
+            # Create the CSS selector for the class
+            path_parts.insert(0, f".{class_value}")
+        else:
+            # If no class, use the tag name
+            path_parts.insert(0, element.name)
+
+        # Move to the parent element
+        element = element.find_parent()
+
+        if element and element.name == 'html':  # Stop at the root element
+            break
+
+    # Join all the path parts and use a space (descendant combinator) instead of '>'
+    return ' '.join(path_parts)
+
 class Test(APIView):
     def post(self, request, *args, **kwargs):
         url = request.data['url']
+        last_bracket_index = url.rfind('.com/')
+        domain = url[:last_bracket_index]+'.com/'
         driver = create_browser()
         driver.get(url)
         sleep(10)
@@ -4387,24 +4463,29 @@ class Test(APIView):
             child_divs = divs.find_all(recursive=False)
             if len(child_divs)>3:
                 try:
+                    print(child_divs[0].select('img'))
                     first_div_height = child_divs[0]['class']
+                    if len(child_divs[0].select('img'))==0:
+                        continue
                     if first_div_height:
                         all_same_size = all(checkIfExist(first_div_height, div['class']) for div in child_divs)
                         if all_same_size:
                             hrefs = []
                             
                             for w in child_divs:
-                                print(w)
                                 if len(w.select('a[href]'))>0:
                                     href = w.select_one('a[href]')['href']
-                                    print(w)
                                     if 'http' not in href:
-                                        hrefs.append('https://alaryanmobile.com/'+href)
+                                        hrefs.append(domain+href)
                                     else:
                                         hrefs.append(href)
+                            print('1')
+                            xpath = get_bsf4_xpath(child_divs[0], True)
+                            # css = get_class_css_selector(child_divs[0])
+                            print(xpath)
                             data.append({
                                 # 'class': ' '.join(divs['class']),
-                                'name': 'Div: '+str(index),
+                                'name': 'Div: '+xpath,
                                 'hrefs': hrefs
                             })
                             index = index + 1
@@ -4412,10 +4493,11 @@ class Test(APIView):
                     print(e)
         
         # selenium
-        # for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
-        #     child_divs = divs.find_elements(By.XPATH, './div')
-        #     all_same_size = False
-        #     if len(child_divs)>3:
+        for divs in driver.find_elements(By.CSS_SELECTOR,'div'):
+            selenium_child_divs = divs.find_elements(By.XPATH, './div')
+            all_same_size = False
+            if len(selenium_child_divs)>3:
+                print(selenium_child_divs[0].find_elements(By.CSS_SELECTOR,'img'))
         #         # for class
         #         first_div_height = child_divs[0].get_attribute('class')
         #         if first_div_height:
@@ -4433,23 +4515,25 @@ class Test(APIView):
         #                 })
         #                 index = index + 1
         #         if not all_same_size:
-        #             # for size
-        #             first_div_height = child_divs[0].size['height']
-        #             first_div_width = child_divs[0].size['width']
-        #             all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in child_divs)
-        #             if all_same_size:
-        #                 hrefs = []
-        #                 for w in child_divs:
-        #                     if len(w.find_elements(By.CSS_SELECTOR,'a[href]'))>0:
-        #                         href = w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')
-        #                         hrefs.append(href)
-        #                 if len(hrefs)>0:
-        #                     data.append({
-        #                         # 'class': ' '.join(divs['class']),
-        #                         'name': 'Div: '+str(index),
-        #                         'hrefs': hrefs
-        #                     })
-        #                 index = index + 1
+                    # for size
+                first_div_height = selenium_child_divs[0].size['height']
+                first_div_width = selenium_child_divs[0].size['width']
+                all_same_size = all(div.size['height'] == first_div_height and div.size['width'] == first_div_width for div in selenium_child_divs)
+                if all_same_size:
+                    hrefs = []
+                    if len(selenium_child_divs[0].find_elements(By.CSS_SELECTOR,'img'))==0:
+                        continue
+                    for w in selenium_child_divs:
+                        if len(w.find_elements(By.CSS_SELECTOR,'a[href]'))>0:
+                            href = w.find_element(By.CSS_SELECTOR,'a[href]').get_attribute('href')
+                            hrefs.append(href)
+                    if len(hrefs)>0:
+                        data.append({
+                            # 'class': ' '.join(divs['class']),
+                            'name': 'Div: '+str(index),
+                            'hrefs': hrefs
+                        })
+                    index = index + 1
         to_delete = []
         for d in data:
             products = []
@@ -4487,37 +4571,68 @@ class TestInside(APIView):
         res = {}
         biggest_img = None
         for divs in driver.find_elements(By.CSS_SELECTOR,'img[src]'):
-            divs.size['height']
             if biggest_img is None or divs.size['height'] > biggest_img.size['height']:
                 biggest_img = divs
         
         product_div = biggest_img
+        res['img'] = {
+            'img': biggest_img.get_attribute('src'),
+            'xpath': getAbsoluteXPath(driver, biggest_img)
+        }
+        res['imgs'] = {}
         while True:
             product_div = product_div.find_element(By.XPATH, "..")
+            if len(product_div.find_elements(By.CSS_SELECTOR, 'img'))>1:
+                for img in product_div.find_elements(By.CSS_SELECTOR, 'img'):
+                    if img.size['height'] == biggest_img.size['height'] and img.get_attribute('src') != biggest_img.get_attribute('src'):
+                        res['imgs']['xpath'] = getAbsoluteXPath(driver, img)
+                    if img.size['height'] != biggest_img.size['height']:
+                        res['imgs']['thumb_xpath'] = getAbsoluteXPath(driver, product_div.find_element(By.CSS_SELECTOR, 'img'))
             if len(product_div.find_elements(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6'))>0:
                 break
         
-        print(product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6').text)
-        res['title'] = product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6').text
+        res['title'] = {
+            'title': product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6').text, 
+            'xpath': getAbsoluteXPath(driver, product_div.find_element(By.CSS_SELECTOR, 'h1, h2, h3, h4, h5, h6'))
+        }
         description_div = product_div.find_element(By.CSS_SELECTOR,'div')
         for divs in product_div.find_elements(By.CSS_SELECTOR,'div'):
             if description_div is None or len(divs.find_elements(By.XPATH, './h1 | ./h2 | ./h3 | ./h4 | ./h5 | ./h6 | ./p | ./span')) > len(description_div.find_elements(By.XPATH, './h1 | ./h2 | ./h3 | ./h4 | ./h5 | ./h6 | ./p | ./span')):
                 description_div = divs
         
-        # print(description_div.text)
         try:
-            res['description'] = getSameFontSize(product_div).text
+            description_div = getSameFontSize(product_div)
+            res['description'] = {
+                'description': description_div.text,
+                'xpath': getAbsoluteXPath(driver, description_div)
+            }
         except Exception as e:
             print(e)
-
-        if len(product_div.find_elements(By.CSS_SELECTOR, 'img[src]'))>0:
-            for img in product_div.find_elements(By.CSS_SELECTOR, 'img[src]'):
-                res['img'] = img.get_attribute('src')
-        
+        prices = []
         if len(product_div.find_elements(By.CSS_SELECTOR, 'p, span, bdi, del'))>0:
             for price in product_div.find_elements(By.CSS_SELECTOR, 'p, span, bdi, del'):
                 if len(re.findall(r"\d{1,3}\.\d{1,3}", price.text))>0:
-                    res['price'] = price.text
+                    font_weight = price.value_of_css_property('font-weight')        
+                    if font_weight == 'normal':
+                        font_weight_value = 400
+                    elif font_weight == 'bold':
+                        font_weight_value = 700
+                    else:
+                        font_weight_value = int(font_weight)
+                    font_size = int(price.value_of_css_property('font-size').replace('px',''))
+                    prices.append({
+                        'element': price,
+                        'size': font_weight_value,
+                        'font_size': font_size,
+                    })
+        biggest_size = 0
+        for p in prices:
+            if p['font_size'] > biggest_size:
+                biggest_size = p['font_size']
+                res['price'] = {
+                    'price': p['element'].text,
+                    'xpath': getAbsoluteXPath(driver, p['element'])
+                }
             
         driver.quit()
         print(res)
