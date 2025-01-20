@@ -353,29 +353,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Number One</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="number_one_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="number_one_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="number_one_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="number_one_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="numberOneScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>Dermacol</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="dermacol_url"/>
                                     <input type="text" class="form-control mt-3" placeholder="Description"
@@ -925,28 +902,7 @@
             .catch(error => console.error("Error:", error));
 
     }
-    
-    function numberOneScrapView() {
-        fetch("/api/NumberOneScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "2962",
-                url: document.getElementById('number_one_url').value,
-                db_category: document.getElementById('number_one_db_category').value,
-                description: document.getElementById('number_one_description').value,
-                arabic_description: document.getElementById('number_one_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
 
-    }
-    
     function dermacolScrapView() {
         fetch("/api/DermacolScrapView", {
             method: "POST",

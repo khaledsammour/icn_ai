@@ -5,8 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView, NumberOneScrapView
-
+from .views import HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView
 urlpatterns = [
 
     # The home page
@@ -27,7 +26,6 @@ urlpatterns = [
     path('api/DiamondStarScrapView', DiamondStarScrapView.as_view()),
     path('api/GenerateBlog', GenerateBlog.as_view()),
     path('api/AlrefaiScrapView', AlrefaiScrapView.as_view()),
-    path('api/NumberOneScrapView', NumberOneScrapView.as_view()),
     path('api/DermacolScrapView', DermacolScrapView.as_view()),
     path('api/UpdateStoreScrapView', UpdateStoreScrapView.as_view()),
     path('api/TahboubScrapView', TahboubScrapView.as_view()),
