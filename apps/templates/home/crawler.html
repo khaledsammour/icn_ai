@@ -65,10 +65,62 @@
                 <div class="card-header">
                     <h4 class="card-title"> Simple Table</h4>
                 </div>
-                <input type="text" class="form-control mt-3" placeholder="URL" id="url" />
-                <button type="button" class="btn" onclick="mainScrapView()">
-                    Scrap
-                </button>
+                <div class="row p-3">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Url</label>
+                            <input id="url" type="text" class="form-control" placeholder="Url">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Product Selector</label>
+                            <input id="productSelector" type="text" class="form-control" placeholder="Product Selector">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Title Selector</label>
+                            <input id="titleSelector" type="text" class="form-control" placeholder="Title Selector">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Price Selector</label>
+                            <input id="priceSelector" type="text" class="form-control" placeholder="Price Selector">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Image Selector</label>
+                            <input id="imageSelector" type="text" class="form-control" placeholder="Image Selector">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Images Selector</label>
+                            <input id="imagesSelector" type="text" class="form-control" placeholder="Images Selector">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Description Selector</label>
+                            <input id="descriptionSelector" type="text" class="form-control" placeholder="Description Selector">
+                        </div>
+                    </div>
+                </div>
+                <div class="row p-3">
+                    <div class="col-6">
+                        <button type="button" class="w-100 btn" onclick="mainScrapView()">
+                            Scrap
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="w-100 btn" onclick="testInsideScrapView('',document.getElementById('url').value)">
+                            Inside Scrap
+                        </button>
+                    </div>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive" id="content">
 
@@ -155,7 +207,7 @@
                                     <p>3</p>
                                 </td>
                                 <td>
-                                    <button type="button" class="btn" onclick="testInsideScrapView('`+ e.link + `')">
+                                    <button type="button" class="btn" onclick="testInsideScrapView('`+e.name+`', '`+ e.link + `')">
                                         Scrap
                                     </button>
                                 </td>
@@ -179,7 +231,8 @@
 
     }
 
-    function testInsideScrapView(url) {
+    function testInsideScrapView(name, url) {
+        document.getElementById('productSelector').value = name
         fetch("/api/TestInside", {
             method: "POST",
             headers: {
@@ -191,7 +244,14 @@
             })
         })
             .then(response => response.json())
-            .then(data => {})
+            .then(data => {
+                console.log(data)
+                document.getElementById('titleSelector').value = data.data.title.xpath
+                document.getElementById('imageSelector').value = data.data.img.xpath
+                document.getElementById('imagesSelector').value = data.data.imgs.xpath
+                document.getElementById('descriptionSelector').value = data.data.description.xpath
+                document.getElementById('priceSelector').value = data.data.price.xpath
+            })
             .catch(error => console.error("Error:", error));
 
     }

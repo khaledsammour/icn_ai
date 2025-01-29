@@ -208,6 +208,60 @@ Node.ATTRIBUTE_NODE ? element.ownerElement : element.parentNode) {
     return xpath;
 
 } return absoluteXPath(arguments[0]);''', element)
+
+def getClassBasedCSSSelector(driver, element):
+    return driver.execute_script('''function classBasedCSSSelector(element) {
+        var selector = '';
+        
+        // Traverse up the DOM to get the classes
+        for (; element; element = element.parentElement) {
+            if (element.nodeType === Node.ELEMENT_NODE) {
+                var className = element.className.trim();
+                if (className) {
+                    // Append class name to the selector
+                    selector = '.' + className.replace(/\s+/g, '.') + ' ' + selector;
+                }
+            }
+        }
+        
+        return selector.trim();
+    }
+
+    return classBasedCSSSelector(arguments[0]);''', element)
+
+def getNthChildCSSSelector(driver, element):
+    return driver.execute_script('''function nthChildCSSSelector(element) {
+        var selector = '';
+        
+        // Traverse up the DOM tree
+        for (; element; element = element.parentElement) {
+            if (element.nodeType === Node.ELEMENT_NODE) {
+                // Get the element's tag name and its position among its siblings
+                var tagName = element.nodeName.toLowerCase();
+                var siblingIndex = 1;
+                
+                var sibling = element.previousElementSibling;
+                while (sibling) {
+                    if (sibling.nodeName.toLowerCase() === tagName) {
+                        siblingIndex++;
+                    }
+                    sibling = sibling.previousElementSibling;
+                }
+                
+                // Append nth-child if there are multiple siblings of the same type
+                if (siblingIndex > 1) {
+                    selector = tagName + ':nth-child(' + siblingIndex + ') ' + selector;
+                } else {
+                    selector = tagName + ' ' + selector;
+                }
+            }
+        }
+        
+        return selector.trim();
+    }
+
+    return nthChildCSSSelector(arguments[0]);''', element)
+
 def getImageBase64(driver, id, image_url):
     if 'youtube.com' in image_url:
         return ''
