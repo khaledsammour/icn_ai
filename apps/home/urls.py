@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, TahboubScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BCIScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView
+from .views import GetProductsFromBing, HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, GamersScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, ScrapView, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, ACIScrapView, DiamondStarScrapView, GenerateBlog, AlrefaiScrapView
 urlpatterns = [
 
     # The home page
@@ -18,7 +18,6 @@ urlpatterns = [
     path('api/VikushaScrapView', VikushaScrapView.as_view()),
     path('api/GTSScrapView', GTSScrapView.as_view()),
     path('api/TXONScrapView', TXONScrapView.as_view()),
-    path('api/BCIScrapView', BCIScrapView.as_view()),
     path('api/BashitiScrapView', BashitiScrapView.as_view()),
     path('api/TemuScrapView', TemuScrapView.as_view()),
     path('api/SportEquipmentScrapView', SportEquipmentScrapView.as_view()),
@@ -28,7 +27,6 @@ urlpatterns = [
     path('api/AlrefaiScrapView', AlrefaiScrapView.as_view()),
     path('api/DermacolScrapView', DermacolScrapView.as_view()),
     path('api/UpdateStoreScrapView', UpdateStoreScrapView.as_view()),
-    path('api/TahboubScrapView', TahboubScrapView.as_view()),
     path('api/DelfyScrapView', DelfyScrapView.as_view()),
     path('api/RealCosmeticsScrapView', RealCosmeticsScrapView.as_view()),
     path('api/NewVisionScrapView', NewVisionScrapView.as_view()),
@@ -52,4 +50,5 @@ urlpatterns = [
     path('api/Search', Search.as_view(), name='Search'),
     path('api/SimilarNames', SimilarNames.as_view(), name='SimilarNames'),
     path('api/HyperMax', HyperMax.as_view(), name='HyperMax'),
+    path('api/GetProductsFromBing', GetProductsFromBing.as_view(), name='GetProductsFromBing'),
 ]

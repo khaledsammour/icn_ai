@@ -289,12 +289,17 @@ def getImageBase64(driver, id, image_url):
     if '?' in image_url:
         image_url = image_url.split('?')[0]
         if 'https:' not in image_url and 'http:' not in image_url:
-            image_url = 'https:' + image_url
+            # image_url = 'https:' + image_url
+            domain = re.findall(r'https?://([a-zA-Z0-9.-]+)', driver.current_url)[0]
+            if domain not in image_url:
+                image_url = f'https://{domain}{image_url}'
+            else:
+                image_url = f'https:{image_url}'
     print(image_url)
     array_buffer = driver.execute_script(js_code, image_url)
     
     # Convert the ArrayBuffer to bytes
-    image_data = bytes(array_buffer)    
+    image_data = bytes(array_buffer)
 
     url = 'https://www.icn.com/api/v1/image/upload'
     file_name = ''
@@ -302,7 +307,7 @@ def getImageBase64(driver, id, image_url):
         file_name = image_url.split('?')[0].split('/')[-1]
     else:
         file_name = image_url.split('/')[-1]
-    if '.' not in file_name:
+    if '.png' not in file_name or '.jpg' not in file_name or '.webp' not in file_name:
         file_name = file_name + '.png'
     files=[
         ('image',(file_name,image_data,'image/png'))
