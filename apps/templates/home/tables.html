@@ -109,30 +109,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>Oriental</p>
-                                    <input type="number" class="form-control mt-3" placeholder="category"
-                                           id="oriental_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="number" class="form-control mt-3" placeholder="DB category"
-                                           id="oriental_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="scrap()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>Cashmere</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="cashmere_url"/>
                                 </td>
@@ -284,29 +260,6 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <p>ACI</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="aci_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="aci_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="aci_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="aci_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="aCIScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
                                     <p>DiamondStar</p>
                                     <input type="text" class="form-control mt-3" placeholder="URL" id="diamond_star_url"/>
                                     <input type="text" class="form-control mt-3" placeholder="Description"
@@ -416,29 +369,6 @@
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn" onclick="newVisionScrapView()">
-                                        Scrap
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <p>Gamers</p>
-                                    <input type="text" class="form-control mt-3" placeholder="URL" id="gamers_url"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Description"
-                                           id="gamers_description"/>
-                                </td>
-                                <td>
-                                    <p>3</p>
-                                    <input type="text" class="form-control mt-3" placeholder="Category"
-                                           id="gamers_db_category"/>
-                                    <input type="text" class="form-control mt-3" placeholder="Arabic description"
-                                           id="gamers_arabic_description"/>
-                                </td>
-                                <td>
-                                    07-10-2024
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn" onclick="gamersScrapView()">
                                         Scrap
                                     </button>
                                 </td>
@@ -628,28 +558,6 @@
 
     const csrftoken = getCookie('csrftoken');
 
-    function scrap(url) {
-        fetch("/api/scrap", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "1",
-                url: url,
-                category: document.getElementById('oriental_category').value,
-                db_category: document.getElementById('oriental_db_category').value,
-                description: document.getElementById('description').value,
-                arabic_description: document.getElementById('arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-
     function secScrapView() {
         fetch("/api/SecScrapView", {
             method: "POST",
@@ -810,48 +718,6 @@
             .catch(error => console.error("Error:", error));
 
     }
-    
-    function aCIScrapView() {
-        fetch("/api/ACIScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "2956",
-                url: document.getElementById('aci_url').value,
-                db_category: document.getElementById('aci_db_category').value,
-                description: document.getElementById('aci_description').value,
-                arabic_description: document.getElementById('aci_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-    
-    function diamondStarScrapView() {
-        fetch("/api/DiamondStarScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "1769",
-                url: document.getElementById('diamond_star_url').value,
-                db_category: document.getElementById('diamond_star_db_category').value,
-                description: document.getElementById('diamond_star_description').value,
-                arabic_description: document.getElementById('diamond_star_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
 
     function dermacolScrapView() {
         fetch("/api/DermacolScrapView", {
@@ -929,27 +795,6 @@
                 db_category: document.getElementById('new_vision_db_category').value,
                 description: document.getElementById('new_vision_description').value,
                 arabic_description: document.getElementById('new_vision_arabic_description').value,
-            })
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error));
-
-    }
-    
-    function gamersScrapView() {
-        fetch("/api/GamersScrapView", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                id: "3063",
-                url: document.getElementById('gamers_url').value,
-                db_category: document.getElementById('gamers_db_category').value,
-                description: document.getElementById('gamers_description').value,
-                arabic_description: document.getElementById('gamers_arabic_description').value,
             })
         })
             .then(response => response.json())
