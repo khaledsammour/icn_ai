@@ -10,13 +10,24 @@ from selenium.webdriver import Chrome
 from bs4 import BeautifulSoup
 import language_tool_python
 import re
-from deep_translator import GoogleTranslator
+# from deep_translator import GoogleTranslator
 import yake
-from langdetect import detect
-import os 
+import os
 from django.conf import settings  # Import project settings
 from airtable import Airtable
 from random import *
+from transformers import MarianMTModel, MarianTokenizer
+from lingua import Language, LanguageDetectorBuilder
+languages = [Language.ENGLISH, Language.ARABIC]
+detector = LanguageDetectorBuilder.from_languages(*languages).build()
+# Load pre-trained model and tokenizer
+model_name = "Helsinki-NLP/opus-mt-tc-big-en-ar"
+model = MarianMTModel.from_pretrained(model_name)
+tokenizer = MarianTokenizer.from_pretrained(model_name)
+
+en_model_name = "Helsinki-NLP/opus-mt-tc-big-ar-en"
+en_model = MarianMTModel.from_pretrained(en_model_name)
+en_tokenizer = MarianTokenizer.from_pretrained(en_model_name)
 
 API_KEY='patKfzGeYSaMEflNh.436aae2a5ffa7285045f29714bddfcee86ae9ff624a1748533231aaede505715'
 def get_hrefs(driver, url, pagination, selector, attr="href", not_contains_class=None, inner_selector=None, should_not_exist='', index=1, max_index=None, start_pagination=False, no_pagination=False, pagination_click=False):
@@ -425,20 +436,66 @@ def replace_dimensions(url):
     pattern = r'\d+x\d+.webp'
     return re.sub(pattern, '1200x1200.webp', url)
 
-def translate(text, dest='ar', source='auto'):
+
+def remove_numbers_and_special_characters(text):
+    cleaned_text = re.sub(r'[^a-zA-Z\s]', '', text)
+    return cleaned_text.strip()
+
+def translate(text, dest='ar-EG', source='en-US'):
     try:
-        # lang = detect(text)
-        # detected_lang = 'en' if lang == 'en' else 'ar'
-        # print(text, detected_lang)
-        # if detected_lang == dest:
-        #     return text
-        translation = GoogleTranslator(source=source, target=dest).translate(text)
-        return translation
+        # lang = detect(remove_numbers_and_special_characters(text))
+        language = detector.detect_language_of(remove_numbers_and_special_characters(text))
+        detected_lang = 'en-US' if language == Language.ENGLISH else 'ar-EG'
+        # print('+'*50)
+        # print(dest)
+        # print(text)
+        # print(remove_numbers_and_special_characters(text))
+        # print(language)
+        # print('+'*50)
+        if detected_lang == dest:
+            return text
+
+        # print("-"*50)
+        # inputs = tokenizer(text, return_tensors="tf")
+        # outputs = model(inputs)
+        #
+        # last_hidden_states = outputs.last_hidden_state
+        # print("+"*50)
+        # print(last_hidden_states)
+        # print("+"*50)
+        # translation = GoogleTranslator(source=source, target=dest).translate(text)
+        # translated_text = MyMemoryTranslator(source=source, target=dest).translate(text.lower())
+
+        if 'en' in dest:
+            tokens = en_tokenizer.encode(text, return_tensors="pt", truncation=True)
+
+            # Generate translation
+            translation = en_model.generate(tokens)
+
+            # Decode and return translated text
+            translated_text = en_tokenizer.decode(translation[0], skip_special_tokens=True)
+        else:
+            tokens = tokenizer.encode('>>ara<< '+ text, return_tensors="pt", truncation=True)
+
+            # Generate translation
+            translation = model.generate(tokens)
+
+            # Decode and return translated text
+            translated_text = tokenizer.decode(translation[0], skip_special_tokens=True)
+
+        # print("="*50)
+        # print(dest)
+        # print("-"*50)
+        # print(text)
+        # print("+"*50)
+        # print(translated_text)
+        # print("="*50)
+        return translated_text
     except Exception as e:
         print(e)
         print(text)
         return text
-
+translate('Easy')
 def unwrap_divs(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     

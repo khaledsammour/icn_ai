@@ -814,7 +814,7 @@ class SportEquipmentScrapView(APIView):
                     until_visible(driver, title_selector)
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
-                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en-US')
                     # Get the product price
                     price = soup.select_one('.summary .price .amount > bdi').get_text(strip=True).replace('د.ا','').replace('.','').replace(',','.').strip() if len(soup.select(".summary .price .amount > bdi"))>1 else soup.select_one("meta[property*='product:price:amount']")['content']
                     # Get discount
@@ -858,7 +858,7 @@ class SportEquipmentScrapView(APIView):
                     for attr in product_attributes:
                         key = attr.select_one("th").get_text(strip=True)
                         val = attr.select_one("td").get_text(strip=True)
-                        product_attributes_content_json[translate(key, dest='en')] = translate(val, dest='en')
+                        product_attributes_content_json[translate(key, dest='en-US')] = translate(val, dest='en-US')
 
                     driver.get(href.replace('/en/', '/'))
                     if len(driver.find_elements(By.CSS_SELECTOR,'.page-header h3.title'))>0:
@@ -943,7 +943,7 @@ class AlrefaiScrapView(APIView):
                     until_visible(driver, title_selector)
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
-                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en-US')
                     # Get the product price
                     price = soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".details_content .details_discount .theoldprice"))>0 and soup.select_one('.details_content .details_discount .theoldprice').get_text(strip=True).replace('JD','').replace(',','').strip() != '' else soup.select_one('.details_content .details_price .theprice').get_text(strip=True).replace('JD','').replace(',','').strip() if len(soup.select(".details_content .details_price .theprice"))>0 else ''
                     # Get discount
@@ -990,9 +990,9 @@ class AlrefaiScrapView(APIView):
                             new_title = title + ' - ' + softfix
                             product = {
                             "Arabic Name": new_title,
-                            "English Name": translate(new_title, dest='en'),
+                            "English Name": translate(new_title, dest='en-US'),
                             "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                            "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                            "English Description": translate(product_attributes_content, dest='en-US') if len(product_attributes_content) > 3 else request.data['description'],
                             "Category Id": request.data['db_category'],
                             "Arabic Brand": "",
                             "English Brand": "",
@@ -1016,9 +1016,9 @@ class AlrefaiScrapView(APIView):
                         unit = soup.select_one('.details_price .unit').get_text(strip=True) if len(soup.select('.details_price .unit'))>0 else ''
                         product = {
                             "Arabic Name": f'{title} - {unit}',
-                            "English Name": translate(f'{title} - {unit}', dest='en'),
+                            "English Name": translate(f'{title} - {unit}', dest='en-US'),
                             "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                            "English Description": translate(product_attributes_content, dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                            "English Description": translate(product_attributes_content, dest='en-US') if len(product_attributes_content) > 3 else request.data['description'],
                             "Category Id": request.data['db_category'],
                             "Arabic Brand": "",
                             "English Brand": "",
@@ -1076,7 +1076,7 @@ class DermacolScrapView(APIView):
                         continue
                     href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
                     soup = BeautifulSoup(href_res, 'html.parser')
-                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en')
+                    title = translate(soup.select_one(title_selector).get_text(strip=True), dest='en-US')
                     if 'ml' not in title and len(soup.select('.b-detail-desc__unit strong'))>0:
                         title += ' ' + soup.select_one('.b-detail-desc__unit strong').get_text(strip=True)
                     # Get the main image URL
@@ -1115,17 +1115,17 @@ class DermacolScrapView(APIView):
                             ar_keywords.append(k)
 
                         for keyW in ar_keywords:
-                            keywords.append(translate(keyW, dest='en'))
+                            keywords.append(translate(keyW, dest='en-US'))
                     else:
                         keywords = []
                         for keyW in keywords:
-                            keywords.append(translate(keyW, dest='en'))
+                            keywords.append(translate(keyW, dest='en-US'))
                     
                     product = {
                         "Arabic Name": 'Dermacol - ' + translate(title),
                         "English Name": 'Dermacol - ' + title,
                         "Arabic Description": product_attributes_content if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": translate(product_attributes_content,dest='en') if len(product_attributes_content) > 3 else request.data['description'],
+                        "English Description": translate(product_attributes_content,dest='en-US') if len(product_attributes_content) > 3 else request.data['description'],
                         "Category Id": request.data['db_category'],
                         "Arabic Brand": "",
                         "English Brand": "",
@@ -1514,113 +1514,6 @@ class RealCosmeticsScrapView(APIView):
                         "English Brand": "",
                         "Unit Price": price,
                         "Discount Type": "Percent" if discount != "0" else "",
-                        "Discount": discount if discount != "0" else "",
-                        "Unit": "PC",
-                        "Current Stock": in_stock,
-                        "Main Image URL": image,
-                        "Photos URLs": str((",").join(images)) if images else image,
-                        "Video Youtube URL": "",
-                        "English Meta Tags": ','.join(keywords),
-                        "Arabic Meta Tags": ','.join(ar_keywords),
-                        "features": '',
-                        "features_ar": '',
-                        "wholesale": "no",
-                        "reference_link": href,
-                    }
-                    data.append(product)
-                except Exception as e:
-                    error = True
-                    print(e)
-                    traceback.print_exc()
-                    errors.append({
-                        "url": href
-                    })   
-        if len(errors)>0:
-            err_df = pd.DataFrame(errors)
-            err_df.to_excel('excel/'+request.data['db_category']+'_errors.xlsx', index=False)
-        else:
-            df = pd.DataFrame(data)
-            df.to_excel('excel/'+request.data['db_category']+'_products.xlsx', index=False)
-            change_content(driver, data, request.data['db_category'])
-            
-        driver.quit()
-        return JsonResponse({})  
-
-class NewVisionScrapView(APIView):
-    def post(self, request, *args, **kwargs):
-        url = request.data['url']
-        driver = create_browser()
-        driver.get(url)
-        sleep(1)
-        data = []
-        errors = []
-        hrefs = get_hrefs(driver, url, 'page/', ".wd-products > .wd-product a.product-image-link")
-        error = False
-        for href in hrefs:
-            if not error:
-                try:
-                    driver.get(href)
-                    sleep(1)
-                    title_selector = '.product_title'
-                    key_words_selector = "meta[property*='og:title']"
-                    description_selector = '.woocommerce-product-details__short-description'
-                    try:
-                        until_visible(driver, '.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
-                    except: 
-                        pass
-                    if len(driver.find_elements(By.CSS_SELECTOR, title_selector))==0:
-                        continue
-                    href_res = driver.find_element(By.CSS_SELECTOR, 'html').get_attribute('outerHTML')
-                    soup = BeautifulSoup(href_res, 'html.parser')
-                    title = soup.select_one(title_selector).get_text(strip=True)
-                    # Get the product price
-                    price = soup.select_one('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount').get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount'))>0 else ''
-                    # Get discount
-                    discount_elem = soup.select('.single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount')[1].get_text(strip=True).replace('JOD','').replace(',','').strip() if len(soup.select(".single-product-page .price.pewc-main-price .woocommerce-Price-amount.amount"))>1 else None
-                    discount = float(price) - float(discount_elem) if discount_elem else '0'
-                    # Get the main image URL
-                    main_image_elem = soup.select_one('.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
-                    image = getImageBase64(driver, request.data['id'], main_image_elem['href']) if main_image_elem else ''
-                    # Get additional images
-                    image_elems = soup.select('.product-image-summary-inner .woocommerce-product-gallery__wrapper .wd-carousel-wrap figure > a')
-                    images = []
-                    for img in image_elems:
-                        if len(img['href'])>10:
-                            res = getImageBase64(driver, request.data['id'], img['href'])
-                            if res:
-                                images.append(res)
-                    # Check stock status
-                    in_stock = '3'
-                    # Get product attributes content
-                    description_elem = soup.select_one(description_selector).get_text(" ",strip=True) if soup.select_one(description_selector) else ''
-                    product_attributes_content = description_elem if description_elem else ''
-                    # Get keywords
-                    key_words_elem = soup.select_one(key_words_selector)
-                    keyWords = key_words_elem['content'].strip() if key_words_elem else ''
-                    keywords = keyWords.split('//')
-                    if len(product_attributes_content)>0:
-                        keywords = extract_top_keywords(product_attributes_content)
-                        ar_keywords = []
-                        for k in keyWords.split('//'):
-                            keywords.append(k)
-
-                        for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
-                    else:
-                        ar_keywords = []
-                        for keyW in keywords:
-                            ar_keywords.append(translate(keyW))
-                    
-                    product = {
-                        "Arabic Name": translate(title),
-                        "English Name": title,
-                        "Arabic Description": translate(product_attributes_content) if len(product_attributes_content)>3 else request.data['arabic_description'],
-                        "English Description": product_attributes_content if len(product_attributes_content) > 3 else request.data['description'],
-                        "Category Id": request.data['db_category'],
-                        "Arabic Brand": "",
-                        "English Brand": "",
-                        "Unit Price": price,
-                        "Discount Type": "Flat" if discount != "0" else "",
                         "Discount": discount if discount != "0" else "",
                         "Unit": "PC",
                         "Current Stock": in_stock,
@@ -2276,7 +2169,7 @@ class MainScrapView(APIView):
                     keywords = extract_top_keywords(product_attributes_content)
                     ar_keywords = []
                     for k in keyWords.split('//'):
-                        keywords.append(translate(k, dest="en"))
+                        keywords.append(translate(k, dest='en-US', source='ar-EG'))
 
                     for keyW in keywords:
                         ar_keywords.append(translate(keyW))
@@ -2293,7 +2186,7 @@ class MainScrapView(APIView):
                             if attr.select_one(website.features_key_selector) and attr.select_one(website.features_value_selector):
                                 key = attr.select_one(website.features_key_selector).get_text(strip=True)
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
-                                product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
+                                product_attributes_content_json[translate(key, dest='en-US', source='ar-EG')] = translate(val, dest='en-US', source='ar-EG')
                     if website.ar_selector:
                         ar_href =  soup.select_one(website.ar_selector)
                         driver.get(ar_href[website.ar_attr])
@@ -2335,7 +2228,7 @@ class MainScrapView(APIView):
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
                 else:
                     if website.translate_arabic:
-                        ar_title = translate(title, source='en')
+                        ar_title = translate(title, source='en-US')
                     else:
                         ar_title = title
                     if ar_title_prefix:
@@ -2351,12 +2244,12 @@ class MainScrapView(APIView):
                                 key = attr.select_one(website.features_key_selector).get_text(strip=True)
                                 val = attr.select_one(website.features_value_selector).get_text(strip=True)
                                 ar_product_attributes_content_json[translate(key)] = translate(val)
-                                product_attributes_content_json[translate(key, dest="en")] = translate(val, dest="en")
+                                product_attributes_content_json[translate(key, dest='en-US', source='ar-EG')] = translate(val, dest='en-US', source='ar-EG')
                 product = {
-                    "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(title_prefix, source='en') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
-                    "English Name": (title_prefix +' ' if title_prefix else '') + (translate(title, dest="en") if website.translate_english else title) +  (' ' + title_suffix if title_suffix else ''),
+                    "Arabic Name": (ar_title_prefix+' ' if ar_title_prefix else translate(title_prefix, source='en-US') +' ' if title_prefix else '') + ar_title +  (' ' + translate(title_suffix) if title_suffix else ''),
+                    "English Name": (title_prefix +' ' if title_prefix else '') + (translate(title, dest='en-US', source='ar-EG') if website.translate_english else title) +  (' ' + title_suffix if title_suffix else ''),
                     "Arabic Description": ar_description.replace('الوصف','').strip(),
-                    "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest="en") if len(product_attributes_content) > 3 else request.data['description'],
+                    "English Description": translate(product_attributes_content.replace('Description', '').strip(), dest='en-US', source='ar-EG') if len(product_attributes_content) > 3 else request.data['description'],
                     "Category Id": category,
                     "Arabic Brand": "",
                     "English Brand": "",
@@ -2542,9 +2435,9 @@ class YaserMarket(APIView):
 
                     data.append({
                         "Arabic Name": translate(p['name']),
-                        "English Name": translate(p['name'], dest="en"),
+                        "English Name": translate(p['name'], dest='en-US'),
                         "Arabic Description": translate(p['description']),
-                        "English Description": translate(p['description'], dest="en"),
+                        "English Description": translate(p['description'], dest='en-US'),
                         "Category Id": request.data['category'],
                         "Arabic Brand": "",
                         "English Brand": "",
@@ -2556,7 +2449,7 @@ class YaserMarket(APIView):
                         "Main Image URL": img,
                         "Photos URLs": img,
                         "Video Youtube URL": "",
-                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "English Meta Tags": translate(p['name'], dest='en-US'),
                         "Arabic Meta Tags": translate(p['name']),
                         "features": '',
                         "features_ar": '',
@@ -2643,7 +2536,7 @@ class Jubran(APIView):
 
                     data.append({
                         "Arabic Name": 'جبران ' + translate(p['name']),
-                        "English Name": 'Jubran ' + translate(p['name'], dest="en"),
+                        "English Name": 'Jubran ' + translate(p['name'], dest='en-US'),
                         "Arabic Description": request.data['ar_description'],
                         "English Description": request.data['en_description'],
                         "Category Id": request.data['category'],
@@ -2657,7 +2550,7 @@ class Jubran(APIView):
                         "Main Image URL": img,
                         "Photos URLs": img,
                         "Video Youtube URL": "",
-                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "English Meta Tags": translate(p['name'], dest='en-US'),
                         "Arabic Meta Tags": translate(p['name']),
                         "features": '',
                         "features_ar": '',
@@ -2786,7 +2679,7 @@ class SecoundYaserMarket(APIView):
                         'Meta: _secondary_title': '',
 
                         # "Arabic Name": translate(p['name']),
-                        # "English Name": translate(p['name'], dest="en"),
+                        # "English Name": translate(p['name'], dest='en-US'),
                         # "reference_link": 'https://www.yasermallonline.com/en/product/'+p['product_id'],
                     })
         df = pd.DataFrame([d for d in data])
@@ -3135,167 +3028,159 @@ class CommonWebsites(APIView):
         driver.get(url)
         sleep(3)
         for web in website:
-            if web.inner_selector and len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
-                print('1')
-                if len(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_elements(By.CSS_SELECTOR, web.inner_selector))>0:
-                    print('2')
-                    driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_element(By.CSS_SELECTOR, web.inner_selector).get_attribute('href'))
-                    sleep(3)
-                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
-                        print('3')
-                        print(web.product_selector)
-                        newWebsite = Websites()
-                        newWebsite.require_login = web.require_login
-                        newWebsite.email_selector = web.email_selector
-                        newWebsite.email = web.email
-                        newWebsite.password_selector = web.password_selector
-                        newWebsite.password = web.password
-                        newWebsite.button_selector = web.button_selector
-                        newWebsite.no_pagination = web.no_pagination
-                        newWebsite.pagination_click = web.pagination_click
-                        newWebsite.pagination_path = web.pagination_path
-                        newWebsite.product_selector = web.product_selector
-                        newWebsite.not_contains_class = web.not_contains_class
-                        newWebsite.inner_selector = web.inner_selector
-                        newWebsite.inside_category_selector = web.inside_category_selector
-                        newWebsite.product_click = web.product_click
-                        newWebsite.title_prefix = web.title_prefix
-                        newWebsite.title_prefix_selector = web.title_prefix_selector
-                        newWebsite.title_prefix_attr = web.title_prefix_attr
-                        newWebsite.title_selector = web.title_selector
-                        newWebsite.title_attr = web.title_attr
-                        newWebsite.title_suffix = web.title_suffix
-                        newWebsite.title_suffix_selector = web.title_suffix_selector
-                        newWebsite.title_suffix_attr = web.title_suffix_attr
-                        newWebsite.description_selector = web.description_selector
-                        newWebsite.description_attr = web.description_attr
-                        newWebsite.key_words_selector = web.key_words_selector
-                        newWebsite.main_img_selector = web.main_img_selector
-                        newWebsite.main_img_attr = web.main_img_attr
-                        newWebsite.img_click = web.img_click
-                        newWebsite.img_selector = web.img_selector
-                        newWebsite.img_attr = web.img_attr
-                        newWebsite.static_price = web.static_price
-                        newWebsite.is_price_have_comma = web.is_price_have_comma
-                        newWebsite.price_selector = web.price_selector
-                        newWebsite.price_attr = web.price_attr
-                        newWebsite.second_price_selector = web.second_price_selector
-                        newWebsite.second_price_attr = web.second_price_attr
-                        newWebsite.is_discount = web.is_discount
-                        newWebsite.discount_selector = web.discount_selector
-                        newWebsite.discount_attr = web.discount_attr
-                        newWebsite.is_stuck = web.is_stuck
-                        newWebsite.stuck_selector = web.stuck_selector
-                        newWebsite.is_feature = web.is_feature
-                        newWebsite.features_selector = web.features_selector
-                        newWebsite.features_key_selector = web.features_key_selector
-                        newWebsite.features_key_attr = web.features_key_attr
-                        newWebsite.features_value_selector = web.features_value_selector
-                        newWebsite.features_value_attr = web.features_value_attr
-                        newWebsite.en_link = web.en_link
-                        newWebsite.ar_link = web.ar_link
-                        newWebsite.ar_selector = web.ar_selector
-                        newWebsite.ar_attr = web.ar_attr
-                        newWebsite.export_out_of_stuck = web.export_out_of_stuck
-                        newWebsite.start_index = web.start_index
-                        newWebsite.end_index = web.end_index
-                        newWebsite.number_of_products = web.number_of_products
-                        newWebsite.change_content = web.change_content
-                        newWebsite.save()
-                        return JsonResponse({
-                            'product_selector': web.product_selector,
-                            'title_selector': web.title_selector,
-                            'img_selector': web.img_selector,
-                            'price_selector': web.price_selector
-                        })
+            try:
+                if web.inner_selector and len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
+                    if len(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_elements(By.CSS_SELECTOR, web.inner_selector))>0:
+                        driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).find_element(By.CSS_SELECTOR, web.inner_selector).get_attribute('href'))
+                        sleep(3)
+                        if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                            newWebsite = Websites()
+                            newWebsite.require_login = web.require_login
+                            newWebsite.email_selector = web.email_selector
+                            newWebsite.email = web.email
+                            newWebsite.password_selector = web.password_selector
+                            newWebsite.password = web.password
+                            newWebsite.button_selector = web.button_selector
+                            newWebsite.no_pagination = web.no_pagination
+                            newWebsite.pagination_click = web.pagination_click
+                            newWebsite.pagination_path = web.pagination_path
+                            newWebsite.product_selector = web.product_selector
+                            newWebsite.not_contains_class = web.not_contains_class
+                            newWebsite.inner_selector = web.inner_selector
+                            newWebsite.inside_category_selector = web.inside_category_selector
+                            newWebsite.product_click = web.product_click
+                            newWebsite.title_prefix = web.title_prefix
+                            newWebsite.title_prefix_selector = web.title_prefix_selector
+                            newWebsite.title_prefix_attr = web.title_prefix_attr
+                            newWebsite.title_selector = web.title_selector
+                            newWebsite.title_attr = web.title_attr
+                            newWebsite.title_suffix = web.title_suffix
+                            newWebsite.title_suffix_selector = web.title_suffix_selector
+                            newWebsite.title_suffix_attr = web.title_suffix_attr
+                            newWebsite.description_selector = web.description_selector
+                            newWebsite.description_attr = web.description_attr
+                            newWebsite.key_words_selector = web.key_words_selector
+                            newWebsite.main_img_selector = web.main_img_selector
+                            newWebsite.main_img_attr = web.main_img_attr
+                            newWebsite.img_click = web.img_click
+                            newWebsite.img_selector = web.img_selector
+                            newWebsite.img_attr = web.img_attr
+                            newWebsite.static_price = web.static_price
+                            newWebsite.is_price_have_comma = web.is_price_have_comma
+                            newWebsite.price_selector = web.price_selector
+                            newWebsite.price_attr = web.price_attr
+                            newWebsite.second_price_selector = web.second_price_selector
+                            newWebsite.second_price_attr = web.second_price_attr
+                            newWebsite.is_discount = web.is_discount
+                            newWebsite.discount_selector = web.discount_selector
+                            newWebsite.discount_attr = web.discount_attr
+                            newWebsite.is_stuck = web.is_stuck
+                            newWebsite.stuck_selector = web.stuck_selector
+                            newWebsite.is_feature = web.is_feature
+                            newWebsite.features_selector = web.features_selector
+                            newWebsite.features_key_selector = web.features_key_selector
+                            newWebsite.features_key_attr = web.features_key_attr
+                            newWebsite.features_value_selector = web.features_value_selector
+                            newWebsite.features_value_attr = web.features_value_attr
+                            newWebsite.en_link = web.en_link
+                            newWebsite.ar_link = web.ar_link
+                            newWebsite.ar_selector = web.ar_selector
+                            newWebsite.ar_attr = web.ar_attr
+                            newWebsite.export_out_of_stuck = web.export_out_of_stuck
+                            newWebsite.start_index = web.start_index
+                            newWebsite.end_index = web.end_index
+                            newWebsite.number_of_products = web.number_of_products
+                            newWebsite.change_content = web.change_content
+                            newWebsite.save()
+                            return JsonResponse({
+                                'product_selector': web.product_selector,
+                                'title_selector': web.title_selector,
+                                'img_selector': web.img_selector,
+                                'price_selector': web.price_selector
+                            })
+                        else:
+                            driver.get(url)
+                            sleep(3)
                     else:
                         driver.get(url)
                         sleep(3)
-                else:
-                    driver.get(url)
-                    sleep(3)
-            elif len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
-                print( web.name)
-                print( web.product_selector)
-                print( web.inner_selector)
-                print( web.inside_category_selector)
-                try:
-                    driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).get_attribute('href'))
-                    sleep(3)
-                    if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
-                        print('2')
-                        print(web.product_selector)
-                        newWebsite = Websites()
-                        newWebsite.require_login = web.require_login
-                        newWebsite.email_selector = web.email_selector
-                        newWebsite.email = web.email
-                        newWebsite.password_selector = web.password_selector
-                        newWebsite.password = web.password
-                        newWebsite.button_selector = web.button_selector
-                        newWebsite.no_pagination = web.no_pagination
-                        newWebsite.pagination_click = web.pagination_click
-                        newWebsite.pagination_path = web.pagination_path
-                        newWebsite.product_selector = web.product_selector
-                        newWebsite.not_contains_class = web.not_contains_class
-                        newWebsite.inner_selector = web.inner_selector
-                        newWebsite.inside_category_selector = web.inside_category_selector
-                        newWebsite.product_click = web.product_click
-                        newWebsite.title_prefix = web.title_prefix
-                        newWebsite.title_prefix_selector = web.title_prefix_selector
-                        newWebsite.title_prefix_attr = web.title_prefix_attr
-                        newWebsite.title_selector = web.title_selector
-                        newWebsite.title_attr = web.title_attr
-                        newWebsite.title_suffix = web.title_suffix
-                        newWebsite.title_suffix_selector = web.title_suffix_selector
-                        newWebsite.title_suffix_attr = web.title_suffix_attr
-                        newWebsite.description_selector = web.description_selector
-                        newWebsite.description_attr = web.description_attr
-                        newWebsite.key_words_selector = web.key_words_selector
-                        newWebsite.main_img_selector = web.main_img_selector
-                        newWebsite.main_img_attr = web.main_img_attr
-                        newWebsite.img_click = web.img_click
-                        newWebsite.img_selector = web.img_selector
-                        newWebsite.img_attr = web.img_attr
-                        newWebsite.static_price = web.static_price
-                        newWebsite.is_price_have_comma = web.is_price_have_comma
-                        newWebsite.price_selector = web.price_selector
-                        newWebsite.price_attr = web.price_attr
-                        newWebsite.second_price_selector = web.second_price_selector
-                        newWebsite.second_price_attr = web.second_price_attr
-                        newWebsite.is_discount = web.is_discount
-                        newWebsite.discount_selector = web.discount_selector
-                        newWebsite.discount_attr = web.discount_attr
-                        newWebsite.is_stuck = web.is_stuck
-                        newWebsite.stuck_selector = web.stuck_selector
-                        newWebsite.is_feature = web.is_feature
-                        newWebsite.features_selector = web.features_selector
-                        newWebsite.features_key_selector = web.features_key_selector
-                        newWebsite.features_key_attr = web.features_key_attr
-                        newWebsite.features_value_selector = web.features_value_selector
-                        newWebsite.features_value_attr = web.features_value_attr
-                        newWebsite.en_link = web.en_link
-                        newWebsite.ar_link = web.ar_link
-                        newWebsite.ar_selector = web.ar_selector
-                        newWebsite.ar_attr = web.ar_attr
-                        newWebsite.export_out_of_stuck = web.export_out_of_stuck
-                        newWebsite.start_index = web.start_index
-                        newWebsite.end_index = web.end_index
-                        newWebsite.number_of_products = web.number_of_products
-                        newWebsite.change_content = web.change_content
-                        newWebsite.save()
-                        return JsonResponse({
-                            'product_selector': web.product_selector,
-                            'title_selector': web.title_selector,
-                            'img_selector': web.img_selector,
-                            'price_selector': web.price_selector
-                        })
-                    else:
-                        driver.get(url)
+                elif len(driver.find_elements(By.CSS_SELECTOR, web.product_selector))>0:
+                    try:
+                        driver.get(driver.find_element(By.CSS_SELECTOR, web.product_selector).get_attribute('href'))
                         sleep(3)
-                except:
-                    pass
-        # sleep(10)
-        
+                        if len(driver.find_elements(By.CSS_SELECTOR, web.title_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.main_img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.img_selector))>0 and len(driver.find_elements(By.CSS_SELECTOR, web.price_selector))>0:
+                            newWebsite = Websites()
+                            newWebsite.require_login = web.require_login
+                            newWebsite.email_selector = web.email_selector
+                            newWebsite.email = web.email
+                            newWebsite.password_selector = web.password_selector
+                            newWebsite.password = web.password
+                            newWebsite.button_selector = web.button_selector
+                            newWebsite.no_pagination = web.no_pagination
+                            newWebsite.pagination_click = web.pagination_click
+                            newWebsite.pagination_path = web.pagination_path
+                            newWebsite.product_selector = web.product_selector
+                            newWebsite.not_contains_class = web.not_contains_class
+                            newWebsite.inner_selector = web.inner_selector
+                            newWebsite.inside_category_selector = web.inside_category_selector
+                            newWebsite.product_click = web.product_click
+                            newWebsite.title_prefix = web.title_prefix
+                            newWebsite.title_prefix_selector = web.title_prefix_selector
+                            newWebsite.title_prefix_attr = web.title_prefix_attr
+                            newWebsite.title_selector = web.title_selector
+                            newWebsite.title_attr = web.title_attr
+                            newWebsite.title_suffix = web.title_suffix
+                            newWebsite.title_suffix_selector = web.title_suffix_selector
+                            newWebsite.title_suffix_attr = web.title_suffix_attr
+                            newWebsite.description_selector = web.description_selector
+                            newWebsite.description_attr = web.description_attr
+                            newWebsite.key_words_selector = web.key_words_selector
+                            newWebsite.main_img_selector = web.main_img_selector
+                            newWebsite.main_img_attr = web.main_img_attr
+                            newWebsite.img_click = web.img_click
+                            newWebsite.img_selector = web.img_selector
+                            newWebsite.img_attr = web.img_attr
+                            newWebsite.static_price = web.static_price
+                            newWebsite.is_price_have_comma = web.is_price_have_comma
+                            newWebsite.price_selector = web.price_selector
+                            newWebsite.price_attr = web.price_attr
+                            newWebsite.second_price_selector = web.second_price_selector
+                            newWebsite.second_price_attr = web.second_price_attr
+                            newWebsite.is_discount = web.is_discount
+                            newWebsite.discount_selector = web.discount_selector
+                            newWebsite.discount_attr = web.discount_attr
+                            newWebsite.is_stuck = web.is_stuck
+                            newWebsite.stuck_selector = web.stuck_selector
+                            newWebsite.is_feature = web.is_feature
+                            newWebsite.features_selector = web.features_selector
+                            newWebsite.features_key_selector = web.features_key_selector
+                            newWebsite.features_key_attr = web.features_key_attr
+                            newWebsite.features_value_selector = web.features_value_selector
+                            newWebsite.features_value_attr = web.features_value_attr
+                            newWebsite.en_link = web.en_link
+                            newWebsite.ar_link = web.ar_link
+                            newWebsite.ar_selector = web.ar_selector
+                            newWebsite.ar_attr = web.ar_attr
+                            newWebsite.export_out_of_stuck = web.export_out_of_stuck
+                            newWebsite.start_index = web.start_index
+                            newWebsite.end_index = web.end_index
+                            newWebsite.number_of_products = web.number_of_products
+                            newWebsite.change_content = web.change_content
+                            newWebsite.save()
+                            return JsonResponse({
+                                'product_selector': web.product_selector,
+                                'title_selector': web.title_selector,
+                                'img_selector': web.img_selector,
+                                'price_selector': web.price_selector
+                            })
+                        else:
+                            driver.get(url)
+                            sleep(3)
+                    except:
+                        pass
+            except:
+                pass
+
         driver.quit()
         return JsonResponse({})
 
@@ -3358,7 +3243,7 @@ class HyperMax(APIView):
 
                     data.append({
                         "Arabic Name": translate(p['name']),
-                        "English Name": translate(p['name'], dest="en"),
+                        "English Name": translate(p['name'], dest='en-US'),
                         "Arabic Description": p['name'],
                         "English Description": p['name'],
                         "Category Id": request.data['category'],
@@ -3372,7 +3257,7 @@ class HyperMax(APIView):
                         "Main Image URL": img,
                         "Photos URLs": img,
                         "Video Youtube URL": "",
-                        "English Meta Tags": translate(p['name'], dest="en"),
+                        "English Meta Tags": translate(p['name'], dest='en-US'),
                         "Arabic Meta Tags": translate(p['name']),
                         "features": '',
                         "features_ar": '',
@@ -3796,6 +3681,11 @@ class Test(APIView):
         domain = url[:last_bracket_index]+'.com/'
         driver = create_browser()
         driver.get(url)
+        driver.execute_script('''
+            document.querySelectorAll('header, footer, iframe').forEach(function(element) {
+                element.remove();
+            });
+        ''')
         sleep(10)
         data = []
         def checkIfExist(calsses, newClass):
@@ -3953,7 +3843,8 @@ def xpath_to_css(xpath):
             if part.startswith('div['):
                 # Extract the index (e.g., div[2] -> 2)
                 index = re.search(r'\[(\d+)\]', part).group(1)
-                css_parts.append(f'div:nth-child({index})')
+                # css_parts.append(f'div:nth-child({index})')
+                css_parts.append(f'div')
             elif part == 'html':
                 css_parts.append('html')
             elif part == 'body':
@@ -4234,7 +4125,7 @@ class ChangeText(APIView):
         for index, row in dataframe1.iterrows():
             data = row.to_dict()
             if data['English Description'] != ' ':
-                new_desc = change_text(driver, translate(remove_emoji(data['English Description']), dest='en'))
+                new_desc = change_text(driver, translate(remove_emoji(data['English Description']), dest='en-US'))
                 ar_new_desc = translate(new_desc)
                 products.append({
                     "Arabic Name": data['Arabic Name'],
@@ -4420,8 +4311,8 @@ class GenerateBlog(APIView):
                     'description': content,
                 })
                 en_res.append({
-                    'title': translate(title, dest='en'),
-                    'description': translate(content, dest='en'),
+                    'title': translate(title, dest='en-US'),
+                    'description': translate(content, dest='en-US'),
                 })
             keywords = extract_top_keywords(en_res[0]['description'])
             ar_keywords = []
@@ -4436,7 +4327,7 @@ class GenerateBlog(APIView):
                 "sa": "ICN"
                 },
                 "title": {
-                    "en": translate(headline, dest='en'),
+                    "en": translate(headline, dest='en-US'),
                     "sa": headline
                 },
                 "short_description": {
@@ -4460,7 +4351,7 @@ class GenerateBlog(APIView):
                     "sa": ','.join(ar_keywords)
                 },
                 "meta_title": {
-                    "en": translate(headline, dest='en'),
+                    "en": translate(headline, dest='en-US'),
                     "sa": headline
                 }
             })}
@@ -4559,7 +4450,7 @@ class IntegrationTest(APIView):
 
         try:
             # # home
-            # change_lang('https://icn.com/', dest='en')
+            # change_lang('https://icn.com/', dest='en-US')
             # check_banners(selector=".header-row-banner a")
             # check_banners(navigate_to='https://icn.com/')
             # change_lang('https://icn.com/')
@@ -4570,11 +4461,11 @@ class IntegrationTest(APIView):
             #     df.to_excel(f'excel/home.xlsx', index=False)
 
             # # category
-            # change_lang('https://icn.com/', dest='en')
+            # change_lang('https://icn.com/', dest='en-US')
             # categories = [{'href': e.get_attribute('href'), 'title': e.text} for e in driver.find_elements(By.CSS_SELECTOR, '.nav-categories .swiper-container a:not([href="#"])')]
             # for c in categories:
             #     errors = []
-            #     change_lang(c['href'], dest='en')
+            #     change_lang(c['href'], dest='en-US')
             #     check_banners()
             #     change_lang(c['href'])
             #     check_banners()
@@ -4583,13 +4474,13 @@ class IntegrationTest(APIView):
             #         df.to_excel(f'excel/{c['title']}.xlsx', index=False)
             
             # filter
-            change_lang('https://icn.com/filter/category/All', dest='en')
+            change_lang('https://icn.com/filter/category/All', dest='en-US')
             until_visible(driver, '#accordion > .accordion-item > .accordion-header a')
             elements = [{'href': e.find_element(By.CSS_SELECTOR, '.accordion-header a').get_attribute('href'),'title': e.find_element(By.CSS_SELECTOR, '.accordion-header a').text} for e in driver.find_elements(By.CSS_SELECTOR, '#accordion > .accordion-item')]
             for e in elements:
                 # english
                 errors = []
-                change_lang(e['href'], dest='en')
+                change_lang(e['href'], dest='en-US')
                 check_banners()
                 categories = [e.get_attribute('href') for e in driver.find_elements(By.CSS_SELECTOR, '.collapse .accordion-item a')]
                 for c in categories:

@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 from django.urls import path, re_path
 from apps.home import views
-from .views import GetProductsFromBing, HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, NewVisionScrapView, RealCosmeticsScrapView, DelfyScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, GenerateBlog, AlrefaiScrapView
+from .views import GetProductsFromBing, HyperMax, SimilarNames, Search ,Jubran, SecoundYaserMarket, CommonWebsites, YaserMarket, GetImagesFromGoogle, Test, TestInside, ImageUploadView, StopProcess, InimexShopScrapView, MainScrapView, ArabiEmartScrapView, IntegrationTest, BashitiCentralScrapView, PetsJoScrapView, RealCosmeticsScrapView, DelfyScrapView, UpdateStoreScrapView, DermacolScrapView, ChangeText, SecScrapView, VikushaScrapView, GTSScrapView, TXONScrapView, BashitiScrapView, TemuScrapView, SportEquipmentScrapView, GenerateBlog, AlrefaiScrapView
 urlpatterns = [
 
     # The home page
@@ -26,7 +26,6 @@ urlpatterns = [
     path('api/UpdateStoreScrapView', UpdateStoreScrapView.as_view()),
     path('api/DelfyScrapView', DelfyScrapView.as_view()),
     path('api/RealCosmeticsScrapView', RealCosmeticsScrapView.as_view()),
-    path('api/NewVisionScrapView', NewVisionScrapView.as_view()),
     path('api/PetsJoScrapView', PetsJoScrapView.as_view()),
     path('api/BashitiCentralScrapView', BashitiCentralScrapView.as_view()),
     path('api/IntegrationTest', IntegrationTest.as_view()),
